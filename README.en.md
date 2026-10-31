@@ -20,7 +20,7 @@
 - 🧮 **Rules are settings**: base fee, watchers pay yes/no, absent members pay yes/no, extra for no-shows, lane per hour (from the cash, split or off). Fits any club.
 - 🙌 **Waive fines** for trips, Christmas parties & co.
 - 🏦 **Club cash** with “who owes what”, payments, expenses and CSV.
-- 📊 **Statistics**: kings, fines per person and type, cash over the year, attendance.
+- 📊 **Statistics** (one year or all years): overview with previous-year comparison and records, kings, cash history · people with their own detail page · evening-by-evening table · fines by type and a "who got what" matrix.
 - 📥 **Move from the “Alle Neune” app** – with all old evenings, fines and the complete cash.
 - 📱 **Offline app**, 🔒 **PIN lock**, 💾 **backup**, 📜 **history**.
 - 🌍 **German or English** (automatic, like Home Assistant) and 💱 **selectable currency**.

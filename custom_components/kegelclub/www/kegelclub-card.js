@@ -6,7 +6,7 @@
 // - Jede Änderung (Pumpe, Einzahlung, wer da ist …) wird als kleine „Änderung“ verschickt.
 // - Klappt das Verschicken nicht (kein Netz auf der Kegelbahn), landet die Änderung im Postausgang und wird
 //   später nachgeschickt. Bis dahin rechnet die Karte selbst so, als wäre sie schon angekommen.
-const KC_VERSION = "0.1.0-beta.4";
+const KC_VERSION = "0.1.0-beta.5";
 
 const MONTHS = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
 const QKEY = "kegelclub_queue";
@@ -48,6 +48,7 @@ const KC_GUIDE = [
 ];
 // 🆕 Was ist neu – das Neueste oben (wie bei der Einkaufsliste)
 const KC_NEWS = [
+  ["0.1.0-beta.5", "📊 Statistik viel ausführlicher: oben 4 Reiter <b>Überblick · Personen · Abende · Strafen</b> · 📅 Knopf „Alle Jahre“ (alles seit Beginn) · 📋 Zahlen mit Vergleich zum Vorjahr (▲ mehr, ▼ weniger) · 🏆 Rekorde (teuerster Abend, meiste Strafe, längste Serie …) · 👤 Person antippen = eigene Seite mit Strafen-Arten und Abend für Abend · 📅 Tabelle je Abend (antippen = Abend öffnen) · 🧮 Strafen-Tabelle „Wer hat was?“"],
   ["0.1.0-beta.4", "💶 Fix: Wer nach „Grundbetrag kassiert“ auf abgemeldet gestellt wird, bekommt den Grundbetrag automatisch wieder aus der Kasse (steht dann unter „Wer schuldet was“) · 👥 Der Knopf zeigt, <b>von wem</b> er kassiert · 🧾 In der Abrechnung stehen Fehlende wieder mit drin – blass, mit offenem Grundbetrag (+ Extra bei nicht abgemeldet)"],
   ["0.1.0-beta.3", "🙈 Keine extra Zeile „Fehlen heute“ mehr: Wer fehlt, bleibt als <b>blasse Kachel</b> stehen · ✍️ Für Fehlende geht nur <b>„Eigene“</b> (Strafe per Hand) – sie erscheinen dann auch in der Abrechnung"],
   ["0.1.0-beta.2", "➖ <b>Minus oben links</b> auf der Strafen-Kachel · ✍️ <b>Eigene Strafe</b> mit Betrag und Grund · 💶 <b>Grundbetrag kassiert</b> am Anfang und 🪙 <b>Münze</b> in der Abrechnung (rechts nur noch die Strafen) · 🙈 Wer fehlt, ist ausgeblendet („Fehlen heute“) · ⠿ feste Reihenfolge wie unter „Mitglieder“ · 🎳 Kegelbahn erst beim Abschließen aus der Kasse, als eigene Zeile · ⚠️ Hinweis beim Abschließen, wenn noch jemand offen ist · ↩️ Rückgängig-Knopf repariert"],
@@ -414,23 +415,48 @@ function applyLocal(d, op) {
 }
 
 // 📊 Statistik für ein Jahr: Strafen pro Person, nach Art, Kasse übers Jahr, Anwesenheit, Könige
+// 📊 Statistik: year = Jahreszahl oder 0 = alle Jahre
 function yearStats(d, year) {
   const [members, strafen] = maps(d);
-  const evs = d.abende.filter((e) => String(e.date).startsWith(String(year)));
-  const perPerson = {}, perType = {}, attend = {}, kings = {};
+  const evs = d.abende.filter((e) => !year || String(e.date).startsWith(String(year))).sort((a, b) => String(a.date).localeCompare(String(b.date)));
+  const perPerson = {}, perType = {}, attend = {}, kings = {}, perEv = [], best = {}, streak = {}, run = {};
+  const fineOf = (ev, p) => (ev.imported ? Math.max(0, (p.total || 0) - (p.fee || 0)) : (p.fines || 0) + (p.extra || 0));
   for (const ev of evs) {
     const b = billEvening(ev, members, strafen, d.settings);
+    const row = { ev, sum: 0, here: 0, top: null, topAmt: 0, per: {} };
     for (const [mid, p] of Object.entries(b.people)) {
-      perPerson[mid] = (perPerson[mid] || 0) + (ev.imported ? Math.max(0, p.total - (p.fee || 0)) : p.own + p.from_others);
-      if (["play", "watch"].includes(p.status)) attend[mid] = (attend[mid] || 0) + 1;
+      const f = r2(fineOf(ev, p));
+      perPerson[mid] = (perPerson[mid] || 0) + f;
+      row.per[mid] = f; row.sum += f;
+      if (f > row.topAmt) { row.top = mid; row.topAmt = f; }
+      if (!best[mid] || f > best[mid].amt) best[mid] = { amt: f, ev };
+      if (["play", "watch"].includes(p.status)) { attend[mid] = (attend[mid] || 0) + 1; row.here++; run[mid] = (run[mid] || 0) + 1; streak[mid] = Math.max(streak[mid] || 0, run[mid]); }
+      else run[mid] = 0;
     }
+    for (const mid of Object.keys(run)) if (!(mid in b.people)) run[mid] = 0;
+    row.sum = r2(row.sum);
+    let maxCnt = null;
     for (const [mid, per] of Object.entries(ev.counts || {})) for (const [sid, n] of Object.entries(per || {})) {
-      perType[sid] = (perType[sid] || 0) + Number(n || 0);
+      const c = Number(n || 0);
+      perType[sid] = (perType[sid] || 0) + c;
       const k = (kings[sid] = kings[sid] || {});
-      k[mid] = (k[mid] || 0) + Number(n || 0);
+      k[mid] = (k[mid] || 0) + c;
+      if (!maxCnt || c > maxCnt.n) maxCnt = { n: c, mid, sid };
     }
+    row.maxCnt = maxCnt;
+    perEv.push(row);
   }
-  // 💶 Kasse übers Jahr: Stand nach jedem Monat
+  // 🏆 Rekorde
+  const rec = {};
+  for (const r of perEv) {
+    if (r.sum > 0 && (!rec.evMax || r.sum > rec.evMax.sum)) rec.evMax = r;
+    if (r.topAmt > 0 && (!rec.pMax || r.topAmt > rec.pMax.topAmt)) rec.pMax = r;
+    if (r.maxCnt && r.maxCnt.n > 0 && (!rec.cMax || r.maxCnt.n > rec.cMax.maxCnt.n)) rec.cMax = r;
+    if (r.here > 0 && (!rec.hereMax || r.here > rec.hereMax.here)) rec.hereMax = r;
+  }
+  const st = Object.entries(streak).sort((a, b) => b[1] - a[1])[0];
+  if (st && st[1] > 1) rec.streak = { mid: st[0], n: st[1] };
+  // 💶 Kasse: im Jahr Stand nach jedem Monat, bei „alle“ Stand am Jahresende
   const s0 = Number(d.settings.start_balance) || 0;
   const flows = [];
   for (const k of d.kasse) flows.push([k.ts || 0, (k.kind === "out" ? -1 : 1) * (Number(k.amount) || 0)]);
@@ -438,13 +464,25 @@ function yearStats(d, year) {
   flows.sort((a, b) => a[0] - b[0]);
   const line = [];
   let bal = s0, i = 0;
-  for (let m = 0; m < 12; m++) {
-    const end = new Date(year, m + 1, 1).getTime();
-    while (i < flows.length && flows[i][0] < end) bal += flows[i++][1];
-    if (new Date(year, m, 1).getTime() <= Date.now()) line.push([m, r2(bal)]);
+  if (year) {
+    for (let m = 0; m < 12; m++) {
+      const end = new Date(year, m + 1, 1).getTime();
+      while (i < flows.length && flows[i][0] < end) bal += flows[i++][1];
+      if (new Date(year, m, 1).getTime() <= Date.now()) line.push([m, r2(bal)]);
+    }
+  } else {
+    const ys = statYears(d);
+    for (const y of ys) {
+      const end = new Date(y + 1, 0, 1).getTime();
+      while (i < flows.length && flows[i][0] < end) bal += flows[i++][1];
+      line.push([y, r2(bal)]);
+    }
   }
-  return { evs, perPerson, perType, attend, kings, line };
+  const fineSum = r2(Object.values(perPerson).reduce((s, v) => s + v, 0)), fineCnt = Object.values(perType).reduce((s, v) => s + v, 0);
+  return { evs, perPerson, perType, attend, kings, line, perEv, rec, best, streak, fineSum, fineCnt };
 }
+// 📅 Alle Jahre, in denen es Abende gab (aufsteigend)
+function statYears(d) { return [...new Set(d.abende.map((e) => Number(String(e.date).slice(0, 4))).filter((y) => y > 1900))].sort((a, b) => a - b); }
 const CSS = `
 :host { display:block; --kc-green:var(--success-color,#43a047); --kc-yellow:var(--warning-color,#ffa600); --kc-red:var(--error-color,#db4437); --pc:var(--primary-color,#03a9f4); }
 ha-card { display:block; padding:12px 12px 8px; overflow:hidden; background:var(--ha-card-background, var(--card-background-color)); border-radius:var(--ha-card-border-radius, 12px); }
@@ -760,6 +798,42 @@ ol.steps li { margin:3px 0; }
 .coin.ok { color:var(--kc-green, #43a047); }
 .coin ha-icon { --mdc-icon-size:26px; }
 .bill .item.off { opacity:.6; }
+/* 📊 Statistik (beta.5) */
+.yearnav .btn.small { margin-left:8px; }
+.stseg { justify-content:center; margin:2px 0 10px; }
+.stseg button { display:inline-flex; align-items:center; gap:4px; }
+.stseg ha-icon { --mdc-icon-size:16px; }
+.kpis { grid-template-columns:repeat(auto-fill, minmax(140px, 1fr)); }
+.tile .dl { font-size:.72em; display:block; margin-top:2px; color:var(--secondary-text-color); }
+.tile .dl.up { color:#e53935; }
+.tile .dl.down { color:#43a047; }
+.recs { display:grid; grid-template-columns:repeat(auto-fill, minmax(160px, 1fr)); gap:6px; margin:0 2px 8px; }
+.tile.rec { border-left:4px solid var(--rc); }
+.tile.rec > span:first-child ha-icon { color:var(--rc); }
+.tile .rs { font-size:.72em; color:var(--secondary-text-color); display:block; }
+.stbar .c.click { cursor:pointer; }
+table.sttab td, table.sttab th { padding:6px 4px; border-bottom:1px solid var(--divider-color); text-align:left; }
+table.sttab th { font-weight:500; font-size:.85em; color:var(--secondary-text-color); }
+table.sttab tr.click { cursor:pointer; }
+table.sttab tr.click:hover td { background:color-mix(in srgb, var(--pc) 8%, transparent); }
+table.sttab td:not(:first-child), table.sttab th:not(:first-child) { text-align:right; white-space:nowrap; font-variant-numeric:tabular-nums; }
+i.dot { display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:7px; vertical-align:0; }
+.cellbar { position:relative; display:block; min-width:84px; padding:2px 6px; isolation:isolate; }
+.cellbar i { position:absolute; right:0; top:0; bottom:0; background:color-mix(in srgb, #e53935 22%, transparent); border-radius:6px; z-index:-1; }
+.hbar { display:grid; grid-template-columns:minmax(90px, 38%) 1fr auto; align-items:center; gap:8px; margin:5px 2px; font-size:.9em; }
+.hbar > span { display:flex; align-items:center; gap:5px; min-width:0; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+.hbar > span ha-icon { --mdc-icon-size:16px; color:#fb8c00; flex:none; }
+.hbar i { display:block; height:12px; border-radius:6px; background:var(--bc, var(--pc)); }
+.minibars { display:flex; align-items:flex-end; gap:2px; height:64px; padding:4px 2px; border-bottom:1px solid var(--divider-color); }
+.minibars i { flex:1; min-width:2px; max-width:14px; border-radius:3px 3px 0 0; background:var(--bc, var(--pc)); }
+.mxwrap { overflow-x:auto; margin:0 -2px; }
+table.matrix { width:auto; min-width:100%; }
+table.matrix th, table.matrix td { padding:5px 6px; text-align:center; border-bottom:1px solid var(--divider-color); font-variant-numeric:tabular-nums; }
+table.matrix td:first-child { text-align:left; white-space:nowrap; position:sticky; left:0; background:var(--card-background-color, #fff); }
+table.matrix th ha-icon { --mdc-icon-size:18px; color:#fb8c00; }
+table.matrix td:not(:first-child) { background:rgba(142, 36, 170, var(--a)); }
+.tile b > span, .tile b .m { font-size:inherit !important; color:inherit !important; display:inline !important; }
+table.matrix th small { display:block; font-size:9.5px; font-weight:400; color:var(--secondary-text-color); max-width:62px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin:2px auto 0; }
 `;
 
 const initials = (n) => { const p = String(n || "?").trim().split(/\s+/); return ((p[0]?.[0] || "?") + (p.length > 1 ? p[p.length - 1][0] : (p[0]?.[1] || ""))).toUpperCase(); };
@@ -978,7 +1052,7 @@ class KegelclubCard extends HTMLElement {
     else if (this._pad) { const back = this._pad.back; this._pad = null; if (back !== "sheet") { this._view = "abend"; this._sheet = null; } }
     else if (this._open) this._open = null;
     else if (this._view === "set" && this._sheet) this._sheet = null;
-    else { this._view = this._view === "ev" ? "abend" : "abend"; this._sheet = null; }
+    else { this._view = this._view === "ev" ? this._evBack || "abend" : "abend"; this._evBack = null; this._sheet = null; }
     this._force = true; this._render();
     return true;
   }
@@ -1182,38 +1256,105 @@ class KegelclubCard extends HTMLElement {
 
   // ---------------------------------------------------------------- 📊 Statistik
   _statsView(d) {
-    const y = this._year, st = yearStats(d, y);
+    const y = this._year, st = yearStats(d, y), tab = this._statTab || "over";
     const [members, strafen] = maps(d);
-    let h = `<div class="yearnav"><button class="iconbtn" data-a="year" data-v="-1" title="Jahr davor">${ic("chevron-left")}</button><span>${y}</span><button class="iconbtn" data-a="year" data-v="1" title="Jahr danach">${ic("chevron-right")}</button></div>`;
-    if (!st.evs.length) return h + `<div class="empty">In ${y} gab es keinen Kegelabend.</div>`;
-    h += `<p class="small" style="text-align:center">${st.evs.length} Kegelabende</p>`;
-    // 👑 Könige: pro Strafe, wer am häufigsten
-    const kings = Object.entries(st.kings).map(([sid, per]) => { const top = Object.entries(per).sort((a, b) => b[1] - a[1])[0]; return top && strafen[sid] ? { s: strafen[sid], mid: top[0], n: top[1] } : null; }).filter(Boolean).sort((a, b) => b.n - a.n);
-    if (kings.length) h += this._gh("crown-outline", "#f9a825", "Könige", "") + `<div class="kings">${kings.map((k) => `<div class="tile"><span><ha-icon icon="${esc(k.s.icon || "mdi:bowling")}"></ha-icon><span data-noicon>${esc(k.s.name)}</span></span><b data-noicon>${esc(String(members[k.mid]?.name || "?").split(" ")[0])} · ${k.n}×</b></div>`).join("")}</div>`;
-    // 📊 Säulen: Strafen pro Person
-    const pp = Object.entries(st.perPerson).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]).slice(0, 12);
-    if (pp.length) {
-      const max = Math.max(...pp.map((x) => x[1]), 1);
-      h += this._gh("chart-bar", "#1e88e5", `Strafen pro Person (${KC_MONEY.sym})`, "") + `<div class="stbar">${pp.map(([mid, v]) => `<div class="c"><span>${numDe(r2(v))}</span><i style="height:${Math.max(3, (v / max) * 120).toFixed(0)}px;--bc:${mcol(d, mid)}"></i></div>`).join("")}</div>
-        <div class="stlbl">${pp.map(([mid]) => `<span data-noicon>${esc(String(members[mid]?.name || "?").split(" ")[0])}</span>`).join("")}</div>`;
+    const fn = (mid) => esc(String(members[mid]?.name || "?").split(" ")[0]);
+    const ys = statYears(d);
+    let h = `<div class="yearnav"><button class="iconbtn" data-a="year" data-v="-1" title="Jahr davor" ${!y ? "disabled" : ""}>${ic("chevron-left")}</button><span>${y || "Alle Jahre"}</span><button class="iconbtn" data-a="year" data-v="1" title="Jahr danach" ${!y ? "disabled" : ""}>${ic("chevron-right")}</button><button class="btn small ${y ? "" : "main"}" data-a="yearall">${ic("calendar-multiple")}${y ? "Alle Jahre" : "Ein Jahr"}</button></div>`;
+    h += `<div class="seg stseg">${[["over", "view-dashboard-outline", "Überblick"], ["people", "account-group-outline", "Personen"], ["evs", "calendar-text-outline", "Abende"], ["fines", "gavel", "Strafen"]].map(([k, i, t]) => `<button data-a="stattab" data-v="${k}" class="${tab === k ? "on" : ""}">${ic(i)}${t}</button>`).join("")}</div>`;
+    if (!st.evs.length) return h + `<div class="empty">${y ? `In ${y} gab es keinen Kegelabend.` : "Noch kein Kegelabend."}</div>`;
+    if (tab === "people") return h + this._statPeople(d, st, members, strafen, fn);
+    if (tab === "evs") return h + this._statEvs(d, st, members, fn);
+    if (tab === "fines") return h + this._statFines(d, st, members, strafen, fn);
+    // 📋 Zahlen + Vergleich mit dem Vorjahr
+    const prev = y && ys.includes(y - 1) ? yearStats(d, y - 1) : null;
+    const avg = (s) => (s.evs.length ? s.fineSum / s.evs.length : 0);
+    const delta = (cur, old, isMoney) => {
+      if (!prev) return "";
+      const dv = r2(cur - old);
+      if (!dv) return `<span class="dl">± 0 zu ${y - 1}</span>`;
+      return `<span class="dl ${dv > 0 ? "up" : "down"}">${dv > 0 ? "▲" : "▼"} ${isMoney ? this._m(Math.abs(dv)) : numDe(Math.abs(dv))} zu ${y - 1}</span>`;
+    };
+    const kpi = (icon, label, val, cur, old, isMoney) => `<div class="tile"><span>${ic(icon)}${label}</span><b>${val}</b>${delta(cur, old, isMoney)}</div>`;
+    h += this._gh("counter", "#3949ab", "Zahlen", prev ? `Vergleich mit ${y - 1}` : "");
+    h += `<div class="tiles kpis">${kpi("calendar-check-outline", "Abende", String(st.evs.length), st.evs.length, prev?.evs.length, false)}${kpi("cash-multiple", "Strafen", this._m(st.fineSum), st.fineSum, prev?.fineSum, true)}${kpi("pound", "Strafen (Anzahl)", `${st.fineCnt}×`, st.fineCnt, prev?.fineCnt, false)}${kpi("division", "Ø pro Abend", this._m(r2(avg(st))), r2(avg(st)), prev ? r2(avg(prev)) : 0, true)}${kpi("account-multiple-outline", "Ø anwesend", numDe(r2(st.perEv.reduce((s, r) => s + r.here, 0) / st.evs.length)), r2(st.perEv.reduce((s, r) => s + r.here, 0) / st.evs.length), prev && prev.evs.length ? r2(prev.perEv.reduce((s, r) => s + r.here, 0) / prev.evs.length) : 0, false)}</div>`;
+    // 🏆 Rekorde
+    const r = st.rec, recs = [];
+    if (r.evMax) recs.push(["cash-plus", "#e53935", "Teuerster Abend", `${this._m(r.evMax.sum)}`, fmtDate(r.evMax.ev.date)]);
+    if (r.pMax) recs.push(["account-cash-outline", "#fb8c00", "Meiste Strafe an einem Abend", `${fn(r.pMax.top)} · ${this._m(r.pMax.topAmt)}`, fmtDate(r.pMax.ev.date)]);
+    if (r.cMax && strafen[r.cMax.maxCnt.sid]) recs.push([icn(strafen[r.cMax.maxCnt.sid].icon), "#8e24aa", `Meiste „${esc(strafen[r.cMax.maxCnt.sid].name)}“ an einem Abend`, `${fn(r.cMax.maxCnt.mid)} · ${r.cMax.maxCnt.n}×`, fmtDate(r.cMax.ev.date)]);
+    if (r.hereMax) recs.push(["account-group", "#00897b", "Volles Haus", `${r.hereMax.here} da`, fmtDate(r.hereMax.ev.date)]);
+    if (r.streak) recs.push(["fire", "#f4511e", "Längste Serie dabei", `${fn(r.streak.mid)} · ${r.streak.n} Abende`, "ohne zu fehlen"]);
+    if (recs.length) h += this._gh("trophy-outline", "#f9a825", "Rekorde", "") + `<div class="recs">${recs.map(([i, c, t, v, s]) => `<div class="tile rec" style="--rc:${c}"><span>${ic(i)}<span data-noicon>${t}</span></span><b data-noicon>${v}</b><span class="rs">${esc(s)}</span></div>`).join("")}</div>`;
+    // 👑 Könige
+    const kings = Object.entries(st.kings).map(([sid, per]) => { const top = Object.entries(per).sort((a, b) => b[1] - a[1])[0]; return top && top[1] > 0 && strafen[sid] ? { s: strafen[sid], mid: top[0], n: top[1] } : null; }).filter(Boolean).sort((a, b) => b.n - a.n);
+    if (kings.length) h += this._gh("crown-outline", "#f9a825", "Könige", "") + `<div class="kings">${kings.map((k) => `<div class="tile"><span><ha-icon icon="${esc(k.s.icon || "mdi:bowling")}"></ha-icon><span data-noicon>${esc(k.s.name)}</span></span><b data-noicon>${fn(k.mid)} · ${k.n}×</b></div>`).join("")}</div>`;
+    // 📈 Kasse
+    if (st.line.length > 1) {
+      const vals = st.line.map((x) => x[1]), mn = Math.min(...vals), mx = Math.max(...vals), span = mx - mn || 1, n = st.line.length;
+      const W = 320, H = 90, px = (j) => (y ? (st.line[j][0] / 11) : j / Math.max(1, n - 1)) * (W - 20) + 10, py = (v) => H - 10 - ((v - mn) / span) * (H - 24);
+      const lbl = (x) => (y ? (KC_LANG === "en" ? MONTHS_EN : MONTHS)[x] : String(x));
+      h += this._gh("chart-line", "#43a047", y ? "Kasse übers Jahr" : "Kasse über die Jahre", this._m(vals[vals.length - 1])) + `<svg viewBox="0 0 ${W} ${H + 14}" style="width:100%;height:auto;margin:4px 0"><polyline fill="none" stroke="#43a047" stroke-width="3" stroke-linejoin="round" points="${st.line.map(([, v], j) => `${px(j).toFixed(1)},${py(v).toFixed(1)}`).join(" ")}"/>${st.line.map(([, v], j) => `<circle cx="${px(j).toFixed(1)}" cy="${py(v).toFixed(1)}" r="3" fill="#43a047"/>`).join("")}${st.line.map(([x], j) => `<text x="${px(j).toFixed(1)}" y="${H + 10}" font-size="9" text-anchor="middle" fill="currentColor" opacity=".6">${lbl(x)}</text>`).join("")}</svg>`;
     }
-    // 🥧 Kuchen: Strafen nach Art (Anzahl)
+    return h;
+  }
+  // 👤 Personen: Säulen, Anwesenheit, antippen = Einzelansicht
+  _statPeople(d, st, members, strafen, fn) {
+    const sel = this._statP && (this._statP in st.perPerson || this._statP in st.attend) ? this._statP : null;
+    if (sel) return this._statPerson(d, st, sel, members, strafen);
+    let h = "";
+    const pp = this._order(d, Object.keys(st.perPerson).filter((m) => st.perPerson[m] > 0)).sort((a, b) => st.perPerson[b] - st.perPerson[a]).slice(0, 12);
+    if (pp.length) {
+      const max = Math.max(...pp.map((m) => st.perPerson[m]), 1);
+      h += this._gh("chart-bar", "#1e88e5", `Strafen pro Person (${KC_MONEY.sym})`, "Säule antippen") + `<div class="stbar">${pp.map((mid) => `<div class="c click" data-a="statp" data-id="${esc(mid)}"><span>${numDe(r2(st.perPerson[mid]))}</span><i style="height:${Math.max(3, (st.perPerson[mid] / max) * 120).toFixed(0)}px;--bc:${mcol(d, mid)}"></i></div>`).join("")}</div>
+        <div class="stlbl">${pp.map((mid) => `<span data-noicon>${fn(mid)}</span>`).join("")}</div>`;
+    }
+    const ids = this._order(d, [...new Set([...Object.keys(st.attend), ...Object.keys(st.perPerson)])]);
+    h += this._gh("account-check-outline", "#00897b", "Alle Personen", "antippen = Details") + `<table class="sttab"><tr><th></th><th>da</th><th>Strafen</th><th>Ø</th></tr>${ids.map((mid) => { const a = st.attend[mid] || 0; return `<tr class="click" data-a="statp" data-id="${esc(mid)}"><td data-noicon><i class="dot" style="background:${mcol(d, mid)}"></i>${esc(members[mid]?.name || "?")}</td><td>${a} / ${st.evs.length}</td><td>${this._m(r2(st.perPerson[mid] || 0))}</td><td>${a ? this._m(r2((st.perPerson[mid] || 0) / a)) : "–"}</td></tr>`; }).join("")}</table>`;
+    return h;
+  }
+  _statPerson(d, st, mid, members, strafen) {
+    const m = members[mid] || {}, a = st.attend[mid] || 0, sum = r2(st.perPerson[mid] || 0);
+    let h = `<div class="btnrow"><button class="btn small" data-a="statp" data-id="">${ic("arrow-left")}Alle Personen</button></div>`;
+    h += `<div class="hero" style="--hc:${mcol(d, mid)}"><div class="lbl" data-noicon>${esc(m.name || "?")}${m.guest ? " · Gast" : ""}</div><div class="big" style="font-size:1.9em">${this._m(sum)}</div><div class="small">Strafen ${this._year || "gesamt"}</div></div>`;
+    const best = st.best[mid];
+    h += `<div class="tiles kpis"><div class="tile"><span>${ic("calendar-check-outline")}Dabei</span><b>${a} / ${st.evs.length}</b></div><div class="tile"><span>${ic("division")}Ø pro Abend</span><b>${a ? this._m(r2(sum / a)) : "–"}</b></div><div class="tile"><span>${ic("fire")}Längste Serie</span><b>${st.streak[mid] || 0} Abende</b></div>${best && best.amt > 0 ? `<div class="tile"><span>${ic("arrow-up-bold-outline")}Teuerster Abend</span><b>${this._m(best.amt)}</b><span class="rs">${esc(fmtDate(best.ev.date))}</span></div>` : ""}</div>`;
+    // Strafen nach Art
+    const kinds = Object.entries(st.kings).map(([sid, per]) => [sid, per[mid] || 0]).filter(([sid, n]) => n > 0 && strafen[sid]).sort((x, z) => z[1] - x[1]);
+    if (kinds.length) {
+      const mx = Math.max(...kinds.map((k) => k[1]));
+      h += this._gh("gavel", "#e53935", "Welche Strafen?", "") + kinds.map(([sid, n]) => `<div class="hbar"><span><ha-icon icon="${esc(strafen[sid].icon || "mdi:bowling")}"></ha-icon><span data-noicon>${esc(strafen[sid].name)}</span></span><i style="width:${Math.max(4, (n / mx) * 100).toFixed(0)}%;--bc:${mcol(d, mid)}"></i><b>${n}×</b></div>`).join("");
+    }
+    // Verlauf je Abend
+    const rows = st.perEv.filter((r) => mid in r.per);
+    if (rows.length) {
+      const mx = Math.max(...rows.map((r) => r.per[mid]), 0.01);
+      h += this._gh("chart-timeline-variant", "#1e88e5", "Abend für Abend", "") + `<div class="minibars">${rows.map((r) => `<i title="${esc(fmtDate(r.ev.date))}: ${esc(money(r.per[mid]))}" style="height:${Math.max(2, (r.per[mid] / mx) * 60).toFixed(0)}px;--bc:${mcol(d, mid)}"></i>`).join("")}</div>`;
+      h += `<table class="sttab">${rows.slice().reverse().slice(0, 30).map((r) => { const s = (d.abende.find((e) => e.id === r.ev.id)?.status || {})[mid] || "play"; return `<tr><td>${esc(fmtDate(r.ev.date))}</td><td>${esc(STATUS[s]?.label || "")}</td><td>${this._m(r.per[mid])}</td></tr>`; }).join("")}</table>`;
+    }
+    return h;
+  }
+  // 📅 Tabelle je Abend
+  _statEvs(d, st, members, fn) {
+    const rows = st.perEv.slice().reverse();
+    const mx = Math.max(...rows.map((r) => r.sum), 0.01);
+    return this._gh("calendar-text-outline", "#546e7a", "Abend für Abend", `${rows.length}`) + `<table class="sttab"><tr><th>Datum</th><th>da</th><th>Strafen</th><th>Meiste</th></tr>${rows.map((r) => `<tr class="click" data-a="evopen" data-id="${esc(r.ev.id)}"><td>${esc(fmtDate(r.ev.date, { day: "2-digit", month: "2-digit", year: "2-digit" }))}${r.ev.no_fines ? " 🙌" : ""}</td><td>${r.here}</td><td><span class="cellbar"><i style="width:${((r.sum / mx) * 100).toFixed(0)}%"></i>${this._m(r.sum)}</span></td><td data-noicon>${r.top && r.topAmt > 0 ? `${fn(r.top)} ${this._m(r.topAmt)}` : "–"}</td></tr>`).join("")}</table>`;
+  }
+  // 🧮 Strafen: Kuchen + Matrix
+  _statFines(d, st, members, strafen, fn) {
+    let h = "";
     const pt = Object.entries(st.perType).filter(([sid, n]) => n > 0 && strafen[sid]).sort((a, b) => b[1] - a[1]);
     if (pt.length) {
       const tot = pt.reduce((s, x) => s + x[1], 0);
       let acc = 0;
       const grad = pt.map(([, n], i) => { const a0 = acc; acc += (n / tot) * 100; return `${PIE[i % PIE.length]} ${a0.toFixed(2)}% ${acc.toFixed(2)}%`; }).join(",");
       h += this._gh("chart-pie", "#fb8c00", "Strafen nach Art", `${tot}×`) + `<div class="pie"><div class="disc" style="background:conic-gradient(${grad})"></div><div class="lg">${pt.map(([sid, n], i) => `<div><i style="background:${PIE[i % PIE.length]}"></i><span data-noicon>${esc(strafen[sid].name)}</span> ${n}× · ${Math.round((n / tot) * 100)} %</div>`).join("")}</div></div>`;
-    }
-    // 📈 Linie: Kasse übers Jahr
-    if (st.line.length > 1) {
-      const vals = st.line.map((x) => x[1]), mn = Math.min(...vals), mx = Math.max(...vals), span = mx - mn || 1;
-      const W = 320, H = 90, px = (m) => (m / 11) * (W - 20) + 10, py = (v) => H - 10 - ((v - mn) / span) * (H - 24);
-      h += this._gh("chart-line", "#43a047", "Kasse übers Jahr", this._m(vals[vals.length - 1])) + `<svg viewBox="0 0 ${W} ${H + 14}" style="width:100%;height:auto;margin:4px 0"><polyline fill="none" stroke="#43a047" stroke-width="3" stroke-linejoin="round" points="${st.line.map(([m, v]) => `${px(m).toFixed(1)},${py(v).toFixed(1)}`).join(" ")}"/>${st.line.map(([m, v]) => `<circle cx="${px(m).toFixed(1)}" cy="${py(v).toFixed(1)}" r="3" fill="#43a047"/>`).join("")}${st.line.map(([m]) => `<text x="${px(m).toFixed(1)}" y="${H + 10}" font-size="9" text-anchor="middle" fill="currentColor" opacity=".6">${(KC_LANG === "en" ? MONTHS_EN : MONTHS)[m]}</text>`).join("")}</svg>`;
-    }
-    // 🙋 Anwesenheit
-    const at = Object.entries(st.attend).sort((a, b) => b[1] - a[1]);
-    if (at.length) h += this._gh("account-check-outline", "#00897b", "Anwesenheit", "") + `<table>${at.map(([mid, n]) => `<tr><td data-noicon>${esc(members[mid]?.name || "?")}</td><td>${n} / ${st.evs.length}</td></tr>`).join("")}</table>`;
+      const ids = this._order(d, Object.keys(st.attend).filter((mid) => pt.some(([sid]) => (st.kings[sid] || {})[mid])));
+      if (ids.length) {
+        const mx = Math.max(...ids.flatMap((mid) => pt.map(([sid]) => (st.kings[sid] || {})[mid] || 0)), 1);
+        h += this._gh("table-large", "#8e24aa", "Wer hat was?", "Anzahl") + `<div class="mxwrap"><table class="matrix"><tr><th></th>${pt.map(([sid]) => `<th title="${esc(strafen[sid].name)}"><ha-icon icon="${esc(strafen[sid].icon || "mdi:bowling")}"></ha-icon><small data-noicon>${esc(strafen[sid].name)}</small></th>`).join("")}</tr>${ids.map((mid) => `<tr><td data-noicon>${fn(mid)}</td>${pt.map(([sid]) => { const n = (st.kings[sid] || {})[mid] || 0; return `<td style="--a:${n ? (0.12 + (n / mx) * 0.6).toFixed(2) : 0}">${n || ""}</td>`; }).join("")}</tr>`).join("")}</table></div><p class="small">Je dunkler das Feld, desto öfter. Zu breit? Einfach seitlich wischen.</p>`;
+      }
+    } else h += `<div class="empty">Keine Strafen gezählt.</div>`;
     return h;
   }
 
@@ -1568,7 +1709,7 @@ class KegelclubCard extends HTMLElement {
     else if (a === "back") {
       if (this._pad) { const back = this._pad.back; this._pad = null; if (back !== "sheet") { this._view = "abend"; this._sheet = null; } }
       else if (this._view === "set" && this._sheet) { this._sheet = null; this._imp = null; }
-      else { this._view = "abend"; this._sheet = null; }
+      else { this._view = this._view === "ev" ? this._evBack || "abend" : "abend"; this._evBack = null; this._sheet = null; }
       this._open = null; redraw();
     }
     else if (a === "hide") { this._hidden = !this._hidden; store.put(HKEY, this._hidden); redraw(); }
@@ -1650,7 +1791,7 @@ class KegelclubCard extends HTMLElement {
       this._send({ type: "abend_close", abend: id, value: true });
       this._evId = id; this._view = "ev"; redraw();
     }
-    else if (a === "evopen") { this._evId = id; this._view = "ev"; redraw(); }
+    else if (a === "evopen") { this._evBack = this._view === "stats" ? "stats" : "abend"; this._evId = id; this._view = "ev"; redraw(); }
     else if (a === "evreopen") {
       if (ev) { this._toast("Es läuft schon ein anderer Kegelabend"); return; }
       this._send({ type: "abend_close", abend: id, value: false }); this._view = "abend"; redraw();
@@ -1678,7 +1819,10 @@ class KegelclubCard extends HTMLElement {
     else if (a === "kform") { this._kform = el.dataset.v; redraw(); }
     else if (a === "kdel") this._removeWithUndo("kasse", id, "🗑️ Buchung gelöscht");
     else if (a === "allk") { this._allK = true; redraw(); }
-    else if (a === "year") { this._year += Number(el.dataset.v); redraw(); }
+    else if (a === "year") { this._year = (this._year || new Date().getFullYear()) + Number(el.dataset.v); redraw(); }
+    else if (a === "yearall") { this._year = this._year ? 0 : new Date().getFullYear(); redraw(); }
+    else if (a === "stattab") { this._statTab = el.dataset.v; this._statP = null; redraw(); }
+    else if (a === "statp") { this._statP = id || null; redraw(); }
     // 👥 Mitglieder & Strafen
     else if ((a === "open" || a === "new") && this._dragEnd && Date.now() - this._dragEnd < 400) { /* gerade gezogen */ }
     else if (a === "open" || a === "new") { this._open = { kind: el.dataset.k, id: a === "new" ? "new" : id }; redraw(); }

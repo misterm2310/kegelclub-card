@@ -124,8 +124,27 @@ check("Wieder online: nachgeschickt", await p.evaluate((n) => fake.applied.lengt
 
 // 📊 Statistik + 👥 Mitglieder + ⚙️
 await tap('[data-a="tab"][data-v="stats"]');
-check("Statistik: Könige und Balken", await sr(`return h.querySelectorAll('.kings .tile').length > 0 && h.querySelectorAll('.stbar .c').length > 0;`));
+check("Statistik Überblick: Zahlen, Rekorde, Könige", await sr(`return h.querySelectorAll('.kpis .tile').length >= 4 && h.querySelectorAll('.recs .tile').length > 0 && h.querySelectorAll('.kings .tile').length > 0;`));
 await shot("4-statistik.png");
+await tap('[data-a="stattab"][data-v="people"]');
+check("Statistik Personen: Balken + Tabelle", await sr(`return h.querySelectorAll('.stbar .c').length > 0 && h.querySelectorAll('table.sttab tr.click').length > 0;`));
+await shot("4b-statistik-personen.png");
+await tap('table.sttab tr.click');
+check("Statistik Person: eigene Seite", await sr(`return !!h.querySelector('.hero') && /Abend für Abend|Welche Strafen/.test(h.textContent);`));
+await shot("4c-statistik-person.png");
+await tap('[data-a="stattab"][data-v="evs"]');
+check("Statistik Abende: Tabelle", await sr(`return h.querySelectorAll('table.sttab tr[data-a="evopen"]').length > 0;`));
+await shot("4d-statistik-abende.png");
+await tap('table.sttab tr[data-a="evopen"]');
+await tap('[data-a="back"]');
+check("Abend aus Statistik: Zurück landet wieder in Statistik", await sr(`return !!h.querySelector('.stseg');`));
+await tap('[data-a="stattab"][data-v="fines"]');
+check("Statistik Strafen: Matrix", await sr(`return h.querySelectorAll('table.matrix td').length > 0 && !!h.querySelector('.pie .disc');`));
+await shot("4e-statistik-strafen.png");
+await tap('[data-a="yearall"]');
+await tap('[data-a="stattab"][data-v="over"]');
+check("Statistik alle Jahre", await sr(`return /Alle Jahre/.test(h.querySelector('.yearnav').textContent) && h.querySelectorAll('.kpis .tile').length >= 4;`));
+await tap('[data-a="yearall"]');
 await tap('[data-a="tab"][data-v="edit"]');
 check("Mitglieder + Gast + Strafen gelistet", await sr(`return /Gast Gustav/.test(h.textContent) && /Alle Neune/.test(h.textContent);`));
 await tap('[data-a="tab"][data-v="set"]');

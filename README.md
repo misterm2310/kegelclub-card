@@ -21,7 +21,7 @@
 - 🧮 **Regeln als Einstellung**: Grundbetrag, Zuschauer zahlen ja/nein, Fehlende zahlen ja/nein, Extra bei „nicht abgemeldet“, Kegelbahn pro Stunde (aus der Kasse, aufgeteilt oder aus). Passt so für jeden Club.
 - 🙌 **Strafen erlassen** für Ausflug, Weihnachtsfeier & Co.
 - 🏦 **Kegelkasse** mit „Wer schuldet was“, Einzahlungen, Ausgaben und CSV.
-- 📊 **Statistik**: Könige, Strafen pro Person, nach Art, Kasse übers Jahr, Anwesenheit.
+- 📊 **Statistik** (ein Jahr oder alle Jahre): Überblick mit Vergleich zum Vorjahr und Rekorden, Könige, Kasse-Verlauf · Personen mit eigener Detailseite · Tabelle Abend für Abend · Strafen nach Art und „Wer hat was?“-Tabelle.
 - 📥 **Umzug aus der App „Alle Neune“** – mit allen alten Abenden, Strafen und der kompletten Kasse.
 - 📱 **Offline-App** für die Kegelbahn, 🔒 **PIN-Sperre**, 💾 **Sicherung**, 📜 **Verlauf**.
 - 🌍 **Deutsch oder Englisch** (automatisch wie Home Assistant) und 💱 **Währung wählbar**.
