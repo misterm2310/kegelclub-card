@@ -1,0 +1,1773 @@
+// 🎳 Kegelclub-Karte – Kegelabende, Strafen und die Kegelkasse. Ersatz für Zettel, Stift und Kegelbuch.
+// Läuft im Dashboard UND in der Offline-App (/kegelclub/app/). Kein Build-Schritt, reines JavaScript.
+//
+// So funktioniert's (für Doofe 😄):
+// - Home Assistant schickt alle Daten („subscribe“).
+// - Jede Änderung (Pumpe, Einzahlung, wer da ist …) wird als kleine „Änderung“ verschickt.
+// - Klappt das Verschicken nicht (kein Netz auf der Kegelbahn), landet die Änderung im Postausgang und wird
+//   später nachgeschickt. Bis dahin rechnet die Karte selbst so, als wäre sie schon angekommen.
+const KC_VERSION = "0.1.0-beta.1";
+
+const MONTHS = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
+const QKEY = "kegelclub_queue";
+const PAYPAL = "https://paypal.me/MarcoStrickmann";
+const REPO = "https://github.com/misterm2310/kegelclub-card";
+
+// 👤 Wie war jemand da? (gleiche Schlüssel wie STATUSES in const.py)
+const STATUS = {
+  play: { icon: "bowling", color: "#43a047", label: "kegelt" },
+  watch: { icon: "glass-mug-variant", color: "#1e88e5", label: "schaut zu" },
+  excused: { icon: "account-cancel-outline", color: "#9e9e9e", label: "abgemeldet" },
+  absent: { icon: "account-alert-outline", color: "#e53935", label: "nicht abgemeldet" },
+};
+const STATUS_NEXT = { play: "watch", watch: "excused", excused: "absent", absent: "play" };
+// 🎨 Symbole zur Auswahl für Strafen (Material Design Icons)
+const KC_ICONS = ["bowling", "arm-flex-outline", "target", "bell-ring-outline", "numeric", "sync", "clock-alert-outline", "cellphone", "crown-outline", "circle-outline", "arrow-down-bold-outline",
+  "glass-mug-variant", "beer-outline", "cup-outline", "emoticon-poop", "emoticon-cry-outline", "hand-back-left-outline", "account-voice", "flash-outline", "star-outline", "fire", "alert-octagon-outline", "silverware-fork-knife", "cash"];
+const MEMBER_COLORS = ["#1e88e5", "#e91e63", "#8e24aa", "#fb8c00", "#00897b", "#6d4c41", "#3949ab", "#43a047", "#f4511e", "#546e7a"];
+
+// 📖 Anleitung – einfach erklärt, Kapitel zum Aufklappen
+const KC_GUIDE = [
+  { icon: "rocket-launch-outline", title: "Erste Schritte", text: `Beim allerersten Öffnen fragt die Karte, wie du starten willst: <b>leer</b>, mit <b>Beispiel-Strafen</b> oder mit der <b>Datei aus „Alle Neune“</b>.<br>Danach unter <b>„Mitglieder“</b> eure Leute anlegen und unter ⚙️ → <b>„Regeln & Beträge“</b> Grundbetrag und Kegelbahn einstellen. Fertig – gut Holz! 🎳` },
+  { icon: "bowling", title: "Ein Kegelabend", text: `Reiter <b>„Abend“</b> → <b>„Kegelabend starten“</b>. Alle Mitglieder stehen als Kacheln da.<br><b>1.</b> Wer ist da? <b>Kleiner Knopf unten an der Kachel</b> schaltet weiter: kegelt → schaut zu → abgemeldet → nicht abgemeldet.<br><b>2.</b> Strafe buchen: <b>Person antippen</b> (blau umrandet), dann die <b>Strafe antippen</b>. Jeder Tipp = +1. Vertippt? <b>Rückgängig</b> in der schwarzen Leiste unten oder in der Abrechnung mit <b>−</b>.<br><b>3.</b> Fertig? <b>„Abend abschließen“</b>. Die Abrechnung zeigt, wer was zahlt – mit Knopf zum <b>Teilen</b> (z. B. in die WhatsApp-Gruppe).` },
+  { icon: "account-plus-outline", title: "Gäste", text: `Im laufenden Abend <b>„＋ Gast“</b> antippen: bekannten Gast wählen oder neuen Namen eintippen. Für Gäste gelten die gleichen Regeln wie für Mitglieder. Ein Gast, der nicht da ist, zahlt nichts – er gehört ja nicht zum Abend.` },
+  { icon: "cash-multiple", title: "Was kostet was?", text: `Unter ⚙️ → <b>„Regeln & Beträge“</b>:<br>• <b>Grundbetrag</b> pro Person und Abend (z. B. 7,50 €).<br>• <b>Zuschauer zahlen</b> den Grundbetrag (Schalter).<br>• <b>Fehlende Mitglieder zahlen</b> den Grundbetrag (Schalter) – egal ob abgemeldet oder nicht.<br>• <b>Nicht abgemeldet</b>: Extra-Betrag obendrauf (z. B. 5,00 €).<br>• <b>Kegelbahn</b>: pro Stunde, aus der <b>Kasse</b>, auf die Anwesenden <b>aufgeteilt</b> oder <b>gar nicht</b>.<br>Ändern gilt ab sofort und für den laufenden Abend. Abgeschlossene Abende bleiben, wie sie waren.` },
+  { icon: "gavel", title: "Sündenregister (Strafen)", text: `Reiter <b>„Mitglieder“</b> → Bereich <b>Strafen</b> → <b>＋ Neu</b>. Jede Strafe hat Name, Symbol, Betrag und <b>„Wer zahlt?“</b>:<br>• <b>Er selbst</b> – z. B. Pumpe, Klingeln.<br>• <b>Alle anderen, die mitkegeln</b> – z. B. <b>Alle Neune</b>: Wer die Neun wirft, zahlt nichts, alle anderen Mitkegler zahlen. Zuschauer und Fehlende bleiben verschont.<br>Am Griff ⠿ ziehen = Reihenfolge der Knöpfe am Abend.` },
+  { icon: "hand-okay", title: "Strafen erlassen", text: `Ausflug, Weihnachtsfeier, Geburtstag? Im Abend (oder später in der Liste der Abende) den Schalter <b>„Strafen erlassen“</b> an: Gezählt wird trotzdem (für die Statistik), bezahlt wird nur der Grundbetrag.` },
+  { icon: "bank-outline", title: "Kegelkasse", text: `Reiter <b>„Kasse“</b>: oben der <b>Kassenstand</b>, darunter <b>„Wer schuldet was“</b>. Hat jemand bezahlt: <b>grünen Haken ✓</b> antippen – dann ist alles beglichen (Rückgängig geht 8 Sekunden lang). Teilbetrag? Auf die Person tippen.<br><b>＋ Einzahlung</b> und <b>− Ausgabe</b> (z. B. Kegelfahrt, Essen) für alles andere. Die Kegelbahn bucht sich je nach Einstellung selbst.<br><b>„Soll“</b> = Kasse + was noch offen ist.` },
+  { icon: "chart-bar", title: "Statistik & Ehrungen", text: `Reiter <b>„Statistik“</b>: Jahr mit ‹ › wählen. Oben die <b>Könige</b> (wer hat die meisten Pumpen, Neunen …), dann <b>Strafen pro Person</b> (Säulen), <b>Strafen nach Art</b> (Kuchen), <b>Kasse übers Jahr</b> (Linie) und <b>Anwesenheit</b>.` },
+  { icon: "history", title: "Alte Abende", text: `Unten im Reiter „Abend“ stehen die letzten Abende. Antippen = Abrechnung ansehen, <b>wieder öffnen</b> (z. B. vergessene Pumpe nachtragen), Datum ändern oder löschen.` },
+  { icon: "database-import-outline", title: "Aus „Alle Neune“ umziehen", text: `In der App „Alle Neune“ die Daten <b>exportieren</b> (Datenbank-Datei). Dann hier ⚙️ → <b>„Import & Sicherung“</b> → Datei wählen. Erst kommt eine <b>Vorschau</b> (wie viele Abende, Personen, Buchungen, Kassenstand), erst nach „Übernehmen“ wird etwas geändert.<br>Übernommen werden Mitglieder, Ehemalige, Gäste, Strafen mit Preisen, alle Abende mit Strafen (für die Statistik) und die <b>komplette Kasse</b>. Alte Abende zählen nicht als „offen“ – die waren in der App ja schon abgerechnet. Spiele werden nicht übernommen.` },
+  { icon: "content-save-outline", title: "Sichern", text: `⚙️ → „Import & Sicherung“: <b>„Sicherung speichern“</b> lädt alles als Datei herunter (.json). Mit derselben Datei holst du später alles zurück. Die Kasse gibt es zusätzlich als <b>CSV</b> für Excel.` },
+  { icon: "cellphone-lock", title: "Offline-App für die Kegelbahn", text: `Auf der Kegelbahn ist das WLAN oft schlechter als die Pumpe vom Kassenwart. Darum gibt es eine eigene kleine App: Adresse in ⚙️ → <b>„Offline-App“</b>. Im Handy-Browser öffnen → anmelden → „Zum Startbildschirm“.<br>Ohne Netz läuft alles weiter. Was du einträgst, wartet im <b>Postausgang</b> (oben „⏳ wartet“) und wird von selbst nachgeschickt. Nichts zählt doppelt – auch wenn zwei Handys gleichzeitig Strafen buchen.` },
+  { icon: "shield-key-outline", title: "PIN-Sperre und Seitenleiste", text: `In ⚙️ unter <b>„Schutz“</b> legst du eine PIN (4–8 Ziffern) fest. Dann fragen ⚙️ und „Mitglieder“ danach. Strafen buchen geht weiter ohne PIN. Wahlweise sperrt die PIN die <b>ganze Karte</b>.<br><b>PIN vergessen?</b> Ein Admin geht auf <b>Einstellungen → Geräte & Dienste → Kegelclub → Konfigurieren</b> und hakt <b>„PIN zurücksetzen“</b> an. Dort gibt es auch <b>„In der Seitenleiste anzeigen“</b>.` },
+  { icon: "home-group", title: "Mehrere Clubs", text: `<b>Einstellungen → Geräte &amp; Dienste → Kegelclub → Eintrag hinzufügen</b> und einen Namen geben. Jeder Club hat eigene Mitglieder, Strafen, Kasse, PIN und Sensoren. Im Karten-Editor wählst du bei „Welcher Club?“.` },
+  { icon: "home-assistant", title: "Sensoren und Aktionen", text: `Sensoren: <b>Kegelkasse</b>, <b>Offen</b> (mit allen Schuldnern), <b>Letzter Abend</b> und <b>Kegelabend läuft</b> (an/aus).<br>Aktionen für Automationen: <code>kegelclub.strafe_buchen</code>, <code>kegelclub.abend_starten</code>, <code>kegelclub.abend_abschliessen</code>, <code>kegelclub.einzahlung</code>, <code>kegelclub.ausgabe</code>, <code>kegelclub.daten_abrufen</code>. Beispiele stehen im README.` },
+  { icon: "lock-outline", title: "Datenschutz", text: `Alles bleibt in <b>deinem</b> Home Assistant. Keine Cloud, kein Tracking, nichts geht ins Internet. In der Offline-App liegt zusätzlich eine Kopie im Handy, bis du dich abmeldest.` },
+  { icon: "eye-outline", title: "Ansicht, Verlauf, Gesundheit", text: `<b>👁️ Ansicht</b> (für alle): Reiter ausblenden, <b>Beschriftungen</b> unter Symbolen, <b>Kassenstand verschleiern</b>. <b>Ruhiger Modus</b> nur für dieses Gerät, in der Offline-App <b>Hell / Dunkel</b>.<br><b>📜 Verlauf</b>: wer hat wann was gebucht. <b>🩺 Alles ok?</b> sucht nach Dingen, die nicht passen (z. B. Abend vergessen abzuschließen).` },
+];
+// 🆕 Was ist neu – das Neueste oben (wie bei der Einkaufsliste)
+const KC_NEWS = [
+  ["0.1.0-beta.1", "🎉 <b>Erste Beta!</b> · 🎳 Kegelabend mit großen Strafen-Knöpfen, vier Zuständen (kegelt, schaut zu, abgemeldet, nicht abgemeldet) und Gästen · 💸 eigenes Sündenregister, auch „<b>alle anderen zahlen</b>“ (Alle Neune) · 🙌 Strafen erlassen · 🏦 Kegelkasse mit „Wer schuldet was“, Einzahlungen, Ausgaben und Kegelbahn (aus der Kasse, aufgeteilt oder aus) · 📊 Statistik mit Königen, Säulen, Kuchen und Linie · 📥 Umzug aus <b>„Alle Neune“</b> inkl. aller alten Abende und der Kasse · 💾 Sicherung · 📱 Offline-App für die Kegelbahn · 🔒 PIN · 📖 Anleitung"],
+];
+const GUIDE_EMO = ["🚀", "🎳", "👤", "💶", "💸", "🙌", "🏦", "📊", "🕘", "📥", "💾", "📱", "🔒", "🏠", "🤖", "🛡️", "👁️"];
+const GUIDE_SUB = ["leer, Vorlage oder Umzug", "starten, buchen, abschließen", "gleiche Regeln wie Mitglieder", "Grundbetrag, Fehlende, Kegelbahn", "selbst angelegt, wer zahlt", "Ausflug & Co.", "Stand, Schulden, Einzahlung", "Könige und Diagramme", "nachtragen, ansehen", "Datei einlesen", "alles als Datei", "ohne Netz auf der Bahn", "PIN, Schloss, Seitenleiste", "mehrere Clubs", "für Automationen", "alles bleibt bei dir", "für alle oder nur hier"];
+const KC_CARDS = new Set(); // ↩️ alle Kegelclub-Karten auf der Seite (für die Zurück-Taste)
+const DKEY = "kegelclub_data";
+const HKEY = "kegelclub_hidden";
+const CALMKEY = "kegelclub_calm"; // 🧘 Ruhiger Modus – nur dieses Gerät
+const THEMEKEY = "kcapp_theme";   // 🌓 Hell / Dunkel – nur in der Offline-App
+const kcTheme = () => { try { return localStorage.getItem(THEMEKEY) || "auto"; } catch (_) { return "auto"; } };
+// 👁️ Was man für alle ausblenden kann (gleiche Schlüssel wie VIEW_KEYS in manager.py)
+const KC_VIEW = [["kasse", "bank-outline", "Reiter „Kasse“", "Kassenstand und Schulden"], ["statistik", "chart-bar", "Reiter „Statistik“", "Könige und Diagramme"]];
+function kcVerCmp(a, b) {
+  const p = (v) => { const m = /^(\d+)\.(\d+)\.(\d+)(?:-beta\.(\d+))?/.exec(String(v).trim()); return m ? [+m[1], +m[2], +m[3], m[4] === undefined ? Infinity : +m[4]] : [0, 0, 0, Infinity]; };
+  const [x, y] = [p(a), p(b)];
+  for (let i = 0; i < 4; i++) if (x[i] !== y[i]) return x[i] > y[i] ? 1 : -1;
+  return 0;
+}
+const esc = (x) => String(x ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+// 💱 Währung (⚙️ → Rechnen & Warnung). CHF wird schweizerisch geschrieben (CHF 1’234.50), der Rest deutsch (1.234,50 €)
+const KC_CUR = { EUR: "Euro (€)", CHF: "Schweizer Franken (CHF)", USD: "US-Dollar ($)", GBP: "Britisches Pfund (£)", PLN: "Polnischer Złoty (zł)", CZK: "Tschechische Krone (Kč)", DKK: "Dänische Krone (kr)", SEK: "Schwedische Krone (kr)", NOK: "Norwegische Krone (kr)", HUF: "Ungarischer Forint (Ft)" };
+const KC_MONEY = { key: "", fmt: null, code: "EUR", sym: "€", dec: "," };
+function kcSetMoney(code, lang = "de") {
+  code = KC_CUR[code] ? code : "EUR";
+  const key = `${code}|${lang}`;
+  if (KC_MONEY.key === key) return;
+  const loc = code === "CHF" ? (lang === "en" ? "en-CH" : "de-CH") : (lang === "en" ? "en-IE" : "de-DE");
+  const fmt = new Intl.NumberFormat(loc, { style: "currency", currency: code });
+  const parts = fmt.formatToParts(1234.5);
+  Object.assign(KC_MONEY, { key, fmt, code, sym: parts.find((x) => x.type === "currency")?.value || code, dec: parts.find((x) => x.type === "decimal")?.value || "," });
+}
+kcSetMoney("EUR");
+const money = (v) => KC_MONEY.fmt.format(Number(v) || 0);
+const uid = () => (crypto.randomUUID ? crypto.randomUUID().replace(/-/g, "").slice(0, 16) : Math.random().toString(36).slice(2) + Date.now().toString(36));
+const monthKey = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+function parseMoney(v) {
+  if (typeof v === "number") return Math.round(v * 100) / 100;
+  let s = String(v ?? "").replace("−", "-").replace(/\b(EUR|CHF|SFr\.?|Fr\.|USD|US\$|GBP|PLN|CZK|DKK|SEK|NOK|HUF|zł|Kč|kr\.?|Ft)(?![a-z])|[€$£]/gi, "").replace(/[\s  '’]/g, ""); // 💱 Zeichen weg
+  if (!s) return 0;
+  if (s.includes(",") && s.includes(".")) s = s.lastIndexOf(",") > s.lastIndexOf(".") ? s.replace(/\./g, "").replace(",", ".") : s.replace(/,/g, ""); // 1.234,56 oder 1,234.56
+  else if (s.includes(",")) s = s.replace(",", ".");
+  else if ((s.match(/\./g) || []).length > 1) s = s.replace(/\./g, "");
+  const n = Number(s);
+  return Number.isFinite(n) ? Math.round(n * 100) / 100 : NaN;
+}
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (_) { return d; } },
+  put(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (_) { /* voll/privat */ } },
+};
+
+// 🌍 Englisch als zweite Sprache (wie bei der Einkaufsliste): Die Karte ist auf Deutsch geschrieben. Ist Home Assistant
+// NICHT auf Deutsch (oder steht in der Karte „language: en“), holt sie einmal das Wörterbuch kegelclub-en.json und übersetzt,
+// was sie anzeigt. Eure eigenen Namen (Mitglieder, Strafen, Buchungen …) bleiben, wie sie sind.
+let KC_LANG = "de", KC_DICT = null, KC_PATTERNS = [], KC_DICT_PROMISE = null, KC_DICT_FAIL = 0;
+const KC_USER = new Set(); // ✋ Namen, die die Leute selbst getippt haben – nie übersetzen
+const KC_ATTRS = ["placeholder", "title", "aria-label", "alt"];
+const KC_SKIP = "textarea,style,script,option[data-user],[translate=no]";
+const KC_INLINE = new Set(["B", "I", "EM", "STRONG", "BR", "CODE", "U", "SMALL"]);
+const kcNorm = (t) => String(t).replace(/\s+/g, " ").trim();
+function kcWantLang(hass, config) {
+  const want = String(config?.language || "auto").toLowerCase();
+  const l = want !== "auto" ? want : String(hass?.locale?.language || hass?.language || "de").toLowerCase();
+  return l.startsWith("de") ? "de" : "en";
+}
+function kcLoadDict() {
+  if (!KC_DICT_PROMISE && Date.now() - KC_DICT_FAIL > 60000) {
+    KC_DICT_PROMISE = fetch(`/kegelclub/files/kegelclub-en.json?v=${KC_VERSION}`).then((r) => r.json()).then((raw) => {
+      const dict = {}, pats = [];
+      for (const [de, en] of Object.entries(raw)) {
+        if (de.startsWith("//")) continue; // Kommentar-Zeilen
+        const key = kcNorm(de);
+        if (!key.includes("{}")) { dict[key] = en; continue; }
+        const parts = key.split("{}");
+        pats.push([new RegExp("^" + parts.map((x) => x.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("(.*?)") + "$", "s"), en, parts.join("").length]);
+      }
+      pats.sort((a, b) => b[2] - a[2]); // genauere Muster zuerst
+      KC_DICT = dict; KC_PATTERNS = pats;
+      for (const c of KC_CARDS) { c._force = true; c._render(); }
+    }).catch(() => { KC_DICT_PROMISE = null; KC_DICT_FAIL = Date.now(); });
+  }
+  return KC_DICT_PROMISE || Promise.resolve();
+}
+// 📝 Ein Text auf Englisch (oder unverändert, wenn es ihn im Wörterbuch nicht gibt)
+function kcT(text, depth = 0) {
+  if (KC_LANG === "de" || !KC_DICT || text == null) return text;
+  const raw = String(text), key = kcNorm(raw);
+  if (!key || !/[A-Za-zÄÖÜäöüß]/.test(key) || KC_USER.has(key)) return raw;
+  const lead = raw.match(/^\s*/)[0], trail = raw.match(/\s*$/)[0], wrap = (x) => lead + x + trail;
+  if (key in KC_DICT) return wrap(KC_DICT[key]);
+  for (const [rx, en] of KC_PATTERNS) {
+    const m = key.match(rx);
+    if (m) return wrap(en.replace(/\{(\d)\}/g, (_, i) => { const g = m[Number(i) + 1] ?? ""; return depth < 2 ? kcT(g, depth + 1) : g; }));
+  }
+  const m = depth < 2 && key.match(/^([^\p{L}\p{N}„“"(<]+?)\s(.+)$/u); // „🏦 Kasse“: Zeichen vorne weg, Rest übersetzen
+  if (m) { const rest = kcT(m[2], depth + 1); if (rest !== m[2]) return wrap(`${m[1]} ${rest}`); }
+  return raw;
+}
+// 🧱 Ein Absatz mit <b>fett</b> darin wird als Ganzes übersetzt (sonst zerfällt der Satz in Stücke)
+function kcBlockKey(el) {
+  if (!el.firstElementChild || el.closest(KC_SKIP)) return null;
+  let words = false;
+  for (const n of el.childNodes) {
+    if (n.nodeType === 3) { if (/[A-Za-zÄÖÜäöüß]/.test(n.data)) words = true; }
+    else if (n.nodeType === 1) { if (!KC_INLINE.has(n.tagName) || n.firstElementChild || n.attributes.length) return null; }
+  }
+  return words ? kcNorm(el.innerHTML) : null;
+}
+function kcTranslateTree(root) {
+  if (KC_LANG === "de" || !KC_DICT || !root) return;
+  const w = document.createTreeWalker(root, 5 /* Elemente + Text */);
+  let n = w.nextNode();
+  while (n) {
+    if (n.nodeType === 1) {
+      if (n.matches(KC_SKIP)) { n = w.nextSibling() || kcNext(w); continue; }
+      for (const a of KC_ATTRS) { const v = n.getAttribute(a); if (v) { const t = kcT(v); if (t !== v) n.setAttribute(a, t); } }
+      const bk = kcBlockKey(n);
+      if (bk) { const t = kcT(bk); if (t !== bk) { n.innerHTML = t; n = w.nextSibling() || kcNext(w); continue; } }
+    } else if (n.parentElement && !n.parentElement.closest(KC_SKIP)) { const t = kcT(n.data); if (t !== n.data) n.data = t; }
+    n = w.nextNode();
+  }
+}
+function kcNext(w) { let p; while ((p = w.parentNode())) { const s = w.nextSibling(); if (s) return s; } return null; }
+const kcConfirm = (t) => confirm(kcT(t));
+// ✋ Alles, was die Leute selbst benannt haben, landet in KC_USER und wird nie übersetzt
+function kcCollectUser(d) {
+  KC_USER.clear();
+  if (!d) return;
+  const add = (x) => { const k = kcNorm(x ?? ""); if (k) KC_USER.add(k); };
+  for (const k of ["members", "strafen", "kasse"]) for (const it of d[k] || []) { add(it.name); add(it.note); }
+  for (const ev of d.abende || []) add(ev.note);
+  for (const q of d.settings?.quick || []) add(q);
+  add(d.book?.title);
+}
+const kcLoc = () => (KC_LANG === "en" ? "en-GB" : "de-DE");
+const MONTHS_EN = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+// 🔒 Entsperrt gilt für alle Kegelclub-Karten dieser Seite, bis 🔒 angetippt wird oder 10 Minuten nichts passiert
+const PIN_LOCK = { until: 0 };
+const pinOpen = () => PIN_LOCK.until > Date.now();
+const pinTouch = () => { if (pinOpen()) PIN_LOCK.until = Date.now() + 10 * 60 * 1000; };
+// 🎨 Farben wie bei der Einkaufsliste: jede Gruppe bekommt ihre Farbe (Streifen links + Punkt im Kopf)
+const GROUP_COLORS = ["#1e88e5", "#fb8c00", "#8e24aa", "#00897b", "#e53935", "#6d4c41", "#3949ab"];
+const ic = (name) => `<ha-icon icon="mdi:${name}"></ha-icon>`;
+
+const KC_EMOJI_ICONS = {
+  "🏷": "mdi:tag-outline", "✏": "mdi:pencil-outline", "✍": "mdi:account-edit-outline", "📷": "mdi:camera-outline", "📖": "mdi:book-open-variant", "➕": "mdi:plus",
+  "📍": "mdi:map-marker-outline", "👁": "mdi:eye-outline", "🛒": "mdi:cart-outline", "✅": "mdi:check-circle-outline", "🔄": "mdi:sync", "🔁": "mdi:repeat",
+  "⚠": "mdi:alert-outline", "📋": "mdi:clipboard-text-outline", "📊": "mdi:chart-bar", "✔": "mdi:check", "🧂": "mdi:shaker-outline", "⏳": "mdi:timer-sand",
+  "⌛": "mdi:timer-sand", "🏪": "mdi:store-outline", "📧": "mdi:email-outline", "↩": "mdi:undo-variant", "⇄": "mdi:swap-horizontal",
+  "🤷": "mdi:map-marker-question-outline", "🕒": "mdi:clock-outline", "💡": "mdi:lightbulb-outline", "🧾": "mdi:receipt-text-outline", "🎉": "mdi:party-popper",
+  "👥": "mdi:account-group-outline", "👪": "mdi:account-multiple-outline", "👤": "mdi:account-outline", "⏲": "mdi:pot-steam-outline", "⏱": "mdi:timer-outline",
+  "🧲": "mdi:magnet", "🗓": "mdi:calendar-month-outline", "📅": "mdi:calendar-outline", "🚫": "mdi:cancel", "🥫": "mdi:food-variant", "📈": "mdi:chart-line",
+  "🧽": "mdi:delete-sweep-outline", "🧹": "mdi:broom", "💣": "mdi:nuke", "🔧": "mdi:wrench-outline", "📝": "mdi:note-text-outline", "⭐": "mdi:star-outline",
+  "⌨": "mdi:keyboard-outline", "🗞": "mdi:newspaper-variant-outline", "🖼": "mdi:image-outline", "🔒": "mdi:lock-outline", "🔓": "mdi:lock-open-variant-outline",
+  "📦": "mdi:package-variant-closed", "🔥": "mdi:fire", "🤖": "mdi:robot-happy-outline", "🔠": "mdi:format-size", "⚙": "mdi:cog-outline", "🗂": "mdi:shape-outline",
+  "🗺": "mdi:map-outline", "🧠": "mdi:brain", "🗣": "mdi:microphone-outline", "🌐": "mdi:web", "🍽": "mdi:silverware-fork-knife", "📄": "mdi:file-document-outline",
+  "🧮": "mdi:calculator-variant-outline", "🔊": "mdi:volume-high", "📳": "mdi:vibrate", "🎌": "mdi:flag-outline", "👋": "mdi:hand-wave-outline", "🔐": "mdi:key-outline",
+  "📏": "mdi:ruler", "✖": "mdi:close", "🗑": "mdi:delete-outline", "▥": "mdi:barcode", "🧩": "mdi:puzzle-outline", "🧰": "mdi:toolbox-outline", "🔢": "mdi:numeric", "🎨": "mdi:palette-outline", "🔀": "mdi:shuffle-variant", "✓": "mdi:check", "🍕": "mdi:pizza", "🍝": "mdi:pasta", "🥔": "mdi:food-variant", "🥚": "mdi:egg-outline", "🥦": "mdi:carrot", "🍗": "mdi:food-drumstick-outline", "🐟": "mdi:fish", "🍲": "mdi:pot-steam-outline", "💨": "mdi:weather-windy", "🍰": "mdi:cake-variant-outline", "🎛": "mdi:tune-variant", "💾": "mdi:content-save-outline", "💶": "mdi:cash-multiple", "🩺": "mdi:stethoscope", "📱": "mdi:cellphone", "🧪": "mdi:flask-outline", "👨‍🍳": "mdi:chef-hat", "🛍": "mdi:shopping-outline", "🪟": "mdi:window-open-variant", "✨": "mdi:creation-outline", "👆": "mdi:gesture-tap", "💳": "mdi:credit-card-outline", "🙏": "mdi:hand-heart-outline", "🐙": "mdi:github", "🐞": "mdi:bug-outline", "🔍": "mdi:magnify", "📥": "mdi:tray-arrow-down", "🕘": "mdi:history", "🌓": "mdi:theme-light-dark", "🛡": "mdi:shield-outline",
+};
+// 🎨 Farben zu den Symbolen (damit es nicht trist wird): nur außerhalb von Knöpfen/Links, dort gilt die Schriftfarbe des Knopfes
+const KC_EMOJI_COLORS = {
+  "🧹": "#fb8c00", "✍": "#5c6bc0", "📍": "#e53935", "🏷": "#d81b60", "🛒": "#43a047", "✅": "#43a047", "⚠": "#f9a825", "🔧": "#607d8b", "🥫": "#8d6e63",
+  "🧾": "#3949ab", "📖": "#1e88e5", "⭐": "#f9a825", "🔒": "#546e7a", "🔓": "#546e7a", "📷": "#1e88e5", "📝": "#6d4c41", "✏": "#6d4c41", "💡": "#f9a825",
+  "🎉": "#ab47bc", "🔥": "#ef6c00", "🕒": "#546e7a", "🌐": "#1e88e5", "🔊": "#1e88e5", "📊": "#00897b", "🧂": "#8d6e63", "🏪": "#43a047", "📧": "#1e88e5",
+  "🔄": "#1e88e5", "🔁": "#1e88e5", "📋": "#1e88e5", "🗓": "#43a047", "📅": "#43a047", "👥": "#8e24aa", "👪": "#8e24aa", "👤": "#8e24aa", "🧲": "#e53935",
+  "🚫": "#e53935", "🗑": "#e53935", "💣": "#b71c1c", "🧽": "#fb8c00", "📈": "#00897b", "🗞": "#d81b60", "🤖": "#5e35b1", "🧠": "#5e35b1", "🤷": "#78909c",
+  "⏳": "#fb8c00", "⌛": "#fb8c00", "↩": "#1e88e5", "⇄": "#1e88e5", "🔠": "#546e7a", "🗂": "#fb8c00", "🗺": "#43a047", "🗣": "#1e88e5", "📦": "#8d6e63",
+  "🍽": "#fb8c00", "📄": "#546e7a", "🧮": "#00897b", "📳": "#546e7a", "🎌": "#e53935", "👋": "#fb8c00", "🔐": "#546e7a", "📏": "#546e7a", "🧪": "#8e24aa",
+  "👨‍🍳": "#e53935", "🛍": "#43a047", "🪟": "#1e88e5", "✨": "#f9a825", "👆": "#1e88e5", "💳": "#00acc1", "🙏": "#ec407a", "🐞": "#e53935", "🔍": "#546e7a",
+  "📥": "#1e88e5", "🕘": "#546e7a", "🌓": "#546e7a", "🛡": "#455a64", "⌨": "#546e7a", "🖼": "#1e88e5", "⏲": "#ef6c00", "⏱": "#26a69a", "▥": "#6d4c41", "🍝": "#f9a825", "🥔": "#8d6e63", "🥚": "#fbc02d", "🥦": "#43a047", "🍗": "#bf6b3a", "🐟": "#1e88e5", "🍲": "#ef6c00", "💨": "#546e7a", "🧩": "#8e24aa", "🧰": "#546e7a", "🔢": "#1e88e5", "🎨": "#ec407a", "🔀": "#1e88e5",
+};
+// 🧩 Farben der großen Gruppen-Kästchen in den Einstellungen (Emoji der Gruppe → Farbe)
+const KC_GEM_COLORS = { "💶": "#fb8c00", "🧮": "#00897b", "📋": "#1e88e5", "🎛": "#8e24aa", "💾": "#43a047", "🩺": "#e53935", "👁": "#00897b", "📱": "#3949ab" };
+
+// 🎳 Extra-Symbole nur für den Kegelclub
+Object.assign(KC_EMOJI_ICONS, { "🐷": "mdi:piggy-bank-outline", "🏦": "mdi:bank-outline", "💵": "mdi:cash", "➖": "mdi:minus", "💰": "mdi:cash-multiple", "🎳": "mdi:bowling", "💸": "mdi:cash-minus", "🏁": "mdi:flag-checkered", "🙌": "mdi:hand-okay", "🏆": "mdi:trophy-outline", "👑": "mdi:crown-outline", "🎯": "mdi:target", "📤": "mdi:tray-arrow-up", "🙈": "mdi:eye-off-outline" });
+Object.assign(KC_EMOJI_COLORS, { "🐷": "#e91e63", "🏦": "#1e88e5", "💵": "#43a047", "💰": "#43a047", "🎳": "#fb8c00", "💸": "#e53935", "🏁": "#43a047", "🏆": "#f9a825", "👑": "#f9a825", "🎯": "#fb8c00", "📤": "#1e88e5" });
+const KC_EMOJI_RX = new RegExp("^\\s*(" + Object.keys(KC_EMOJI_ICONS).sort((a, b) => b.length - a.length).join("|") + ")\\uFE0F?(?=\\s|$)\\s*", "u");
+const KC_ICON_PARENTS = "button,h2,h3,h4,summary,legend,label,b,span,li,a,small,p,.lbl,.ic";
+const KC_ICON_SKIP = "option,select,textarea,input,ha-icon,style,script,[data-noicon]";
+// 🎛️ Wie bei der Einkaufsliste: Emoji vorn an Knöpfen/Überschriften → Linien-Symbol (sieht auf jedem Gerät gleich aus)
+function kcIconizeTree(root) {
+  if (!root) return;
+  const nodes = []; const w = document.createTreeWalker(root, 4 /* Text */); let n; while ((n = w.nextNode())) nodes.push(n);
+  for (const t of nodes) {
+    const p = t.parentElement;
+    if (!p || !p.matches(KC_ICON_PARENTS) || p.closest(KC_ICON_SKIP)) continue; // eigene Namen bekommen data-noicon
+    let first = p.firstChild; // das Emoji muss ganz vorn stehen
+    while (first && first !== t && ((first.nodeType === 3 && !first.data.trim()) || (p.tagName === "LABEL" && first.nodeType === 1 && first.matches("input")))) first = first.nextSibling;
+    if (first !== t) continue;
+    const m = KC_EMOJI_RX.exec(t.data);
+    if (!m) continue;
+    const key = m[1];
+    const ic = document.createElement("ha-icon");
+    ic.setAttribute("icon", KC_EMOJI_ICONS[key]);
+    ic.dataset.eli = "1";
+    const gem = p.classList.contains("gem"); // großes Kästchen in den Einstellungen: farbiger Grund, weißes Symbol
+    const plain = !gem && !p.closest("button,a,.tgl,.swline"); // Knöpfe und Links behalten ihre Schriftfarbe
+    const flex = /flex/.test(getComputedStyle(p).display || "");
+    ic.style.cssText = `--mdc-icon-size:${gem ? "1.25em" : "1.2em"};vertical-align:-.22em;flex:none;${flex || gem ? "" : "margin-right:.3em;"}${plain && KC_EMOJI_COLORS[key] ? `color:${KC_EMOJI_COLORS[key]};` : ""}`;
+    if (gem) { p.style.setProperty("background", KC_GEM_COLORS[key] || KC_EMOJI_COLORS[key] || "#607d8b"); p.style.color = "#fff"; }
+    const rest = t.data.slice(m[0].length);
+    t.data = rest;
+    if (p.tagName === "LABEL") { const wrap = document.createElement("span"); p.insertBefore(wrap, t); wrap.append(ic, t); }
+    else p.insertBefore(ic, t);
+  }
+}
+const numDe = (v) => (KC_MONEY.dec === "," ? String(v).replace(".", ",") : String(v)); // ✍️ Zahl fürs Eingabefeld, passend zur Währung
+
+// ---------------------------------------------------------------- 🧮 Rechnen (genau wie in manager.py)
+const r2 = (v) => Math.round((Number(v) || 0) * 100) / 100;
+const RULE_KEYS = ["base_fee", "watch_pays", "missing_pays", "unexcused_extra", "lane_mode", "lane_rate"];
+const DEF_SETTINGS = { base_fee: 7.5, watch_pays: true, missing_pays: true, unexcused_extra: 5, lane_mode: "kasse", lane_rate: 10, lane_hours: 3, start_balance: 0, currency: "EUR" };
+const rulesOf = (st) => Object.fromEntries(RULE_KEYS.map((k) => [k, st?.[k] ?? DEF_SETTINGS[k]]));
+// 🧾 Wer zahlt an diesem Abend was?
+function billEvening(ev, members, strafen, settings) {
+  const rules = { ...rulesOf(settings), ...(ev.rules || {}) };
+  const prices = ev.prices || {}, status = ev.status || {}, counts = ev.counts || {};
+  const base = Number(rules.base_fee) || 0, people = {};
+  for (const [mid, st] of Object.entries(status)) {
+    const guest = !!members[mid]?.guest;
+    let fee = 0;
+    if (st === "play") fee = base;
+    else if (st === "watch") fee = rules.watch_pays !== false ? base : 0;
+    else if ((st === "excused" || st === "absent") && !guest) fee = rules.missing_pays !== false ? base : 0;
+    const extra = st === "absent" && !guest ? Number(rules.unexcused_extra) || 0 : 0;
+    people[mid] = { status: st, fee: r2(fee), extra: r2(extra), own: 0, from_others: 0, lane: 0, items: {} };
+  }
+  const price = (sid) => prices[sid] ? [Number(prices[sid][0]) || 0, String(prices[sid][1])] : [Number(strafen[sid]?.amount) || 0, strafen[sid]?.payer || "self"];
+  const players = Object.keys(people).filter((m) => people[m].status === "play");
+  const fines = !ev.no_fines;
+  for (const [mid, per] of Object.entries(counts)) {
+    for (const [sid, n0] of Object.entries(per || {})) {
+      const n = Number(n0) || 0;
+      if (n <= 0) continue;
+      const [amount, payer] = price(sid);
+      if (payer === "others") {
+        for (const oid of players) if (oid !== mid) { people[oid].from_others += fines ? n * amount : 0; people[oid].items[`${sid}>${mid}`] = (people[oid].items[`${sid}>${mid}`] || 0) + n; }
+        if (people[mid]) people[mid].items[sid] = (people[mid].items[sid] || 0) + n;
+      } else if (people[mid]) { people[mid].own += fines ? n * amount : 0; people[mid].items[sid] = (people[mid].items[sid] || 0) + n; }
+    }
+  }
+  const hours = Number(ev.hours) || 0;
+  const lane = rules.lane_mode !== "off" ? r2(hours * (Number(rules.lane_rate) || 0)) : 0;
+  const laneKasse = rules.lane_mode === "kasse" ? lane : 0;
+  if (rules.lane_mode === "split" && lane) {
+    const present = Object.keys(people).filter((m) => ["play", "watch"].includes(people[m].status));
+    for (const m of present) people[m].lane = lane / present.length;
+  }
+  const appPaid = ev.app_paid || {};
+  let total = 0;
+  for (const [mid, p] of Object.entries(people)) {
+    if (ev.imported) { p.total = r2(appPaid[mid] || 0); total += p.total; continue; }
+    p.own = r2(p.own); p.from_others = r2(p.from_others); p.lane = r2(p.lane);
+    p.total = r2(p.fee + p.extra + p.own + p.from_others + p.lane);
+    total += p.total;
+  }
+  return { people, lane, lane_kasse: laneKasse, total: r2(total), rules };
+}
+const maps = (d) => [Object.fromEntries(d.members.map((m) => [m.id, m])), Object.fromEntries(d.strafen.map((s) => [s.id, s]))];
+function summary(d) {
+  const [members, strafen] = maps(d);
+  const charged = {}, paid = {};
+  let laneKasse = 0, last = null;
+  for (const ev of d.abende) {
+    const b = billEvening(ev, members, strafen, d.settings);
+    laneKasse += b.lane_kasse;
+    if (ev.closed && (!last || String(ev.date) >= String(last.date))) last = { id: ev.id, date: ev.date, total: b.total };
+    if (ev.imported) continue;
+    for (const [mid, p] of Object.entries(b.people)) charged[mid] = (charged[mid] || 0) + p.total;
+  }
+  let kin = 0, kout = 0;
+  for (const k of d.kasse) {
+    const a = Number(k.amount) || 0;
+    if (k.kind === "out") kout += a; else { kin += a; if (k.member && !k.imported) paid[k.member] = (paid[k.member] || 0) + a; }
+  }
+  let open = 0;
+  const people = d.members.map((m) => { const debt = r2((charged[m.id] || 0) - (paid[m.id] || 0)); if (debt > 0) open += debt; return { id: m.id, name: m.name, guest: !!m.guest, charged: r2(charged[m.id] || 0), paid: r2(paid[m.id] || 0), debt }; });
+  const kasse = r2((Number(d.settings.start_balance) || 0) + kin - kout - laneKasse);
+  const run = [...d.abende].reverse().find((e) => !e.closed);
+  return { kasse, open: r2(open), soll: r2(kasse + open), lane_total: r2(laneKasse), people, debtors: people.filter((p) => p.debt > 0).length, running: run?.id || null, running_date: run?.date || null, evenings: d.abende.length, last };
+}
+const todayIso = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; };
+const evFind = (d, ref) => ref ? d.abende.find((e) => e.id === ref) : [...d.abende].reverse().find((e) => !e.closed);
+const sortAbende = (d) => d.abende.sort((a, b) => String(a.date).localeCompare(String(b.date)) || (a.started || 0) - (b.started || 0));
+// Eine Änderung schon mal hier anwenden (damit man sofort sieht, was passiert – auch ohne Netz auf der Kegelbahn)
+const KIND = { member: "members", strafe: "strafen" };
+function applyLocal(d, op) {
+  const t = op.type;
+  const [kind, verb] = t.split("_");
+  if (KIND[kind] && verb === "save") {
+    const list = d[KIND[kind]], it = op.item || {};
+    const old = it.id && list.find((x) => x.id === it.id);
+    const next = { ...(old || { id: it.id || op.op_id, active: true, ...(kind === "strafe" ? { payer: "self", icon: "mdi:bowling", amount: 0 } : {}) }), ...it };
+    if ("amount" in it) next.amount = Math.abs(parseMoney(it.amount)) || 0;
+    if (old) Object.assign(old, next); else {
+      list.push(next);
+      const ev = evFind(d);
+      if (ev && kind === "member" && !next.guest) ev.status[next.id] = ev.status[next.id] || "play";
+    }
+    const ev = evFind(d);
+    if (ev && kind === "strafe") (ev.prices = ev.prices || {})[next.id] = [Number(next.amount) || 0, next.payer || "self"];
+  } else if (KIND[kind] && verb === "delete") {
+    const used = kind === "member" ? d.abende.some((e) => op.id in (e.status || {})) || d.kasse.some((k) => k.member === op.id) : d.abende.some((e) => Object.values(e.counts || {}).some((per) => op.id in (per || {})));
+    if (used) { const x = d[KIND[kind]].find((y) => y.id === op.id); if (x) { x.active = false; x.left = true; } }
+    else d[KIND[kind]] = d[KIND[kind]].filter((x) => x.id !== op.id);
+  } else if (t === "restore") {
+    const it = op.item || {};
+    if (KIND[op.kind]) { const lst = d[KIND[op.kind]], old = lst.find((x) => x.id === it.id); if (old) { Object.assign(old, it); delete old.left; } else lst.splice(Math.min(op.index ?? lst.length, lst.length), 0, { ...it }); }
+    else if (op.kind === "kasse" && !d.kasse.some((k) => k.id === it.id)) d.kasse.push({ ...it });
+    else if (op.kind === "abend" && !d.abende.some((e) => e.id === it.id)) { d.abende.push({ ...it }); sortAbende(d); }
+  } else if (t === "order" && KIND[op.kind]) {
+    const key = KIND[op.kind], pos = new Map((op.ids || []).map((x, i) => [x, i]));
+    d[key] = d[key].map((x, i) => [x, i]).sort((a, b) => (pos.get(a[0].id) ?? 1e6 + a[1]) - (pos.get(b[0].id) ?? 1e6 + b[1])).map((x) => x[0]);
+  } else if (t === "abend_start") {
+    if (evFind(d) || d.abende.some((e) => e.id === (op.id || op.op_id))) return;
+    const status = {};
+    for (const m of d.members) if (m.active !== false && !m.guest) status[m.id] = "play";
+    d.abende.push({ id: op.id || op.op_id, date: op.date || todayIso(), started: op.ts, closed: false, hours: Number(op.hours ?? d.settings.lane_hours ?? 3) || 0, note: "", status, status_ts: {}, counts: {}, rules: rulesOf(d.settings),
+      prices: Object.fromEntries(d.strafen.map((s) => [s.id, [Number(s.amount) || 0, s.payer || "self"]])), waiting: true });
+    sortAbende(d);
+  } else if (t.startsWith("abend_")) {
+    const ev = t === "abend_delete" ? null : evFind(d, op.abend);
+    if (t === "abend_delete") { d.abende = d.abende.filter((e) => e.id !== op.id); return; }
+    if (!ev) return;
+    if (t === "abend_status") {
+      if ((ev.status_ts?.[op.member] || 0) > op.ts) return;
+      (ev.status_ts = ev.status_ts || {})[op.member] = op.ts;
+      if (op.status === "out") delete ev.status[op.member]; else ev.status[op.member] = op.status;
+    } else if (t === "abend_count") {
+      if (!(op.member in ev.status)) return;
+      const s = d.strafen.find((x) => x.id === op.strafe);
+      if (s) (ev.prices = ev.prices || {})[s.id] = ev.prices[s.id] || [Number(s.amount) || 0, s.payer || "self"];
+      const per = (ev.counts[op.member] = ev.counts[op.member] || {});
+      per[op.strafe] = Math.max(0, (per[op.strafe] || 0) + (Number(op.delta) || 1));
+      if (!per[op.strafe]) delete per[op.strafe];
+    } else if (t === "abend_hours") ev.hours = Number(String(op.hours).replace(",", ".")) || 0;
+    else if (t === "abend_close") { ev.closed = op.value !== false; }
+    else if (t === "abend_nofines") ev.no_fines = op.value !== false;
+    else if (t === "abend_note") ev.note = op.note || "";
+    else if (t === "abend_date") { ev.date = op.date; sortAbende(d); }
+  } else if (t === "pay") {
+    if (!d.kasse.some((k) => k.id === (op.id || op.op_id))) d.kasse.push({ id: op.id || op.op_id, ts: op.ts, kind: "in", member: op.member, amount: parseMoney(op.amount), name: op.name || "Einzahlung", waiting: true });
+  } else if (t === "kasse_add") {
+    if (!d.kasse.some((k) => k.id === (op.id || op.op_id))) d.kasse.push({ id: op.id || op.op_id, ts: op.when || op.ts, kind: op.kind === "out" ? "out" : "in", member: op.kind === "out" ? null : op.member || null, amount: Math.abs(parseMoney(op.amount)), name: op.name || (op.kind === "out" ? "Ausgabe" : "Einnahme"), waiting: true });
+  } else if (t === "kasse_edit") { const k = d.kasse.find((x) => x.id === op.id); if (k) { if ("name" in op) k.name = op.name; if ("amount" in op) k.amount = Math.abs(parseMoney(op.amount)); } }
+  else if (t === "kasse_delete") d.kasse = d.kasse.filter((k) => k.id !== op.id);
+  else if (t === "settings") {
+    const s = { ...op.settings };
+    for (const k of ["base_fee", "unexcused_extra", "lane_rate", "start_balance"]) if (k in s) s[k] = parseMoney(s[k]);
+    d.settings = { ...d.settings, ...s, view: { ...(d.settings.view || {}), ...(op.settings?.view || {}) } };
+    const ev = evFind(d);
+    if (ev && RULE_KEYS.some((k) => k in s)) ev.rules = rulesOf(d.settings);
+  } else if (t === "log_clear") d.log = [];
+  else if (t === "setup_done") d.setup_done = true;
+}
+
+// 📊 Statistik für ein Jahr: Strafen pro Person, nach Art, Kasse übers Jahr, Anwesenheit, Könige
+function yearStats(d, year) {
+  const [members, strafen] = maps(d);
+  const evs = d.abende.filter((e) => String(e.date).startsWith(String(year)));
+  const perPerson = {}, perType = {}, attend = {}, kings = {};
+  for (const ev of evs) {
+    const b = billEvening(ev, members, strafen, d.settings);
+    for (const [mid, p] of Object.entries(b.people)) {
+      perPerson[mid] = (perPerson[mid] || 0) + (ev.imported ? Math.max(0, p.total - (p.fee || 0)) : p.own + p.from_others);
+      if (["play", "watch"].includes(p.status)) attend[mid] = (attend[mid] || 0) + 1;
+    }
+    for (const [mid, per] of Object.entries(ev.counts || {})) for (const [sid, n] of Object.entries(per || {})) {
+      perType[sid] = (perType[sid] || 0) + Number(n || 0);
+      const k = (kings[sid] = kings[sid] || {});
+      k[mid] = (k[mid] || 0) + Number(n || 0);
+    }
+  }
+  // 💶 Kasse übers Jahr: Stand nach jedem Monat
+  const s0 = Number(d.settings.start_balance) || 0;
+  const flows = [];
+  for (const k of d.kasse) flows.push([k.ts || 0, (k.kind === "out" ? -1 : 1) * (Number(k.amount) || 0)]);
+  for (const ev of d.abende) { const b = billEvening(ev, members, strafen, d.settings); if (b.lane_kasse) flows.push([ev.closed_ts || ev.started || Date.parse(ev.date) || 0, -b.lane_kasse]); }
+  flows.sort((a, b) => a[0] - b[0]);
+  const line = [];
+  let bal = s0, i = 0;
+  for (let m = 0; m < 12; m++) {
+    const end = new Date(year, m + 1, 1).getTime();
+    while (i < flows.length && flows[i][0] < end) bal += flows[i++][1];
+    if (new Date(year, m, 1).getTime() <= Date.now()) line.push([m, r2(bal)]);
+  }
+  return { evs, perPerson, perType, attend, kings, line };
+}
+const CSS = `
+:host { display:block; --kc-green:var(--success-color,#43a047); --kc-yellow:var(--warning-color,#ffa600); --kc-red:var(--error-color,#db4437); --pc:var(--primary-color,#03a9f4); }
+ha-card { display:block; padding:12px 12px 8px; overflow:hidden; background:var(--ha-card-background, var(--card-background-color)); border-radius:var(--ha-card-border-radius, 12px); }
+* { box-sizing:border-box; }
+button { font:inherit; color:inherit; }
+ha-icon { --mdc-icon-size:20px; display:inline-flex; }
+input, select, textarea { font:inherit; font-size:.95em; color:var(--primary-text-color); background:var(--card-background-color, var(--ha-card-background, #fff)); border:1px solid color-mix(in srgb, var(--primary-text-color, #000) 22%, transparent); border-radius:12px; padding:9px 10px; min-width:0; width:100%; outline:none; }
+input::placeholder, textarea::placeholder { color:var(--secondary-text-color); opacity:.75; }
+input:focus, select:focus, textarea:focus { border-color:var(--pc); box-shadow:0 0 0 2px color-mix(in srgb, var(--pc) 18%, transparent); }
+input.swchk { -webkit-appearance:none; appearance:none; flex:none; width:40px; height:22px; margin:0; border:0; border-radius:12px; background:#bdbdbd; position:relative; cursor:pointer; transition:background .15s; padding:0; box-shadow:none; }
+input.swchk::after { content:""; position:absolute; top:2px; left:2px; width:18px; height:18px; border-radius:50%; background:#fff; box-shadow:0 1px 2px rgba(0,0,0,.3); transition:left .15s; }
+input.swchk:checked { background:var(--pc); }
+input.swchk:checked::after { left:20px; }
+/* 🟢 Leiste oben – wie bei der Einkaufsliste */
+.topbar { display:flex; align-items:center; gap:8px; margin:0 4px 8px; font-size:13px; color:var(--secondary-text-color); }
+.topbar .grow { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:center; color:var(--primary-text-color); }
+.topbar .ver { opacity:.8; }
+.topbar .lbl { display:none; }
+.pill { cursor:pointer; border-radius:999px; padding:2px 10px; background:color-mix(in srgb, var(--kc-green) 18%, transparent); color:var(--primary-text-color); white-space:nowrap; border:0; font-size:13px; }
+.pill.wait { background:color-mix(in srgb, var(--kc-yellow) 25%, transparent); }
+.pill.off { background:color-mix(in srgb, var(--kc-red) 20%, transparent); }
+.iconbtn { background:none; border:0; cursor:pointer; padding:6px; border-radius:50%; display:inline-flex; color:var(--secondary-text-color); line-height:0; }
+.iconbtn:hover { background:var(--secondary-background-color, rgba(127,127,127,.12)); color:var(--primary-text-color); }
+.iconbtn.on { color:var(--pc); }
+/* 🏷️ Kopf in der Karte – wie bei der Einkaufsliste: Symbol + Zähler links, Werkzeuge rechts */
+.head { display:flex; align-items:center; gap:4px; margin:0 2px 8px; min-height:36px; }
+.title { display:flex; align-items:center; gap:8px; font-size:1.25em; font-weight:600; flex:1; min-width:0; }
+.title .logo { cursor:pointer; display:inline-flex; }
+.badge { cursor:pointer; background:var(--pc); color:var(--text-primary-color,#fff); border-radius:999px; padding:1px 9px; font-size:.75em; font-weight:600; }
+.tabs { display:flex; gap:6px; overflow-x:auto; padding:2px 2px 8px; scrollbar-width:none; }
+.tabs::-webkit-scrollbar { display:none; }
+.tab { -webkit-user-select:none; user-select:none; flex:0 0 auto; border:1.5px solid color-mix(in srgb, var(--pc) 55%, transparent); background:transparent; border-radius:999px; padding:5px 12px; cursor:pointer; display:inline-flex; align-items:center; gap:6px; font-size:.9em; }
+.tab ha-icon { --mdc-icon-size:18px; }
+.tab.active { background:var(--pc); border-color:var(--pc); color:var(--text-primary-color,#fff); }
+.tip { display:flex; align-items:center; gap:8px; border-radius:12px; padding:9px 12px; margin:2px 2px 8px; background:color-mix(in srgb, var(--kc-yellow) 18%, transparent); font-size:.9em; }
+.hero { border-radius:12px; padding:12px 14px; margin:2px 2px 10px; background:color-mix(in srgb, var(--hc, var(--kc-green)) 12%, transparent); }
+.hero .lbl { font-size:.85em; color:var(--secondary-text-color); }
+.big { font-size:2.4em; font-weight:700; line-height:1.15; color:var(--hc, var(--kc-green)); font-variant-numeric:tabular-nums; cursor:pointer; }
+.bar { height:8px; background:color-mix(in srgb, var(--primary-text-color) 10%, transparent); border-radius:5px; overflow:hidden; margin-top:8px; }
+.bar i { display:block; height:100%; background:var(--hc, var(--kc-green)); border-radius:5px; }
+.tiles { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin:0 2px 10px; }
+.tile { background:var(--secondary-background-color, rgba(127,127,127,.06)); border:1px solid var(--divider-color, rgba(127,127,127,.25)); border-radius:16px; padding:10px 12px; text-align:left; min-width:0; color:var(--primary-text-color); }
+.tile.click:hover { border-color:var(--pc); }
+.tile.click { cursor:pointer; }
+.tile b { display:block; font-size:1em; font-variant-numeric:tabular-nums; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.tile span { font-size:.75em; color:var(--secondary-text-color); display:flex; align-items:center; gap:3px; }
+.tile span ha-icon { --mdc-icon-size:13px; }
+.next { display:flex; align-items:center; gap:8px; border-radius:12px; padding:9px 12px; margin:0 2px 6px; background:color-mix(in srgb, var(--kc-yellow) 15%, transparent); font-size:.92em; }
+.next ha-icon { color:var(--kc-yellow); }
+.ghead { display:flex; align-items:center; gap:6px; font-size:.8em; font-weight:600; text-transform:uppercase; letter-spacing:.04em; color:var(--secondary-text-color); padding:12px 4px 2px; }
+.ghead .gdot { width:22px; height:22px; flex:none; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; background:color-mix(in srgb, var(--gc, var(--pc)) 18%, transparent); color:var(--gc, var(--pc)); }
+.ghead .gdot ha-icon { --mdc-icon-size:16px; }
+.ghead.click { cursor:pointer; border-radius:10px; }
+.ghead.click:hover { background:var(--secondary-background-color, rgba(127,127,127,.08)); }
+.ghead .chev { display:inline-flex; color:var(--secondary-text-color); }
+.ghead.click .n { margin-left:auto; }
+.ghead .n { margin-left:auto; font-weight:500; text-transform:none; letter-spacing:0; font-size:.9em; }
+/* 🧾 Zeilen wie bei der Einkaufsliste: kompakt, farbiger Streifen links */
+.item { display:flex; align-items:center; gap:8px; padding:5px 4px 5px 6px; border-radius:12px; border-left:4px solid var(--cc, transparent); transition:opacity .25s, background .2s; }
+.item.click:hover { background:color-mix(in srgb, var(--pc) 6%, transparent); }
+.item.click { cursor:pointer; }
+.chk { width:26px; height:26px; flex:none; border-radius:50%; border:2px solid var(--pc); background:none; cursor:pointer; color:#fff; padding:0; display:inline-flex; align-items:center; justify-content:center; }
+.chk ha-icon { --mdc-icon-size:17px; }
+.chk.on { background:var(--kc-green); border-color:var(--kc-green); }
+.item.done .n b { opacity:.6; text-decoration:line-through; }
+.n { flex:1; min-width:0; padding:2px 0; }
+.n b { font-weight:500; display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.meta { font-size:.75em; color:var(--secondary-text-color); display:flex; flex-wrap:wrap; gap:3px 6px; margin-top:2px; }
+.tag { border-radius:8px; padding:0 6px; background:color-mix(in srgb, var(--primary-text-color, #000) 6%, transparent); white-space:nowrap; }
+.tag.wait { background:color-mix(in srgb, var(--kc-yellow) 25%, transparent); color:var(--primary-text-color); }
+.amt { text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.neg { color:var(--kc-red); } .pos { color:var(--kc-green); }
+.quick { display:flex; flex-wrap:nowrap; gap:6px; margin:4px 2px 6px; overflow-x:auto; scrollbar-width:none; -webkit-overflow-scrolling:touch; padding-bottom:2px; } /* ↔️ volle Leiste = wischen, wie die Reiter der Einkaufsliste */
+.quick::-webkit-scrollbar { display:none; }
+.chip { flex:0 0 auto; white-space:nowrap; border:1.5px solid var(--divider-color, rgba(127,127,127,.35)); background:transparent; border-radius:999px; padding:7px 14px; cursor:pointer; font-size:.95em; }
+.chip.on { background:var(--pc); border-color:var(--pc); color:var(--text-primary-color,#fff); }
+form.add { display:grid; grid-template-columns:1fr 110px 48px; gap:6px; margin:2px 2px 6px; }
+form.add.pinf { grid-template-columns:1fr 48px; }
+.potbox { padding:8px 10px; }
+.pothead { cursor:pointer; margin:0 0 6px; }
+.potrow { display:grid; grid-template-columns:1fr auto auto; gap:6px; align-items:center; margin:0 0 6px; }
+.potrow.set { grid-template-columns:auto 1fr auto auto; margin:0; }
+.potrow input.amount { text-align:right; min-width:0; }
+.lentbtn { border:0; font:inherit; font-size:.85em; cursor:pointer; display:inline-flex; align-items:center; gap:2px; vertical-align:middle; }
+.lentbtn ha-icon { --mdc-icon-size:14px; }
+.potlbl { font-size:.85em; color:var(--secondary-text-color); }
+.iconbtn.potbtn { border:1.5px solid var(--divider-color, rgba(127,127,127,.35)); padding:7px; }
+form.add input.amount { text-align:right; }
+.addbtn { border:0; border-radius:12px; background:var(--kc-green); color:#fff; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; }
+.addbtn ha-icon { --mdc-icon-size:26px; }
+.btn { box-sizing:border-box; min-height:40px; border:1px solid color-mix(in srgb, var(--primary-text-color, #000) 22%, transparent); background:transparent; color:var(--primary-text-color); border-radius:12px; padding:8px 14px; cursor:pointer; font:inherit; font-size:.9em; font-weight:500; display:inline-flex; align-items:center; justify-content:center; gap:6px; transition:background .15s, border-color .15s; }
+.btn:hover:not([disabled]) { border-color:var(--pc); background:color-mix(in srgb, var(--pc) 6%, transparent); }
+.btn:active:not([disabled]) { transform:scale(.97); }
+.btn ha-icon { --mdc-icon-size:18px; }
+.btn.main { border:1px solid transparent; background:var(--pc); color:var(--text-primary-color,#fff); }
+.btn.main:hover:not([disabled]) { background:color-mix(in srgb, var(--pc) 88%, #000); border-color:transparent; }
+.btn.ok { color:var(--kc-green); border-color:color-mix(in srgb, var(--kc-green) 45%, transparent); }
+.btn.small { padding:5px 10px; min-height:32px; font-size:.85em; }
+.sum { display:flex; justify-content:space-between; padding:8px 6px 0; font-weight:600; }
+.edit { border:1px solid var(--divider-color, rgba(127,127,127,.2)); border-radius:12px; padding:10px; margin:6px 2px; }
+.f { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.f label { display:flex; flex-direction:column; gap:3px; font-size:.8em; color:var(--secondary-text-color); }
+.f label.wide { grid-column:1 / -1; }
+.months { display:flex; flex-wrap:wrap; gap:4px; }
+.months button { border:1.5px solid color-mix(in srgb, var(--pc) 45%, transparent); background:none; border-radius:999px; padding:3px 9px; font-size:.85em; cursor:pointer; }
+.months button.on { background:var(--pc); color:#fff; border-color:var(--pc); }
+.btnrow { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+.btnrow.end { justify-content:flex-end; }
+.switch { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 4px; border-bottom:1px solid var(--divider-color, rgba(127,127,127,.15)); }
+.switch span { display:flex; align-items:center; gap:8px; }
+.hist { display:flex; align-items:flex-end; gap:6px; height:150px; padding:8px 0 0; border-bottom:1px solid var(--divider-color); }
+.hist .m { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%; gap:2px; min-width:0; }
+.hist .m span { font-size:10.5px; color:var(--secondary-text-color); }
+.legend { display:flex; gap:12px; font-size:12px; color:var(--secondary-text-color); margin:6px 4px; }
+.legend i { display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:4px; vertical-align:-1px; }
+table { width:100%; border-collapse:collapse; font-size:13px; margin-top:8px; }
+td, th { padding:6px 4px; border-bottom:1px solid var(--divider-color); text-align:right; font-variant-numeric:tabular-nums; }
+td:first-child, th:first-child { text-align:left; }
+.hidden-amt { filter:blur(7px); user-select:none; }
+.empty { text-align:center; padding:22px 8px; color:var(--secondary-text-color); }
+.small { font-size:.82em; color:var(--secondary-text-color); margin:6px 4px; }
+/* 📖 Knöpfe UNTER der Karte – wie bei der Einkaufsliste */
+.foot { display:flex; justify-content:center; gap:10px; margin:14px 6px 8px; font-size:13px; color:var(--secondary-text-color); }
+.foot button { font:inherit; color:inherit; background:none; text-decoration:underline; border:1px solid var(--divider-color, rgba(127,127,127,.3)); border-radius:12px; padding:8px 18px; cursor:pointer; }
+.foot button.on { border-color:var(--pc); color:var(--pc); }
+.foot button { display:inline-flex; align-items:center; gap:6px; }
+.foot button ha-icon { --mdc-icon-size:18px; }
+details.gsec { border-radius:12px; margin:6px 2px; background:var(--secondary-background-color, rgba(127,127,127,.08)); }
+details.gsec summary { list-style:none; cursor:pointer; display:flex; align-items:center; gap:10px; padding:10px 12px; font-weight:600; }
+details.gsec summary::-webkit-details-marker { display:none; }
+details.gsec .gdot { width:28px; height:28px; flex:none; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; background:color-mix(in srgb, var(--gc) 20%, transparent); color:var(--gc); }
+details.gsec .gdot ha-icon { --mdc-icon-size:17px; }
+details.gsec .gtext { padding:0 14px 12px 50px; font-size:.92em; line-height:1.5; }
+a.btn { text-decoration:none; color:inherit; }
+a.btn.paypal { background:#0070ba; border-color:#0070ba; color:#fff; }
+a { color:var(--pc); }
+/* 🧮 Taschenrechner */
+.calc { border-radius:12px; padding:10px; margin:0 2px 10px; background:var(--secondary-background-color, rgba(127,127,127,.1)); }
+.calc .disp { display:flex; flex-direction:column; align-items:flex-end; background:var(--card-background-color); border-radius:10px; padding:6px 12px; margin-bottom:8px; min-height:62px; }
+.calc .expr { font-size:.9em; color:var(--secondary-text-color); min-height:1.3em; word-break:break-all; text-align:right; }
+.calc .res { font-size:1.8em; font-weight:600; font-variant-numeric:tabular-nums; }
+.calc .keys { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; }
+.calc .keys button { border:0; border-radius:10px; padding:12px 0; font-size:1.15em; cursor:pointer; background:var(--card-background-color); }
+.calc .keys button.op { color:var(--pc); font-weight:600; }
+.calc .keys button.eq { background:var(--pc); color:#fff; }
+.calc .keys button.cl { color:var(--kc-red); }
+/* ⏸️ pausiert */
+.item.paused .chk { opacity:.6; cursor:default; }
+/* ⠿ Verschieben */
+.olist { display:flex; flex-direction:column; }
+
+.grip { display:inline-flex; color:var(--secondary-text-color); cursor:grab; touch-action:none; padding:4px 2px; margin:-4px 0; }
+.item.drag { background:color-mix(in srgb, var(--pc) 12%, transparent); box-shadow:0 2px 8px rgba(0,0,0,.25); }
+.gsub { font-size:.78em; font-weight:600; color:var(--secondary-text-color); text-transform:uppercase; letter-spacing:.04em; padding:8px 6px 2px; }
+/* ⚙️ Einstellungen wie bei der Einkaufsliste: ein Kasten pro Zweck, Zeilen mit bunten Symbol-Kästchen */
+.sethead { font-weight:600; font-size:1.05em; margin:4px 4px 2px; display:flex; align-items:center; gap:8px; }
+.lgbox { margin:10px 0 0; border:1px solid var(--divider-color, rgba(127,127,127,.25)); border-radius:12px; overflow:hidden; }
+.lgroup { display:flex; align-items:center; gap:12px; width:100%; margin:0; padding:10px 12px; font:inherit; font-size:1em; color:var(--primary-text-color); background:color-mix(in srgb, var(--primary-text-color, #000) 3%, transparent); border:0; cursor:pointer; text-align:left; }
+.lgroup[aria-expanded="true"] { border-bottom:1px solid var(--divider-color, rgba(127,127,127,.25)); }
+.lgroup b, .lrow b { display:block; font-weight:600; }
+.lrow b { font-weight:500; }
+.lgroup small, .lrow small { display:block; color:var(--secondary-text-color); font-size:.8em; font-weight:400; }
+.lgroup .gem { width:36px; height:36px; flex:none; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:18px; background:color-mix(in srgb, var(--primary-text-color, #000) 7%, transparent); }
+.lgroup .grow, .lrow .grow { flex:1 1 auto; min-width:0; }
+.lgroup > ha-icon, .lrow > ha-icon:last-child { flex:none; color:var(--secondary-text-color); }
+.lrow { display:flex; align-items:center; gap:12px; width:calc(100% - 4px); margin:0 0 0 4px; text-align:left; padding:10px 12px; cursor:pointer; border:0; border-top:1px solid var(--divider-color, rgba(127,127,127,.25)); background:none; color:var(--primary-text-color); font:inherit; }
+.lgroup + .lrow { border-top:0; }
+.lrow:hover { background:color-mix(in srgb, var(--pc) 6%, transparent); }
+.lrow > ha-icon:last-child { opacity:.5; }
+.ic { --ic:#607d8b; width:36px; height:36px; flex:none; border-radius:12px; display:flex; align-items:center; justify-content:center; background:var(--ic); color:#fff; }
+.ic ha-icon { --mdc-icon-size:20px; color:#fff; }
+.pagebody textarea, .pagebody input[readonly] { width:100%; }
+/* ↩️ Rückgängig-Leiste unten in der Mitte – wie bei der Einkaufsliste */
+/* ✓ nur ein grüner Haken – was er macht, zeigt langes Drücken (wie bei der Einkaufsliste) */
+.iconbtn.okbtn { color:var(--kc-green); border:1.5px solid color-mix(in srgb, var(--kc-green) 45%, transparent); padding:5px; }
+.iconbtn.okbtn:hover { background:color-mix(in srgb, var(--kc-green) 12%, transparent); color:var(--kc-green); }
+.iconbtn.potbtn.okbtn { padding:7px; }
+.finding { border:1px solid var(--divider-color, rgba(127,127,127,.25)); border-left:4px solid var(--kc-yellow); border-radius:12px; padding:8px 10px; margin:6px 0; }
+.okmsg { color:var(--kc-green); font-weight:600; }
+.btn.danger { color:#fff; background:#c62828; border-color:#c62828; }
+.tag.lent, .lenttxt { color:#ef6c00; } .tag.lent { background:color-mix(in srgb, #fb8c00 18%, transparent); }
+.undobar { position:fixed; left:50%; bottom:calc(20px + env(safe-area-inset-bottom, 0px)); transform:translateX(-50%); z-index:50; max-width:calc(100vw - 24px); display:flex; align-items:center; gap:12px; padding:8px 8px 8px 16px; border-radius:24px; background:#323232; color:#fff; box-shadow:0 3px 12px rgba(0,0,0,.35); font-size:.92em; }
+.undobar .ut { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.undobar .ub { border:0; border-radius:16px; padding:7px 12px; background:#fff; color:#222; font:inherit; font-weight:600; cursor:pointer; white-space:nowrap; }
+/* 🔄 Neue Version – wie bei der Einkaufsliste */
+.updbar { margin:0 2px 8px; padding:8px 10px; border-radius:12px; background:color-mix(in srgb, var(--primary-color,#03a9f4) 14%, transparent); font-size:.88em; display:flex; align-items:center; gap:8px; }
+.updbar b { flex:1; }
+/* 🪟 Seiten IN der Karte – wie bei der Einkaufsliste (Symbol + Titel, ← / ✕ oben rechts) */
+.sec { margin:4px 2px 16px; }
+.sechead { display:flex; align-items:center; gap:12px; margin-bottom:10px; }
+.sechead h3 { min-width:0; margin:0; font-size:1em; }
+.pagebody p { line-height:1.4; }
+/* 🔢 PIN-Eingabe wie am Handy – wie bei der Einkaufsliste */
+.pinpad { text-align:center; max-width:300px; width:100%; margin:0 auto; }
+.pinpad .pdots { font-size:28px; letter-spacing:10px; min-height:40px; margin:10px 0 16px; }
+.pinpad .ppad { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+.pinpad .ppad .btn { font-size:24px; padding:16px 0; margin:0; width:100%; }
+.pinpad .pcancel { margin-top:18px; }
+.btn.primary { border:1px solid transparent; background:var(--pc); color:var(--text-primary-color,#fff); }
+/* 📖 Anleitung wie bei der Einkaufsliste */
+.elg { font:15px/1.5 Roboto, sans-serif; }
+.elg h2 { font-size:20px; margin:6px 0 4px; }
+.elg .elg-sub { color:var(--secondary-text-color); margin:0 0 12px; font-size:14px; }
+.elg-q { width:100%; margin:0 0 10px; font-size:16px; padding:10px 12px; }
+.elg-none { color:var(--secondary-text-color); margin:8px 2px; }
+.elg-sec { border:1px solid var(--divider-color, rgba(127,127,127,.3)); border-radius:12px; margin:10px 0 0; overflow:hidden; }
+.elg-sec[hidden] { display:none; }
+.elg-sec summary { cursor:pointer; padding:10px 12px; font-weight:600; font-size:16px; list-style:none; display:flex; align-items:center; gap:12px; background:color-mix(in srgb, var(--primary-text-color, #000) 3%, transparent); }
+.elg-sec summary::-webkit-details-marker { display:none; }
+.elg-sec summary::after { content:""; flex:none; width:8px; height:8px; margin:0 6px 4px auto; border-right:2px solid var(--secondary-text-color); border-bottom:2px solid var(--secondary-text-color); transform:rotate(45deg); transition:transform .2s; }
+.elg-sec[open] summary::after { transform:rotate(225deg); margin-bottom:-4px; }
+.elg-sec[open] summary { border-bottom:1px solid var(--divider-color, rgba(127,127,127,.3)); }
+.elg-ic { flex:none; width:36px; height:36px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:18px; background:color-mix(in srgb, var(--primary-text-color, #000) 7%, transparent); }
+.elg-tt { flex:1; min-width:0; } .elg-tt b { display:block; } .elg-tt small { display:block; font-weight:400; font-size:12.5px; color:var(--secondary-text-color); }
+.elg-sec > div { padding:8px 12px 12px; }
+.elg-sec ul { margin:4px 0; padding-left:20px; } .elg-sec li { margin:4px 0; }
+.betabox { border:1px solid #fb8c00; border-radius:12px; padding:10px 12px; margin:0 0 12px; background:rgba(251,140,0,.1); }
+ol.steps { padding-left:22px; }
+ol.steps li { margin:3px 0; }
+/* 🔤 Beschriftungen unter Symbol-Knöpfen (⚙️ → Ansicht) */
+.iconbtn .lbl { font-size:10px; line-height:1.1; font-weight:500; }
+:host(.labels) .iconbtn:has(.lbl) { flex-direction:column; align-items:center; gap:2px; border-radius:10px; padding:4px 5px; }
+:host(.labels) .topbar .lbl { display:inline; }
+:host(.labels) .topbar .iconbtn { flex-direction:column; align-items:center; gap:2px; border-radius:10px; }
+/* 🧘 Ruhiger Modus (nur dieses Gerät) */
+:host(.calm) *, :host(.calm) *::before, :host(.calm) *::after { animation:none !important; transition:none !important; }
+:host(.calm) .gdot, :host(.calm) .ic, :host(.calm) .gem, :host(.calm) .hero, :host(.calm) .badge, :host(.calm) .mascot { filter:saturate(.35); }
+/* 🐷 Maskottchen */
+.mascotbox { color:var(--primary-text-color); }
+.mascot.happy { animation:fkwob 2.6s ease-in-out infinite; transform-origin:50% 90%; }
+.mascotbox.hop .mascot { animation:fkhop .7s ease-out 2; }
+@keyframes fkwob { 0%,100% { transform:rotate(0); } 25% { transform:rotate(-4deg); } 75% { transform:rotate(4deg); } }
+@keyframes fkhop { 0%,100% { transform:translateY(0); } 40% { transform:translateY(-7px); } }
+@media (prefers-reduced-motion: reduce) { .mascot, .mascotbox .mascot { animation:none !important; } }
+.mascotprev { display:flex; flex-wrap:wrap; gap:14px; margin:10px 0; color:var(--primary-text-color); }
+.mascotprev > span { display:flex; flex-direction:column; align-items:center; gap:2px; }
+.mascotprev svg { width:44px; height:39px; }
+.mascotprev small { font-size:11px; color:var(--secondary-text-color); }
+.mascotprev > span.now { outline:2px solid #ec407a; outline-offset:3px; border-radius:10px; }
+/* 📜 Verlauf */
+.logday { margin:12px 0 4px; font-size:.8em; font-weight:600; color:var(--secondary-text-color); text-transform:uppercase; letter-spacing:.03em; }
+.logrow { display:flex; align-items:baseline; gap:8px; padding:4px 2px; border-bottom:1px solid var(--divider-color, rgba(127,127,127,.15)); font-size:.9em; }
+.logrow .lt { flex:none; width:42px; color:var(--secondary-text-color); font-variant-numeric:tabular-nums; }
+.logrow .lx { flex:1; min-width:0; }
+.switch .vt { display:flex; flex-direction:column; } .switch .vt small { color:var(--secondary-text-color); font-size:.82em; }
+/* 🙈 verschleierte Beträge: PC = Maus drüber, Handy = antippen (4 Sekunden) */
+.veil { filter:blur(6px); cursor:pointer; user-select:none; -webkit-user-select:none; transition:filter .2s; }
+.veil.peek { filter:none; }
+@media (hover:hover) { .veil:hover { filter:none; } }
+/* 🎳 Kegelabend: Personen-Kacheln und Strafen-Knöpfe */
+.ppl { display:grid; grid-template-columns:repeat(auto-fill, minmax(92px, 1fr)); gap:6px; margin:4px 2px 8px; }
+.pp { position:relative; border:2px solid transparent; border-radius:16px; padding:8px 4px 6px; text-align:center; background:var(--secondary-background-color, rgba(127,127,127,.06)); cursor:pointer; min-width:0; color:var(--primary-text-color); font:inherit; }
+.pp.sel { border-color:var(--pc); background:color-mix(in srgb, var(--pc) 12%, transparent); }
+.pp.off { opacity:.55; }
+.pp .av { width:38px; height:38px; margin:0 auto 4px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:700; font-size:14px; background:var(--ac, #607d8b); }
+.pp .nm { display:block; font-size:.85em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.pp .sum { display:block; font-size:.75em; font-variant-numeric:tabular-nums; color:var(--kc-red); padding:0; font-weight:500; }
+.pp .gst { position:absolute; top:4px; left:6px; font-size:9px; font-weight:700; color:var(--secondary-text-color); text-transform:uppercase; }
+.stbtn { white-space:nowrap; display:inline-flex; align-items:center; gap:3px; margin-top:4px; border:0; border-radius:999px; padding:2px 8px; font:inherit; font-size:.72em; cursor:pointer; color:#fff; background:var(--sc, #9e9e9e); }
+.stbtn ha-icon { --mdc-icon-size:13px; }
+.pp.add .av { background:color-mix(in srgb, var(--primary-text-color) 12%, transparent); color:var(--primary-text-color); }
+.fines { display:grid; grid-template-columns:repeat(auto-fill, minmax(96px, 1fr)); gap:8px; margin:4px 2px 8px; }
+.fine { border:0; border-radius:16px; padding:12px 6px 10px; text-align:center; cursor:pointer; background:var(--secondary-background-color, rgba(127,127,127,.08)); color:var(--primary-text-color); font:inherit; position:relative; }
+.fine:active:not([disabled]) { transform:scale(.95); }
+.fine[disabled] { opacity:.4; cursor:default; }
+.fine ha-icon { --mdc-icon-size:30px; color:var(--kc-orange, #fb8c00); display:block; margin:0 auto 4px; }
+.fine b { display:block; font-weight:500; font-size:.9em; line-height:1.2; }
+.fine small { display:block; font-size:.75em; color:var(--secondary-text-color); }
+.fine small.oth { color:#1e88e5; }
+.fine .cnt { position:absolute; top:6px; right:8px; min-width:20px; height:20px; padding:0 5px; border-radius:999px; background:var(--pc); color:#fff; font-size:.72em; font-weight:700; display:flex; align-items:center; justify-content:center; }
+.evbar { display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin:2px 2px 8px; }
+.evbar .hrs { display:inline-flex; align-items:center; gap:4px; }
+.evbar .hrs input { width:64px; text-align:right; padding:6px 8px; }
+.bill .item { cursor:default; }
+.bill .n .meta .tag.del { cursor:pointer; }
+.chips { display:flex; flex-wrap:wrap; gap:4px; }
+.chipx { display:inline-flex; align-items:center; gap:2px; border-radius:999px; padding:1px 4px 1px 8px; background:color-mix(in srgb, var(--primary-text-color, #000) 7%, transparent); font-size:.78em; }
+.chipx button { border:0; background:none; cursor:pointer; color:var(--kc-red); padding:0 2px; font:inherit; font-weight:700; line-height:1; }
+.big.kasse { color:var(--hc, var(--kc-green)); }
+.stbar { display:flex; align-items:flex-end; gap:6px; height:150px; padding:18px 2px 0; border-bottom:1px solid var(--divider-color); }
+.stbar .c { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%; min-width:0; position:relative; }
+.stbar .c i { display:block; width:100%; max-width:42px; border-radius:6px 6px 0 0; background:var(--bc, var(--pc)); }
+.stbar .c span { position:absolute; top:-16px; font-size:10.5px; white-space:nowrap; }
+.stlbl { display:flex; gap:6px; padding:3px 2px 0; }
+.stlbl span { flex:1; min-width:0; text-align:center; font-size:10.5px; color:var(--secondary-text-color); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.pie { display:flex; align-items:center; gap:14px; margin:6px 2px; }
+.pie .disc { width:120px; height:120px; flex:none; border-radius:50%; }
+.pie .lg { font-size:.85em; line-height:1.7; min-width:0; }
+.pie .lg i { display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:6px; vertical-align:-1px; }
+.kings { display:grid; grid-template-columns:repeat(auto-fill, minmax(130px, 1fr)); gap:6px; margin:0 2px 8px; }
+.yearnav { display:flex; align-items:center; justify-content:center; gap:10px; margin:0 2px 6px; font-weight:600; }
+.wiz { display:grid; gap:8px; margin:6px 2px; }
+.wiz .btn { justify-content:flex-start; padding:12px 14px; text-align:left; }
+.wiz .btn small { display:block; font-weight:400; color:var(--secondary-text-color); }
+.iconpick { display:grid; grid-template-columns:repeat(auto-fill, minmax(40px, 1fr)); gap:4px; }
+.iconpick button { border:1.5px solid transparent; border-radius:10px; background:var(--secondary-background-color, rgba(127,127,127,.08)); padding:6px 0; cursor:pointer; color:var(--primary-text-color); }
+.iconpick button.on { border-color:var(--pc); color:var(--pc); }
+.seg { display:flex; flex-wrap:wrap; gap:6px; }
+.seg button { border:1.5px solid color-mix(in srgb, var(--pc) 45%, transparent); background:none; border-radius:999px; padding:5px 12px; cursor:pointer; font:inherit; font-size:.88em; color:var(--primary-text-color); }
+.seg button.on { background:var(--pc); color:#fff; border-color:var(--pc); }
+.preview { border:1px solid var(--divider-color, rgba(127,127,127,.25)); border-radius:12px; padding:10px 12px; margin:8px 0; }
+.preview table td:first-child { color:var(--secondary-text-color); }
+`;
+
+const initials = (n) => { const p = String(n || "?").trim().split(/\s+/); return ((p[0]?.[0] || "?") + (p.length > 1 ? p[p.length - 1][0] : (p[0]?.[1] || ""))).toUpperCase(); };
+const mcol = (d, mid) => { const i = d.members.findIndex((m) => m.id === mid); return MEMBER_COLORS[(i < 0 ? 0 : i) % MEMBER_COLORS.length]; };
+const fmtDate = (iso, opt = { weekday: "short", day: "2-digit", month: "2-digit", year: "numeric" }) => { const [y, m, dd] = String(iso || "").split("-").map(Number); return y ? new Date(y, (m || 1) - 1, dd || 1).toLocaleDateString(kcLoc(), opt) : ""; };
+const icn = (s) => String(s || "mdi:bowling").replace(/^mdi:/, "");
+const PIE = ["#1e88e5", "#fb8c00", "#43a047", "#e53935", "#8e24aa", "#00897b", "#f9a825", "#6d4c41", "#3949ab", "#ec407a"];
+
+class KegelclubCard extends HTMLElement {
+  constructor() {
+    super();
+    this.attachShadow({ mode: "open" });
+    this._view = "abend";
+    this._open = null;          // welcher Eintrag gerade bearbeitet wird
+    this._sel = null;           // 👤 ausgewählte Person im Kegelabend
+    this._qk = QKEY; this._dk = DKEY;
+    this._queue = store.get(this._qk, []);
+    this._server = null;
+    this._hidden = store.get(HKEY, null);
+    this._sheet = null;
+    this._pad = null;
+    this._year = new Date().getFullYear();
+    this._kform = "in";         // 🏦 Kasse: Einzahlung oder Ausgabe
+    const root = this.shadowRoot;
+    let lpTimer = null, lpFired = false;
+    const lpBtn = (t) => { const b = t?.closest?.("button"); return b && !(b.innerText || "").trim() && (b.getAttribute("title") || b.getAttribute("aria-label")) ? b : null; };
+    root.addEventListener("pointerdown", (e) => {
+      const b = lpBtn(e.target);
+      clearTimeout(lpTimer); lpFired = false;
+      if (!b) return;
+      const text = b.getAttribute("title") || b.getAttribute("aria-label");
+      lpTimer = setTimeout(() => { lpFired = true; try { navigator.vibrate?.(20); } catch (_) { /* egal */ } this._toast(text); }, 550);
+    }, true);
+    for (const ev of ["pointerup", "pointercancel", "pointerleave"]) root.addEventListener(ev, () => clearTimeout(lpTimer), true);
+    root.addEventListener("click", (e) => { if (lpFired) { lpFired = false; e.stopImmediatePropagation(); e.preventDefault(); } }, true);
+    root.addEventListener("contextmenu", (e) => { if (lpBtn(e.target)) e.preventDefault(); }, true);
+    this._onKey = (e) => {
+      if (!this._padShown || !this.isConnected || !this._pad) return;
+      if (/^\d$/.test(e.key)) this._padPress(e.key);
+      else if (e.key === "Backspace") this._padPress("⌫");
+      else if (e.key === "Enter" || e.code === "NumpadEnter") this._padPress("✔");
+      else if (e.key === "Escape") this.shadowRoot.querySelector('[data-a="back"]')?.click();
+      else return;
+      e.preventDefault(); e.stopPropagation();
+    };
+  }
+
+  static getStubConfig() { return { title: "Kegelclub" }; }
+  getCardSize() { return 8; }
+  static getConfigElement() { return document.createElement("kegelclub-card-editor"); }
+  setConfig(config) {
+    this._config = { title: "Kegelclub", ...config };
+    const book = String(this._config.buch || this._config.club || "").trim(); // 🏠 welcher Club (leer = erster)
+    if (book !== (this._book ?? "")) {
+      const changed = this._book !== undefined;
+      this._book = book;
+      const sfx = book ? "_" + book.toLowerCase().replace(/[^a-z0-9äöüß]+/g, "_") : "";
+      this._qk = QKEY + sfx; this._dk = DKEY + sfx;
+      this._queue = store.get(this._qk, []);
+      if (changed) { this._unsub?.then((u) => u?.()).catch(() => {}); this._unsub = null; this._server = null; if (this._hass) { this._subscribe(); this._render(); } }
+    }
+    if (this._hidden == null) this._hidden = !!this._config.privat;
+    if (this._hass) { const before = KC_LANG; this._useLang(); if (before !== KC_LANG) { this._force = true; this._render(); } }
+  }
+  _useLang() {
+    const lang = kcWantLang(this._hass, this._config);
+    if (lang !== KC_LANG) { KC_LANG = lang; for (const c of KC_CARDS) if (c !== this) { c._force = true; c._render(); } }
+    if (KC_LANG !== "de") kcLoadDict();
+  }
+  get _app() { return !!window.__kcOfflineApp; }
+  _bk() { return this._book ? { book: this._book } : {}; }
+
+  set hass(hass) {
+    const first = !this._hass;
+    this._hass = hass;
+    this._useLang();
+    if (first) {
+      if (this._app) this._server = store.get(this._dk, null);
+      this._subscribe();
+      this._render();
+    }
+    if (hass.connected !== false) this._flush();
+  }
+  connectedCallback() { if (this._hass && !this._unsub) this._subscribe(); document.addEventListener("keydown", this._onKey, true); }
+  disconnectedCallback() { this._unsub?.then((u) => u?.()).catch(() => {}); this._unsub = null; document.removeEventListener("keydown", this._onKey, true); }
+  _subscribe() {
+    if (this._unsub || !this._hass?.connection) return;
+    this._unsub = this._hass.connection.subscribeMessage((data) => {
+      this._server = data;
+      if (this._app) store.put(this._dk, data);
+      this._render();
+    }, { type: "kegelclub/subscribe", ...this._bk() }).catch((err) => { this._err = err?.message || String(err); this._unsub = null; this._render(); });
+  }
+  // Der Stand, den man sieht = Stand von HA + alles, was noch im Postausgang liegt
+  get _data() {
+    if (!this._server) return null;
+    const d = JSON.parse(JSON.stringify(this._server));
+    for (const k of ["members", "strafen", "abende", "kasse", "log"]) d[k] = d[k] || [];
+    d.settings = { ...DEF_SETTINGS, ...(d.settings || {}) };
+    for (const ev of d.abende) { ev.status = ev.status || {}; ev.counts = ev.counts || {}; }
+    for (const op of this._queue) { try { applyLocal(d, op); } catch (_) { /* kaputte Änderung – HA sagt dann Bescheid */ } }
+    d.summary = summary(d);
+    return d;
+  }
+  _send(op) {
+    op = { op_id: uid(), ts: Date.now(), ...op };
+    this._queue.push(op);
+    store.put(this._qk, this._queue);
+    this._render();
+    this._flush();
+    return op;
+  }
+  async _flush() {
+    if (this._flushing || !this._queue.length || !this._hass) return;
+    this._flushing = true;
+    try {
+      const batch = this._queue.slice(0, 100);
+      const res = await this._hass.callWS({ type: "kegelclub/apply", ops: batch, ...this._bk() });
+      const done = new Set(batch.map((o) => o.op_id));
+      const failed = (res?.results || []).filter((r) => !r.ok);
+      this._queue = this._queue.filter((o) => !done.has(o.op_id));
+      store.put(this._qk, this._queue);
+      if (failed.length) this._toast("⚠️ " + failed.map((f) => f.error).join(", "));
+      this._render();
+      if (this._queue.length) setTimeout(() => this._flush(), 50);
+    } catch (_) {
+      clearTimeout(this._retry);
+      this._retry = setTimeout(() => this._flush(), 15000);
+    } finally { this._flushing = false; }
+  }
+  _toast(message) { this.dispatchEvent(new CustomEvent("hass-notification", { detail: { message: kcT(message) }, bubbles: true, composed: true })); }
+
+  // ---------------------------------------------------------------- 🖼️ Zeichnen (Optik wie die Einkaufsliste)
+  _m(v, cls = "") { return `<span class="${cls} ${this._hidden ? "hidden-amt" : ""}">${money(v)}</span>`; }
+  _mv(v, key, cls = "") {
+    if (this._hidden || !this._data?.settings?.veil) return this._m(v, cls);
+    const on = this._peek?.key === key && this._peek.until > Date.now();
+    return `<span class="${cls} veil ${on ? "peek" : ""}" data-a="peek" data-v="${esc(key)}" title="Antippen = 4 Sekunden zeigen">${money(v)}</span>`;
+  }
+  _gh(icon, color, title, right = "") { return `<div class="ghead"><span class="gdot" style="--gc:${color}">${ic(icon)}</span><span>${title}</span><span class="n">${right}</span></div>`; }
+  _lb(t) { return this._labels ? `<span class="lbl">${esc(t)}</span>` : ""; }
+  _greet() {
+    const h = new Date().getHours();
+    const g = h < 11 ? "☀️ Guten Morgen" : h < 18 ? "🎳 Gut Holz" : "🌙 Gut Holz";
+    const name = String(this._hass?.user?.name || "").split(" ")[0];
+    return name ? `${g}, ${esc(name)}` : g;
+  }
+  _name(d, mid) { return d.members.find((m) => m.id === mid)?.name || "?"; }
+
+  _render() {
+    if (this._dragging) { this._pending = true; return; }
+    const a = this.shadowRoot.activeElement;
+    if (a && ((a.tagName === "INPUT" && !["checkbox", "radio", "button"].includes(a.type)) || a.tagName === "TEXTAREA" || a.tagName === "SELECT") && !this._force) { this._pending = true; return; }
+    this._force = false;
+    const d = this._data;
+    kcSetMoney(d?.settings?.currency, KC_LANG);
+    this._labels = !!d?.settings?.labels;
+    this.classList.toggle("labels", this._labels);
+    this.classList.toggle("calm", !!store.get(CALMKEY, false));
+    const online = this._hass?.connected !== false;
+    const q = this._queue.length;
+    const pill = q ? `<button class="pill wait" data-a="tab" data-v="abend">⏳ ${q} ${q === 1 ? "wartet" : "warten"}</button>`
+      : online ? `<button class="pill" data-a="tab" data-v="abend">🟢 verbunden</button>`
+      : `<button class="pill off" data-a="tab" data-v="abend">${this._app ? "📴 offline – letzter Stand" : "🔴 keine Verbindung"}</button>`;
+    const top = `<div class="topbar">${pill}<span class="grow">${this._greet()}</span>${d ? `<button class="iconbtn ${this._view === "set" ? "on" : ""}" data-a="tab" data-v="set" title="Einstellungen">${ic("cog-outline")}<span class="lbl">Einstellungen</span></button>` : ""}<span class="ver" translate="no">v${KC_VERSION}</span></div>`;
+    const lockAll = !!(d && d.pin && d.settings?.lock_all && !(this._app && window.__kcAppLock?.on?.()));
+    const locked = !!(d && d.pin && !pinOpen() && (lockAll || this._view === "edit" || this._view === "set"));
+    this._lockAll = lockAll && locked;
+    if (lockAll && !locked) { clearTimeout(this._relockT); this._relockT = setTimeout(() => { this._force = true; this._render(); }, Math.max(1000, PIN_LOCK.until - Date.now() + 500)); }
+    if (locked && this._pad?.step !== "unlock") this._pad = { purpose: "unlock", step: "unlock", buf: "", back: "abend" };
+    if (!locked && this._pad?.step === "unlock") this._pad = null;
+    if (this._view === "ev" && d && !d.abende.some((e) => e.id === this._evId)) this._view = "abend";
+    const page = !d ? null : this._pad ? this._padPage(d) : this._view === "guide" ? { icon: "book-open-variant", color: "#3949ab", title: "Anleitung", html: this._guideView() }
+      : this._view === "ev" ? this._evPage(d) : this._view === "set" && this._sheet ? this._sheetPage(d) : null;
+    this._padShown = !!(d && this._pad);
+    if (this._view !== "set") this._setOpen = null;
+    const deeper = !!(this._pad ? this._pad.back === "sheet" : this._view === "set" && this._sheet);
+    const showBack = !!(d && !this._lockAll && (this._view === "set" || this._view === "guide" || this._view === "ev" || this._pad));
+    const appLock = this._app && !!window.__kcAppLock?.on?.();
+    const isLocked = d?.pin && !pinOpen();
+    const inSet = this._view === "set";
+    const tools = this._lockAll ? "" : `${inSet ? "" : `<button class="iconbtn ${this._hidden ? "on" : ""}" data-a="hide" title="Beträge ${this._hidden ? "zeigen" : "verstecken"}">${ic(this._hidden ? "eye-off-outline" : "eye-outline")}${this._lb(this._hidden ? "Zeigen" : "Verstecken")}</button>`}
+      <button class="iconbtn" data-a="lock" title="${appLock ? "App jetzt sperren" : isLocked ? "Gesperrt – PIN nötig für ⚙️ und Mitglieder" : "Jetzt sperren"}">${ic(isLocked && !appLock ? "lock-outline" : "lock-open-variant-outline")}${this._lb(isLocked && !appLock ? "Gesperrt" : "Sperren")}</button>
+      ${showBack ? `<button class="iconbtn" data-a="back" title="${deeper ? "Zurück" : "Schließen"}">${ic(deeper ? "arrow-left" : "close")}${this._lb(deeper ? "Zurück" : "Schließen")}</button>` : ""}`;
+    let body;
+    if (!d) {
+      body = this._err ? `<div class="empty">⚠️ ${esc(this._err)}<br>Ist die Integration „Kegelclub“ eingerichtet?</div>` : `<div class="empty">⏳ Lade …</div>`;
+    } else {
+      const v = d.settings.view || {};
+      const tabs = [["abend", "bowling", "Abend"], ...(v.kasse === false ? [] : [["kasse", "bank-outline", "Kasse"]]), ...(v.statistik === false ? [] : [["stats", "chart-bar", "Statistik"]]), ["edit", "account-group-outline", "Mitglieder"]];
+      const s = d.summary;
+      const badge = s.running ? `<span class="badge" data-a="tab" data-v="abend" title="Kegelabend läuft">🎳 läuft</span>` : s.debtors ? `<span class="badge" data-a="tab" data-v="kasse" title="so viele haben noch offen">${s.debtors}</span>` : "";
+      const title = d.book && !d.book.primary ? esc(d.book.title) : esc(this._config?.title && this._config.title !== "Kegelclub" ? this._config.title : "");
+      body = `<div class="head"><div class="title"><span class="logo" data-a="tab" data-v="abend" title="Zurück zum Abend">${ic("bowling")}</span>${title ? `<span data-noicon>${title}</span>` : ""}${this._lockAll ? "" : badge}</div>${tools}</div>`;
+      body += this._updHtml(d);
+      if (!page && this._view !== "set") body += `<div class="tabs">${tabs.map(([k, i, l]) => `<button class="tab ${this._view === k ? "active" : ""}" data-a="tab" data-v="${k}">${ic(i)}${l}</button>`).join("")}</div>`;
+      if (!locked) pinTouch();
+      body += page ? `<div class="sec pagehost"><div class="sechead"><span class="ic" style="--ic:${page.color}">${ic(page.icon)}</span><h3>${page.title}</h3></div><div class="pagebody">${page.html}</div></div>`
+        : this._view === "edit" ? this._editView(d) : this._view === "set" ? this._setView(d) : this._view === "kasse" ? this._kasseView(d) : this._view === "stats" ? this._statsView(d) : this._abendView(d);
+    }
+    this.shadowRoot.innerHTML = `<style>${CSS}</style>${top}<ha-card>${body}</ha-card>
+      <div class="foot"><button class="${this._view === "guide" ? "on" : ""}" data-a="tab" data-v="${this._view === "guide" ? "abend" : "guide"}">${ic("book-open-page-variant-outline")}<span>Anleitung</span></button></div>
+      ${this._undo ? `<div class="undobar" role="status"><span class="ut">${esc(this._undo.label)}</span><button class="ub" data-a="undo">↩️ Rückgängig</button></div>` : ""}`;
+    if (KC_LANG !== "de" && KC_DICT) {
+      try { kcCollectUser(this._data); if (this._config?.title && this._config.title !== "Kegelclub") KC_USER.add(kcNorm(this._config.title)); kcTranslateTree(this.shadowRoot); } catch (_) { /* dann eben Deutsch */ }
+    }
+    if (!window.__kcNoIcons) try { kcIconizeTree(this.shadowRoot); } catch (_) { /* Symbole sind nur Deko */ }
+    this._bind();
+    KC_CARDS.add(this);
+    try { window.dispatchEvent(new CustomEvent("kegelclub-nav")); } catch (_) { /* egal */ }
+  }
+  kegelclubIsRoot() { return !this._pad && !this._open && !["set", "guide", "ev"].includes(this._view); }
+  kegelclubBack() {
+    if (this.kegelclubIsRoot()) return false;
+    if (this._pad?.step === "unlock") { this._pad = null; this._view = "abend"; this._sheet = null; }
+    else if (this._pad) { const back = this._pad.back; this._pad = null; if (back !== "sheet") { this._view = "abend"; this._sheet = null; } }
+    else if (this._open) this._open = null;
+    else if (this._view === "set" && this._sheet) this._sheet = null;
+    else { this._view = this._view === "ev" ? "abend" : "abend"; this._sheet = null; }
+    this._force = true; this._render();
+    return true;
+  }
+  _updHtml(d) {
+    const server = d.version;
+    if (!server || server === KC_VERSION) return "";
+    return kcVerCmp(server, KC_VERSION) > 0
+      ? `<div class="updbar">🔄 <b>Neue Version ${esc(server)} ist da (hier läuft noch ${KC_VERSION}).</b><button class="btn small" data-a="reload">Neu laden</button></div>`
+      : `<div class="updbar">🔄 <b>Die Karte ist schon ${KC_VERSION}, Home Assistant noch ${esc(server)} – bitte Home Assistant neu starten.</b></div>`;
+  }
+
+  // ---------------------------------------------------------------- 🎳 Abend
+  _abendView(d) {
+    const ev = evFind(d);
+    if (!d.members.length && !d.setup_done && !ev) return this._wizard(d);
+    if (ev) return this._evRunning(d, ev);
+    const st = d.settings;
+    let h = `<div class="hero" style="--hc:#fb8c00"><div class="lbl">Nächster Kegelabend</div><div style="font-size:1.15em;font-weight:600;margin-top:2px">Gut Holz! 🎳</div></div>
+      <form class="edit" data-a="evstart"><div class="f"><label>Datum<input name="date" type="date" value="${todayIso()}"></label>
+      ${st.lane_mode === "off" ? "" : `<label>Kegelbahn (Stunden)<input name="hours" inputmode="decimal" value="${numDe(st.lane_hours ?? 3)}"></label>`}</div>
+      <div class="btnrow end"><button class="btn main" type="submit">${ic("play")}Kegelabend starten</button></div></form>`;
+    if (!d.strafen.some((s) => s.active !== false)) h += `<div class="tip">💡 Noch keine Strafen. Unter <b>„Mitglieder“</b> → Strafen anlegen.</div>`;
+    if (!d.members.some((m) => !m.guest && m.active !== false)) h += `<div class="tip">💡 Noch keine Mitglieder. Unter <b>„Mitglieder“</b> anlegen.</div>`;
+    h += this._pastList(d);
+    return h;
+  }
+  _wizard(d) {
+    return `<div class="hero" style="--hc:#fb8c00"><div class="lbl">Willkommen</div><div style="font-size:1.2em;font-weight:600;margin-top:2px">🎳 Los geht's – wie willst du starten?</div></div>
+      <div class="wiz">
+        <button class="btn" data-a="wiz" data-v="import">${ic("database-import-outline")}<span><b>Aus „Alle Neune“ übernehmen</b><small>Datei aus der App einlesen – mit allen alten Abenden und der Kasse</small></span></button>
+        <button class="btn" data-a="wiz" data-v="template">${ic("clipboard-list-outline")}<span><b>Beispiel-Strafen laden</b><small>Pumpe, Klingeln, Alle Neune … – alles änderbar</small></span></button>
+        <button class="btn" data-a="wiz" data-v="empty">${ic("file-outline")}<span><b>Leer starten</b><small>Mitglieder und Strafen selbst anlegen</small></span></button>
+      </div><p class="small">Das kannst du später jederzeit in ⚙️ ändern.</p>`;
+  }
+  _pastList(d) {
+    const past = d.abende.filter((e) => e.closed).slice().reverse();
+    if (!past.length) return "";
+    const [members, strafen] = maps(d);
+    const n = this._allPast ? past.length : 8;
+    return this._gh("history", "#546e7a", "Letzte Abende", String(past.length)) + past.slice(0, n).map((ev) => {
+      const b = billEvening(ev, members, strafen, d.settings);
+      const here = Object.values(b.people).filter((p) => ["play", "watch"].includes(p.status)).length;
+      return `<div class="item click" style="--cc:#fb8c00" data-a="evopen" data-id="${esc(ev.id)}"><div class="n"><b>${esc(fmtDate(ev.date))}</b><div class="meta"><span class="tag">${here} da</span>${ev.no_fines ? `<span class="tag">🙌 Strafen erlassen</span>` : ""}${ev.imported ? `<span class="tag">aus Alle Neune</span>` : ""}${ev.note ? `<span class="tag" data-noicon>${esc(ev.note)}</span>` : ""}</div></div><div class="amt">${this._m(b.total)}</div></div>`;
+    }).join("") + (past.length > n ? `<div class="btnrow"><button class="btn small" data-a="allpast">${ic("chevron-down")}Alle ${past.length} zeigen</button></div>` : "");
+  }
+  _evRunning(d, ev) {
+    const [members, strafen] = maps(d);
+    const b = billEvening(ev, members, strafen, d.settings);
+    const ids = Object.keys(ev.status).sort((x, y) => (members[x]?.guest ? 1 : 0) - (members[y]?.guest ? 1 : 0) || d.members.findIndex((m) => m.id === x) - d.members.findIndex((m) => m.id === y));
+    if (this._sel && !(this._sel in ev.status)) this._sel = null;
+    const sel = this._sel;
+    let h = `<div class="hero" style="--hc:#fb8c00"><div class="lbl">Kegelabend · ${esc(fmtDate(ev.date))}${ev.waiting ? " · ⏳ wartet" : ""}</div><div class="big" style="font-size:1.9em">${this._m(b.total)}</div>
+      <div class="lbl">heute zusammen${b.lane ? ` · Kegelbahn ${money(b.lane)}${b.rules.lane_mode === "kasse" ? " aus der Kasse" : " aufgeteilt"}` : ""}</div></div>`;
+    h += `<div class="evbar">${b.rules.lane_mode === "off" ? "" : `<label class="hrs">${ic("timer-outline")}<input data-a="evhours" inputmode="decimal" value="${numDe(ev.hours || 0)}" aria-label="Stunden Kegelbahn"> Std.</label>`}
+      <button class="btn small" data-a="guest">${ic("account-plus-outline")}Gast</button>
+      <label class="switch" style="border:0;padding:0 4px"><span>${ic("hand-okay")}Strafen erlassen</span><input type="checkbox" class="swchk" data-a="nofines" ${ev.no_fines ? "checked" : ""}></label></div>`;
+    if (this._guestPick) {
+      const known = d.members.filter((m) => m.guest && m.active !== false && !(m.id in ev.status));
+      const back = d.members.filter((m) => !m.guest && !(m.id in ev.status) && m.active !== false);
+      h += `<div class="edit"><b>Wer kommt dazu?</b>${known.length || back.length ? `<div class="quick" style="flex-wrap:wrap">${[...back, ...known].map((m) => `<button class="chip" data-a="guestadd" data-id="${esc(m.id)}" data-noicon>${esc(m.name)}</button>`).join("")}</div>` : ""}
+        <form class="add pinf" data-a="guestnew"><input name="name" placeholder="Neuer Gast: Name" autocomplete="off"><button class="addbtn" type="submit" title="Gast dazu">${ic("plus")}</button></form>
+        <div class="btnrow end"><button class="btn small" data-a="guest">${ic("close")}Fertig</button></div></div>`;
+    }
+    h += this._gh("account-group-outline", "#1e88e5", "Wer war's?", sel ? `<span data-noicon>${esc(members[sel]?.name || "")}</span>` : "Person antippen");
+    h += `<div class="ppl">${ids.map((mid) => {
+      const m = members[mid] || {}, p = b.people[mid], st = STATUS[p.status] || STATUS.play;
+      return `<div class="pp ${sel === mid ? "sel" : ""} ${["excused", "absent"].includes(p.status) ? "off" : ""}" data-a="pick" data-id="${esc(mid)}" role="button">${m.guest ? `<span class="gst">Gast</span>` : ""}<span class="av" style="--ac:${mcol(d, mid)}">${esc(initials(m.name))}</span><span class="nm" data-noicon>${esc(m.name || "?")}</span><span class="sum">${this._m(p.total)}</span>
+        <button class="stbtn" style="--sc:${st.color}" data-a="status" data-id="${esc(mid)}" title="Antippen = weiter: kegelt → schaut zu → abgemeldet → nicht abgemeldet">${ic(st.icon)}${st.label}</button></div>`;
+    }).join("")}</div>`;
+    const fines = d.strafen.filter((s) => s.active !== false);
+    h += this._gh("gavel", "#e53935", sel ? `Strafe für ${esc(members[sel]?.name || "")}` : "Strafen", sel ? "" : "erst Person wählen");
+    h += fines.length ? `<div class="fines">${fines.map((s) => {
+      const n = ev.counts?.[sel]?.[s.id] || 0, pr = ev.prices?.[s.id] || [s.amount, s.payer];
+      return `<button class="fine" data-a="fine" data-id="${esc(s.id)}" ${sel ? "" : "disabled"} title="${esc(s.name)}">${n ? `<span class="cnt">${n}</span>` : ""}<ha-icon icon="${esc(s.icon || "mdi:bowling")}"></ha-icon><b data-noicon>${esc(s.name)}</b><small class="${pr[1] === "others" ? "oth" : ""}">${money(pr[0])}${pr[1] === "others" ? " · alle anderen" : ""}</small></button>`;
+    }).join("")}</div>` : `<div class="empty">Noch keine Strafen – unter „Mitglieder“ anlegen.</div>`;
+    h += this._billHtml(d, ev, b, true);
+    h += `<div class="btnrow"><button class="btn main" data-a="evclose" data-id="${esc(ev.id)}">${ic("flag-checkered")}Abend abschließen</button><button class="btn" data-a="share" data-id="${esc(ev.id)}">${ic("share-variant-outline")}Teilen</button></div>`;
+    return h;
+  }
+  // 🧾 Abrechnung: pro Person Grundbetrag, Strafen (mit −), Summe
+  _billHtml(d, ev, b, live) {
+    const [members, strafen] = maps(d);
+    const ids = Object.keys(b.people).sort((x, y) => b.people[y].total - b.people[x].total);
+    let h = this._gh("receipt-text-outline", "#3949ab", "Abrechnung", this._m(b.total));
+    if (ev.imported) h += `<p class="small">📥 Aus „Alle Neune“ übernommen: Die Beträge sind die, die damals wirklich in die Kasse gebucht wurden.</p>`;
+    h += `<div class="bill">${ids.map((mid) => {
+      const p = b.people[mid], st = STATUS[p.status] || STATUS.play;
+      const chips = Object.entries(p.items).map(([k, n]) => {
+        const [sid, from] = k.split(">"), s = strafen[sid];
+        const label = from ? `${s?.name || "?"} von ${members[from]?.name || "?"}` : s?.name || "?";
+        const canDel = live && !from && !ev.imported;
+        return `<span class="chipx" data-noicon>${esc(label)} ×${n}${canDel ? `<button data-a="minus" data-id="${esc(mid)}" data-v="${esc(sid)}" title="eins weniger" aria-label="eins weniger">−</button>` : ""}</span>`;
+      }).join("");
+      const parts = ev.imported ? [] : [p.fee ? `Grundbetrag ${money(p.fee)}` : "", p.extra ? `nicht abgemeldet ${money(p.extra)}` : "", p.own + p.from_others ? `Strafen ${money(p.own + p.from_others)}` : ev.no_fines && Object.keys(p.items).length ? "Strafen erlassen" : "", p.lane ? `Bahn ${money(p.lane)}` : ""].filter(Boolean);
+      return `<div class="item" style="--cc:${st.color}"><div class="n"><b data-noicon>${esc(members[mid]?.name || "?")}</b><div class="meta"><span class="tag">${st.label}</span>${parts.map((x) => `<span class="tag">${x}</span>`).join("")}</div>${chips ? `<div class="chips" style="margin-top:3px">${chips}</div>` : ""}</div><div class="amt">${this._m(p.total)}</div></div>`;
+    }).join("")}</div>`;
+    return h;
+  }
+  // 🕘 Alter Abend: ansehen, wieder öffnen, Datum, Strafen erlassen, löschen
+  _evPage(d) {
+    const ev = d.abende.find((e) => e.id === this._evId);
+    const [members, strafen] = maps(d);
+    const b = billEvening(ev, members, strafen, d.settings);
+    const open = !ev.closed;
+    const html = `<div class="evbar"><label style="display:inline-flex;align-items:center;gap:6px">${ic("calendar-outline")}<input type="date" data-a="evdate" value="${esc(ev.date)}" style="width:auto"></label>
+        ${ev.imported ? "" : `<label class="switch" style="border:0;padding:0 4px"><span>${ic("hand-okay")}Strafen erlassen</span><input type="checkbox" class="swchk" data-a="nofines" data-id="${esc(ev.id)}" ${ev.no_fines ? "checked" : ""}></label>`}</div>
+      <div class="f" style="margin:0 2px 8px"><label class="wide">Notiz (z. B. Kegeltour)<input data-a="evnote" value="${esc(ev.note || "")}"></label></div>
+      ${b.lane ? `<p class="small">Kegelbahn: ${numDe(ev.hours)} Std. = ${money(b.lane)}${b.rules.lane_mode === "kasse" ? " aus der Kasse" : " auf die Anwesenden aufgeteilt"}</p>` : ""}
+      ${this._billHtml(d, ev, b, false)}
+      <div class="btnrow">${open ? "" : ev.imported ? "" : `<button class="btn" data-a="evreopen" data-id="${esc(ev.id)}">${ic("lock-open-variant-outline")}Wieder öffnen</button>`}
+      <button class="btn" data-a="share" data-id="${esc(ev.id)}">${ic("share-variant-outline")}Teilen</button>
+      <button class="btn" data-a="evdel" data-id="${esc(ev.id)}">${ic("delete-outline")}Löschen</button></div>`;
+    return { icon: "bowling", color: "#fb8c00", title: `Kegelabend ${fmtDate(ev.date)}`, html };
+  }
+  _shareText(d, ev) {
+    const [members, strafen] = maps(d);
+    const b = billEvening(ev, members, strafen, d.settings);
+    const lines = [`🎳 Kegelabend ${fmtDate(ev.date)}${ev.note ? ` – ${ev.note}` : ""}`, ""];
+    for (const [mid, p] of Object.entries(b.people).sort((x, y) => y[1].total - x[1].total)) lines.push(`${members[mid]?.name || "?"}: ${money(p.total)}${p.status !== "play" ? ` (${STATUS[p.status]?.label})` : ""}`);
+    lines.push("", `Zusammen: ${money(b.total)}`);
+    if (ev.no_fines) lines.push("🙌 Strafen erlassen");
+    lines.push(`🏦 Kasse jetzt: ${money(d.summary.kasse)}`);
+    return lines.join("\n");
+  }
+
+  // ---------------------------------------------------------------- 🏦 Kasse
+  _kasseView(d) {
+    const s = d.summary;
+    const hc = s.kasse < 0 ? "var(--kc-red)" : "var(--kc-green)";
+    let h = `<div class="hero" style="--hc:${hc}"><div class="lbl">Kegelkasse</div><div class="big kasse" data-a="hide">${this._mv(s.kasse, "kasse")}</div></div>
+      <div class="tiles"><div class="tile"><span>${ic("account-clock-outline")}Noch offen</span><b>${this._m(s.open, s.open ? "neg" : "")}</b></div>
+      <div class="tile"><span>${ic("scale-balance")}Soll</span><b>${this._mv(s.soll, "soll")}</b></div>
+      <div class="tile"><span>${ic("bowling")}Kegelbahn</span><b>${this._m(s.lane_total)}</b></div></div>`;
+    const debtors = s.people.filter((p) => p.debt > 0.004).sort((a, b) => b.debt - a.debt);
+    h += this._gh("account-cash-outline", "var(--kc-red)", "Wer schuldet was", debtors.length ? this._m(s.open, "neg") : "");
+    h += debtors.length ? debtors.map((p) => this._open?.kind === "pay" && this._open.id === p.id ? this._payForm(p)
+      : `<div class="item click" style="--cc:${mcol(d, p.id)}" data-a="open" data-k="pay" data-id="${esc(p.id)}" title="Antippen = Teilbetrag"><div class="n"><b data-noicon>${esc(p.name)}</b><div class="meta">${p.guest ? `<span class="tag">Gast</span>` : ""}<span class="tag">bezahlt ${money(p.paid)}</span></div></div><div class="amt">${this._m(p.debt, "neg")}</div>
+        <button class="iconbtn okbtn" data-a="payall" data-id="${esc(p.id)}" title="✓ Hat alles bezahlt" aria-label="bezahlt">${ic("check-bold")}${this._lb("bezahlt")}</button></div>`).join("") : `<div class="empty">Alle haben bezahlt 🎉</div>`;
+    const credit = s.people.filter((p) => p.debt < -0.004);
+    if (credit.length) h += `<p class="small">Guthaben: ${credit.map((p) => `<span data-noicon>${esc(p.name)}</span> ${money(-p.debt)}`).join(" · ")}</p>`;
+    // ＋ Einzahlung / − Ausgabe
+    const mem = d.members.filter((m) => m.active !== false);
+    h += this._gh("swap-vertical", "#1e88e5", "Buchen", "");
+    h += `<div class="seg" style="margin:0 2px 6px"><button class="${this._kform === "in" ? "on" : ""}" data-a="kform" data-v="in">＋ Einzahlung</button><button class="${this._kform === "out" ? "on" : ""}" data-a="kform" data-v="out">− Ausgabe</button></div>
+      <form class="edit" data-a="kadd"><div class="f">${this._kform === "in" ? `<label>Von wem?<select name="member"><option value="">– niemand (sonstige Einnahme) –</option>${mem.map((m) => `<option value="${esc(m.id)}" data-user>${esc(m.name)}</option>`).join("")}</select></label>` : ""}
+        <label ${this._kform === "in" ? "" : `class="wide"`}>Wofür?<input name="name" placeholder="${this._kform === "in" ? "Einzahlung" : "z. B. Kegelfahrt, Essen"}" autocomplete="off"></label>
+        <label>Betrag (${KC_MONEY.sym})<input name="amount" inputmode="decimal" autocomplete="off"></label>
+        <label>Datum<input name="date" type="date" value="${todayIso()}"></label></div>
+        <div class="btnrow end"><button class="btn main" type="submit">${ic("check")}Buchen</button></div></form>`;
+    const list = d.kasse.slice().sort((a, b) => (b.ts || 0) - (a.ts || 0));
+    const n = this._allK ? list.length : 25;
+    h += this._gh("format-list-bulleted", "#546e7a", "Buchungen", String(list.length));
+    h += list.slice(0, n).map((k) => `<div class="item" style="--cc:${k.kind === "out" ? "var(--kc-red)" : "var(--kc-green)"}"><div class="n"><b data-noicon>${esc(k.name)}</b><div class="meta"><span class="tag">${k.ts ? new Date(k.ts).toLocaleDateString(kcLoc(), { day: "2-digit", month: "2-digit", year: "2-digit" }) : ""}</span>${k.member ? `<span class="tag" data-noicon>${esc(this._name(d, k.member))}</span>` : ""}${k.waiting || this._queue.some((o) => (o.id || o.op_id) === k.id) ? `<span class="tag wait">⏳ wartet</span>` : ""}${k.imported ? `<span class="tag">Alle Neune</span>` : ""}</div></div>
+      <div class="amt">${this._m(k.kind === "out" ? -k.amount : k.amount, k.kind === "out" ? "neg" : "pos")}</div>${k.imported ? "" : `<button class="iconbtn" data-a="kdel" data-id="${esc(k.id)}" title="Löschen">${ic("close")}${this._lb("löschen")}</button>`}</div>`).join("")
+      + (list.length > n ? `<div class="btnrow"><button class="btn small" data-a="allk">${ic("chevron-down")}Alle ${list.length} zeigen</button></div>` : "")
+      + (list.length ? "" : `<div class="empty">Noch keine Buchungen.</div>`);
+    return h;
+  }
+  _payForm(p) {
+    return `<form class="edit" data-a="paypart" data-id="${esc(p.id)}"><div class="f"><label class="wide"><span data-noicon>${esc(p.name)}</span> zahlt (${KC_MONEY.sym})<input name="amount" inputmode="decimal" autocomplete="off" value="${numDe(p.debt)}"></label></div>
+      <div class="btnrow end"><button type="button" class="btn" data-a="cancel">${ic("close")}Abbrechen</button><button class="btn main" type="submit">${ic("check")}Einzahlen</button></div></form>`;
+  }
+
+  // ---------------------------------------------------------------- 📊 Statistik
+  _statsView(d) {
+    const y = this._year, st = yearStats(d, y);
+    const [members, strafen] = maps(d);
+    let h = `<div class="yearnav"><button class="iconbtn" data-a="year" data-v="-1" title="Jahr davor">${ic("chevron-left")}</button><span>${y}</span><button class="iconbtn" data-a="year" data-v="1" title="Jahr danach">${ic("chevron-right")}</button></div>`;
+    if (!st.evs.length) return h + `<div class="empty">In ${y} gab es keinen Kegelabend.</div>`;
+    h += `<p class="small" style="text-align:center">${st.evs.length} Kegelabende</p>`;
+    // 👑 Könige: pro Strafe, wer am häufigsten
+    const kings = Object.entries(st.kings).map(([sid, per]) => { const top = Object.entries(per).sort((a, b) => b[1] - a[1])[0]; return top && strafen[sid] ? { s: strafen[sid], mid: top[0], n: top[1] } : null; }).filter(Boolean).sort((a, b) => b.n - a.n);
+    if (kings.length) h += this._gh("crown-outline", "#f9a825", "Könige", "") + `<div class="kings">${kings.map((k) => `<div class="tile"><span><ha-icon icon="${esc(k.s.icon || "mdi:bowling")}"></ha-icon><span data-noicon>${esc(k.s.name)}</span></span><b data-noicon>${esc(String(members[k.mid]?.name || "?").split(" ")[0])} · ${k.n}×</b></div>`).join("")}</div>`;
+    // 📊 Säulen: Strafen pro Person
+    const pp = Object.entries(st.perPerson).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]).slice(0, 12);
+    if (pp.length) {
+      const max = Math.max(...pp.map((x) => x[1]), 1);
+      h += this._gh("chart-bar", "#1e88e5", `Strafen pro Person (${KC_MONEY.sym})`, "") + `<div class="stbar">${pp.map(([mid, v]) => `<div class="c"><span>${numDe(r2(v))}</span><i style="height:${Math.max(3, (v / max) * 120).toFixed(0)}px;--bc:${mcol(d, mid)}"></i></div>`).join("")}</div>
+        <div class="stlbl">${pp.map(([mid]) => `<span data-noicon>${esc(String(members[mid]?.name || "?").split(" ")[0])}</span>`).join("")}</div>`;
+    }
+    // 🥧 Kuchen: Strafen nach Art (Anzahl)
+    const pt = Object.entries(st.perType).filter(([sid, n]) => n > 0 && strafen[sid]).sort((a, b) => b[1] - a[1]);
+    if (pt.length) {
+      const tot = pt.reduce((s, x) => s + x[1], 0);
+      let acc = 0;
+      const grad = pt.map(([, n], i) => { const a0 = acc; acc += (n / tot) * 100; return `${PIE[i % PIE.length]} ${a0.toFixed(2)}% ${acc.toFixed(2)}%`; }).join(",");
+      h += this._gh("chart-pie", "#fb8c00", "Strafen nach Art", `${tot}×`) + `<div class="pie"><div class="disc" style="background:conic-gradient(${grad})"></div><div class="lg">${pt.map(([sid, n], i) => `<div><i style="background:${PIE[i % PIE.length]}"></i><span data-noicon>${esc(strafen[sid].name)}</span> ${n}× · ${Math.round((n / tot) * 100)} %</div>`).join("")}</div></div>`;
+    }
+    // 📈 Linie: Kasse übers Jahr
+    if (st.line.length > 1) {
+      const vals = st.line.map((x) => x[1]), mn = Math.min(...vals), mx = Math.max(...vals), span = mx - mn || 1;
+      const W = 320, H = 90, px = (m) => (m / 11) * (W - 20) + 10, py = (v) => H - 10 - ((v - mn) / span) * (H - 24);
+      h += this._gh("chart-line", "#43a047", "Kasse übers Jahr", this._m(vals[vals.length - 1])) + `<svg viewBox="0 0 ${W} ${H + 14}" style="width:100%;height:auto;margin:4px 0"><polyline fill="none" stroke="#43a047" stroke-width="3" stroke-linejoin="round" points="${st.line.map(([m, v]) => `${px(m).toFixed(1)},${py(v).toFixed(1)}`).join(" ")}"/>${st.line.map(([m, v]) => `<circle cx="${px(m).toFixed(1)}" cy="${py(v).toFixed(1)}" r="3" fill="#43a047"/>`).join("")}${st.line.map(([m]) => `<text x="${px(m).toFixed(1)}" y="${H + 10}" font-size="9" text-anchor="middle" fill="currentColor" opacity=".6">${(KC_LANG === "en" ? MONTHS_EN : MONTHS)[m]}</text>`).join("")}</svg>`;
+    }
+    // 🙋 Anwesenheit
+    const at = Object.entries(st.attend).sort((a, b) => b[1] - a[1]);
+    if (at.length) h += this._gh("account-check-outline", "#00897b", "Anwesenheit", "") + `<table>${at.map(([mid, n]) => `<tr><td data-noicon>${esc(members[mid]?.name || "?")}</td><td>${n} / ${st.evs.length}</td></tr>`).join("")}</table>`;
+    return h;
+  }
+
+  // ---------------------------------------------------------------- 👥 Mitglieder & Strafen
+  _editView(d) {
+    const row = (kind, it, meta, sortable) => this._open?.kind === kind && this._open.id === it.id ? this._form(d, kind, it)
+      : `<div class="item click ${it.active === false ? "done" : ""}" data-a="open" data-k="${kind}" data-id="${esc(it.id)}" ${sortable ? `data-row="${esc(it.id)}"` : ""} ${kind === "member" ? `style="--cc:${mcol(d, it.id)}"` : ""}>${sortable ? `<span class="grip" data-grip="${kind}" title="Ziehen zum Verschieben">${ic("drag")}</span>` : ""}${kind === "strafe" ? `<ha-icon icon="${esc(it.icon || "mdi:bowling")}" style="color:#fb8c00"></ha-icon>` : ""}<div class="n"><b data-noicon>${esc(it.name)}</b>${meta.length ? `<div class="meta">${meta.map((x) => `<span class="tag">${x}</span>`).join("")}</div>` : ""}</div>${kind === "strafe" ? `<div class="amt">${money(it.amount)}</div>` : ""}<span class="iconbtn">${ic("pencil-outline")}</span></div>`;
+    const head = (kind, icon, color, title, extra = "") => this._gh(icon, color, title, `${extra}<button class="btn small" data-a="new" data-k="${kind}">${ic("plus")}Neu</button>`) + (this._open?.kind === kind && this._open.id === "new" ? this._form(d, kind, {}) : "");
+    const act = d.members.filter((m) => !m.guest && m.active !== false), guests = d.members.filter((m) => m.guest && m.active !== false), left = d.members.filter((m) => m.active === false);
+    let h = head("member", "account-group-outline", "#1e88e5", "Mitglieder", "");
+    h += act.length ? `<div class="olist" data-list="member">${act.map((m) => row("member", m, m.note ? [esc(m.note)] : [], true)).join("")}</div>` : `<div class="empty">Noch keine Mitglieder.</div>`;
+    if (guests.length) h += `<div class="gsub">Gäste</div>` + guests.map((m) => row("member", m, ["Gast"], false)).join("");
+    if (left.length) h += `<div class="gsub">Ehemalige / ausgeblendet</div>` + left.map((m) => row("member", m, [m.guest ? "Gast" : "ehemalig"], false)).join("");
+    const fines = d.strafen.filter((s) => s.active !== false), off = d.strafen.filter((s) => s.active === false);
+    h += head("strafe", "gavel", "#e53935", "Strafen (Sündenregister)");
+    h += fines.length ? `<div class="olist" data-list="strafe">${fines.map((s) => row("strafe", s, [s.payer === "others" ? "alle anderen zahlen" : "zahlt er selbst"], true)).join("")}</div>` : `<div class="empty">Noch keine Strafen.<div class="btnrow" style="justify-content:center"><button class="btn small" data-a="template">${ic("clipboard-list-outline")}Beispiel-Strafen laden</button></div></div>`;
+    if (off.length) h += `<div class="gsub">Ausgeblendet</div>` + off.map((s) => row("strafe", s, ["aus"], false)).join("");
+    h += `<p class="small">⠿ Am Griff vorne ziehen = Reihenfolge ändern (so stehen sie auch am Kegelabend). Wer schon bei Abenden dabei war, wird beim Löschen nur ausgeblendet – sonst stimmt die Kasse nicht mehr.</p>`;
+    return h;
+  }
+  _form(d, kind, it) {
+    const isNew = !it.id;
+    const f = [`<label class="wide">Name<input name="name" value="${esc(it.name || "")}" required autocomplete="off"></label>`];
+    if (kind === "member") {
+      f.push(`<label class="wide">Notiz<input name="note" value="${esc(it.note || "")}" placeholder="z. B. Kassenwart"></label>`);
+      f.push(`<label class="wide" style="flex-direction:row;align-items:center;gap:8px"><input type="checkbox" class="swchk" name="guest" ${it.guest ? "checked" : ""}> Gast (kein Mitglied)</label>`);
+    } else {
+      f.push(`<label>Betrag (${KC_MONEY.sym})<input name="amount" inputmode="decimal" value="${it.amount != null ? numDe(it.amount) : ""}"></label>`);
+      const payer = it.payer || "self";
+      f.push(`<label class="wide">Wer zahlt?<div class="seg"><button type="button" data-a="payer" data-v="self" class="${payer === "self" ? "on" : ""}">Er selbst</button><button type="button" data-a="payer" data-v="others" class="${payer === "others" ? "on" : ""}">Alle anderen, die mitkegeln</button></div><input type="hidden" name="payer" value="${payer}"></label>`);
+      const cur = icn(it.icon);
+      f.push(`<label class="wide">Symbol<div class="iconpick">${KC_ICONS.map((x) => `<button type="button" data-a="icon" data-v="${x}" class="${x === cur ? "on" : ""}" title="${x}">${ic(x)}</button>`).join("")}</div><input type="hidden" name="icon" value="mdi:${cur}"></label>`);
+    }
+    if (!isNew) f.push(`<label class="wide" style="flex-direction:row;align-items:center;gap:8px"><input type="checkbox" class="swchk" name="active" ${it.active === false ? "" : "checked"}> ${kind === "member" ? "aktiv (aus = ehemalig, ausgeblendet)" : "aktiv (aus = ausgeblendet)"}</label>`);
+    return `<form class="edit" data-a="save" data-k="${kind}" data-id="${esc(it.id || "")}"><div class="f">${f.join("")}</div>
+      <div class="btnrow end">${isNew ? "" : `<button type="button" class="btn" data-a="del" data-k="${kind}" data-id="${esc(it.id)}">${ic("delete-outline")}Löschen</button>`}
+      <button type="button" class="btn" data-a="cancel">${ic("close")}Abbrechen</button><button class="btn main" type="submit">${ic("check")}Speichern</button></div></form>`;
+  }
+  _removeWithUndo(kind, id, label) {
+    const d = this._data, key = kind === "kasse" ? "kasse" : kind === "abend" ? "abende" : KIND[kind];
+    const idx = d[key].findIndex((x) => x.id === id);
+    if (idx < 0) return;
+    const item = JSON.parse(JSON.stringify(d[key][idx]));
+    delete item.waiting;
+    clearTimeout(this._undoT);
+    this._undo = { label: `${label}${item.name ? `: „${item.name}“` : ""}`, op: { type: "restore", kind, item, index: idx } };
+    this._undoT = setTimeout(() => { this._undo = null; this._force = true; this._render(); }, 8000);
+    this._send({ type: kind === "kasse" ? "kasse_delete" : kind === "abend" ? "abend_delete" : `${kind}_delete`, id });
+  }
+  _sendOrder(listEl) {
+    const kind = listEl.dataset.list, ids = [];
+    for (const el of listEl.children) if (el.dataset.row) ids.push(el.dataset.row);
+    const d = this._data, rest = d[KIND[kind]].filter((x) => !ids.includes(x.id)).map((x) => x.id);
+    this._send({ type: "order", kind, ids: [...ids, ...rest] });
+  }
+  _startDrag(grip, ev) {
+    const row = grip.closest("[data-row]"), list = row?.parentElement;
+    if (!row || !list) return;
+    ev.preventDefault(); ev.stopPropagation();
+    this._dragging = true;
+    row.classList.add("drag");
+    const before = [...list.children].map((x) => x.dataset.row || "-").join();
+    const move = (e) => {
+      const y = e.clientY;
+      const others = [...list.children].filter((x) => x !== row && x.dataset.row);
+      let target = null;
+      for (const o of others) { const r = o.getBoundingClientRect(); if (y < r.top + r.height / 2) { target = o; break; } }
+      if (target) { if (target !== row.nextElementSibling) list.insertBefore(row, target); }
+      else if (row !== list.lastElementChild) list.appendChild(row);
+    };
+    const up = () => {
+      window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); window.removeEventListener("pointercancel", up);
+      row.classList.remove("drag");
+      this._dragging = false; this._dragEnd = Date.now();
+      const after = [...list.children].map((x) => x.dataset.row || "-").join();
+      if (after !== before) this._sendOrder(list); else if (this._pending) { this._pending = false; this._force = true; this._render(); }
+    };
+    window.addEventListener("pointermove", move); window.addEventListener("pointerup", up); window.addEventListener("pointercancel", up);
+  }
+
+  // ---------------------------------------------------------------- 📖 Anleitung, Neuigkeiten, Credits
+  _guideView() {
+    const sec = (emo, title, sub, body) => `<details class="elg-sec"><summary><span class="elg-ic">${emo}</span><span class="elg-tt"><b>${title}</b>${sub ? `<small>${sub}</small>` : ""}</span></summary><div>${body}</div></details>`;
+    return `<div class="elg"><h2>🎳 So funktioniert der Kegelclub</h2>
+      <p class="elg-sub">Tipp auf eine Überschrift klappt sie auf. Diese Anleitung findest du immer über den Knopf <b>📖 Anleitung</b> ganz unten unter der Karte.</p>
+      <input type="search" class="elg-q" placeholder="🔎 In dieser Anleitung suchen, z. B. Gast" aria-label="In dieser Anleitung suchen" autocomplete="off" enterkeyhint="search"><p class="elg-none" hidden>Nichts gefunden 🤷 – versuch ein anderes Wort.</p>
+      ${sec("🆕", "Was ist neu", "die letzten Neuerungen", this._newsHtml())}
+      ${KC_GUIDE.map((g, i) => sec(GUIDE_EMO[i] || "📌", g.title, GUIDE_SUB[i] || "", g.text)).join("")}
+      ${sec("🙏", "Credits", "wer das gemacht hat", this._creditsHtml())}</div>`;
+  }
+  _newsHtml() {
+    if (KC_LANG === "en") return `<div class="betabox" translate="no"><b>${/-beta/.test(KC_VERSION) ? "🧪 You are on beta" : "Version"} ${KC_VERSION}</b><p class="small" style="margin:4px 0 2px">The release notes are written in German. You find them on <a href="${REPO}/releases" target="_blank" rel="noopener">GitHub → Releases</a>.</p></div>`;
+    const li = (t) => `<ul>${t.split(" · ").map((x) => `<li>${x}</li>`).join("")}</ul>`;
+    const cur = KC_NEWS.find((n) => n[0] === KC_VERSION);
+    const beta = /-beta/.test(KC_VERSION) && cur ? `<div class="betabox"><b>🧪 Du bist in der Beta ${KC_VERSION}</b><p class="small" style="margin:4px 0 2px">Neu in dieser Beta:</p>${li(cur[1])}</div>` : "";
+    return `${beta}<p class="small">Das Neueste steht oben.</p>${KC_NEWS.filter((n) => n !== cur).map((n) => `<p style="margin:10px 0 0"><b>v${n[0]}</b></p>${li(n[1])}`).join("")}`;
+  }
+  _creditsHtml() {
+    return `<p class="small" style="margin-top:2px">Kegelclub <b>v${KC_VERSION}</b> · von <b>Mister-M</b> · <a href="${REPO}" target="_blank" rel="noopener">GitHub</a> · <a href="${REPO}/issues" target="_blank" rel="noopener">Fehler melden</a></p>
+      <p class="small">Der Kegelclub ist und bleibt <b>kostenlos</b>. Wenn du magst, kannst du mir ganz freiwillig eine kleine Spende schicken – die nächste Runde geht auf dich. 🍻</p>
+      <div class="btnrow"><a class="btn paypal" href="${PAYPAL}" target="_blank" rel="noopener">${ic("hand-heart-outline")}Spenden per PayPal</a></div>
+      <p class="small">Symbole: Material Design Icons (Pictogrammers, frei). Lizenz: MIT. Nicht verbunden mit der App „Alle Neune“ – der Import liest nur deren Export-Datei.</p>`;
+  }
+
+  // ---------------------------------------------------------------- 🔢 PIN
+  _padPage(d) {
+    const p = this._pad;
+    const what = this._view === "set" ? "⚙️ Einstellungen" : "Mitglieder";
+    const t = {
+      unlock: ["PIN eingeben", this._lockAll ? "Der Kegelclub ist gesperrt. Mit der PIN geht's weiter." : `Für <b>${what}</b> brauchst du die PIN. Strafen buchen geht auch ohne.`],
+      old: ["Alte PIN", p.purpose === "off" ? "Zum Ausschalten erst die jetzige PIN eintippen." : "Erst die jetzige PIN eintippen."],
+      new: ["Neue PIN", "4 bis 8 Ziffern, dann ✔."],
+      new2: ["Neue PIN nochmal", "Zur Sicherheit noch einmal dieselbe PIN."],
+    }[p.step];
+    const keys = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "⌫", "0", "✔"];
+    return { icon: "lock-outline", color: "#f4511e", title: t[0], html: `<div class="pinpad"><p class="small">${t[1]}</p>
+      <div class="pdots">${p.buf ? "●".repeat(p.buf.length) : "&nbsp;"}</div>
+      <div class="ppad">${keys.map((k) => `<button type="button" class="btn ${k === "✔" ? "primary" : ""}" data-a="pkey" data-v="${k}" aria-label="${k === "⌫" ? "Löschen" : k === "✔" ? "OK" : k}">${k}</button>`).join("")}</div>
+      ${this._lockAll ? "" : `<button type="button" class="btn pcancel" data-a="back">Abbrechen</button>`}
+      ${p.step === "unlock" ? `<p class="small" style="margin-top:16px">PIN vergessen? Ein Admin geht in Home Assistant auf <b>Einstellungen → Geräte & Dienste → Kegelclub → Konfigurieren</b> und hakt <b>„PIN zurücksetzen“</b> an.</p>` : ""}</div>` };
+  }
+  _padPress(k) {
+    const p = this._pad;
+    if (!p) return;
+    try { navigator.vibrate?.(12); } catch (_) { /* egal */ }
+    if (k === "⌫") p.buf = p.buf.slice(0, -1);
+    else if (k === "✔") { if (p.buf.length >= 4) this._padNext(); else this._toast("Die PIN hat 4 bis 8 Ziffern"); }
+    else if (/^\d$/.test(k) && p.buf.length < 8) p.buf += k;
+    this._force = true; this._render();
+  }
+  _padNext() {
+    const p = this._pad, v = p.buf;
+    p.buf = "";
+    const redraw = () => { this._force = true; this._render(); };
+    const restart = () => { if (this._pad === p) { p.step = p.purpose === "unlock" ? "unlock" : this._data?.pin ? "old" : "new"; p.buf = ""; } redraw(); };
+    const setPin = (pin) => this._pin("kegelclub/pin/set", { pin, old: p.old || null }).then((r) => {
+      if (!r) { restart(); return; }
+      PIN_LOCK.until = pin ? Date.now() + 10 * 60 * 1000 : 0;
+      this._toast(pin ? "🔒 PIN gespeichert" : "🔓 PIN ist aus");
+      this._pad = null; redraw();
+    });
+    if (p.step === "unlock") {
+      this._pin("kegelclub/pin/check", { pin: v }).then((r) => {
+        if (r?.ok) { PIN_LOCK.until = Date.now() + 10 * 60 * 1000; this._pad = null; this._toast("🔓 Entsperrt"); }
+        else if (r) this._toast("❌ Falsche PIN");
+        redraw();
+      });
+    } else if (p.step === "old") { p.old = v; if (p.purpose === "off") setPin(null); else p.step = "new"; }
+    else if (p.step === "new") { p.neu = v; p.step = "new2"; }
+    else if (p.step === "new2") { if (v === p.neu) setPin(v); else { this._toast("Die zwei PINs sind nicht gleich – bitte nochmal"); p.step = "new"; } }
+  }
+  _pinSetHtml(d) {
+    return `<p class="small">${d.pin ? "🔒 PIN ist <b>an</b>. ⚙️ und „Mitglieder“ fragen nach der PIN." : "Mit einer PIN (4–8 Ziffern) sperrst du ⚙️ und „Mitglieder“, z. B. auf dem Tablet am Kegeltisch. Strafen buchen und die Kasse ansehen gehen weiter ohne PIN."}</p>
+      <div class="btnrow">${d.pin ? `<button class="btn main" data-a="padstart" data-v="set">${ic("lock-reset")}PIN ändern</button><button class="btn" data-a="padstart" data-v="off">${ic("lock-open-variant-outline")}PIN ausschalten</button>` : `<button class="btn main" data-a="padstart" data-v="set">${ic("lock-outline")}PIN einschalten</button>`}</div>
+      ${d.pin ? `<label class="switch"><span>${ic("lock-outline")}<span class="vt"><b>Ganze Karte sperren</b><small>Aus = nur ⚙️ und Mitglieder. An = ohne PIN sieht man gar nichts.</small></span></span><input type="checkbox" class="swchk" data-a="set" data-v="lock_all" ${d.settings.lock_all ? "checked" : ""}></label>` : ""}
+      <p class="small">Die PIN liegt nur als Prüfsumme in Home Assistant. Vergessen? Admin → <b>Geräte & Dienste → Kegelclub → Konfigurieren → „PIN zurücksetzen“</b>. 5× falsch = 1 Minute Pause.</p>`;
+  }
+  async _pin(type, payload) {
+    if (this._hass?.connected === false) { this._toast("📴 Die PIN wird in Home Assistant geprüft – dafür braucht es Netz"); return null; }
+    try { return await this._hass.callWS({ type, ...payload, ...this._bk() }); }
+    catch (err) { this._toast("⚠️ " + (err?.message || "Ging nicht")); return null; }
+  }
+
+  // ---------------------------------------------------------------- ⚙️ Einstellungen (wie bei der Einkaufsliste)
+  _sw(key, icon, title, sub, on) { return `<label class="switch"><span>${ic(icon)}<span class="vt"><b>${title}</b>${sub ? `<small>${sub}</small>` : ""}</span></span><input type="checkbox" class="swchk" data-a="set" data-v="${key}" ${on ? "checked" : ""}></label>`; }
+  _num(key, icon, title, val, unit) { return `<div class="switch"><span>${ic(icon)}${title}</span><span><input data-a="setnum" data-v="${key}" inputmode="decimal" value="${numDe(val ?? 0)}" style="width:90px;text-align:right"> ${unit}</span></div>`; }
+  _sheets(d) {
+    const st = d.settings, admin = this._hass?.user?.is_admin !== false;
+    const lane = { kasse: "aus der Kasse", split: "aufgeteilt", off: "nicht erfasst" }[st.lane_mode] || "";
+    return {
+      rules: { icon: "cash-multiple", color: "#43a047", title: "Regeln & Beträge", info: `${money(st.base_fee)} pro Person · Bahn ${lane}`, html: () => `
+        <p class="small">Gilt ab sofort und auch für den laufenden Abend. Abgeschlossene Abende bleiben, wie sie waren.</p>
+        ${this._num("base_fee", "cash", "Grundbetrag pro Person und Abend", st.base_fee, KC_MONEY.sym)}
+        ${this._sw("watch_pays", "glass-mug-variant", "Zuschauer zahlen den Grundbetrag", "da, kegelt aber nicht", st.watch_pays !== false)}
+        ${this._sw("missing_pays", "account-cancel-outline", "Fehlende Mitglieder zahlen den Grundbetrag", "abgemeldet oder nicht – Gäste nie", st.missing_pays !== false)}
+        ${this._num("unexcused_extra", "account-alert-outline", "Extra, wenn nicht abgemeldet", st.unexcused_extra, KC_MONEY.sym)}
+        <div class="switch"><span>${ic("bowling")}Kegelbahn</span><span class="seg">${[["kasse", "aus der Kasse"], ["split", "aufteilen"], ["off", "aus"]].map(([v, t]) => `<button class="${st.lane_mode === v ? "on" : ""}" data-a="lane" data-v="${v}">${t}</button>`).join("")}</span></div>
+        ${st.lane_mode === "off" ? "" : this._num("lane_rate", "timer-outline", "Kegelbahn pro Stunde", st.lane_rate, KC_MONEY.sym) + this._num("lane_hours", "timer-sand", "Stunden-Vorschlag für neue Abende", st.lane_hours, "Std.")}
+        ${this._num("start_balance", "piggy-bank-outline", "Kassenstand am Anfang", st.start_balance, KC_MONEY.sym)}
+        <div class="switch"><span>${ic("cash-multiple")}Währung</span><select data-a="setcur" style="width:auto;max-width:60%">${Object.entries(KC_CUR).map(([c, n]) => `<option value="${c}" ${(st.currency || "EUR") === c ? "selected" : ""}>${n}</option>`).join("")}</select></div>
+        <p class="small">Die Währung ändert nur Zeichen und Schreibweise – es wird <b>nichts umgerechnet</b>.</p>` },
+      imp: { icon: "database-import-outline", color: "#1e88e5", title: "Import & Sicherung", info: admin ? "Alle Neune, Sicherung, CSV" : "nur Admins", html: () => admin ? this._importHtml(d) : `<p class="small">Nur für Admins.</p>` },
+      app: { icon: "cellphone-arrow-down", color: "#3949ab", title: "Offline-App", info: "auch ohne Netz auf der Bahn", html: () => `
+        <p class="small">Eine eigene kleine App nur für den Kegelclub. Sie öffnet sich auch <b>ohne Netz</b>, zeigt den letzten Stand, lässt dich Strafen buchen und schickt alles nach, sobald wieder Netz da ist.</p>
+        <ol class="small steps"><li>Auf dem Handy im <b>Browser</b> (Chrome oder Safari, nicht in der HA-App) die Adresse unten öffnen.</li><li>Einmal mit deinem Home-Assistant-Benutzer <b>anmelden</b>.</li><li>Im Browser-Menü <b>„Zum Startbildschirm hinzufügen“</b> – fertig, eigenes 🎳-Symbol.</li></ol>
+        <p class="small">Unten in der App: <b>„👆 Fingerabdruck-Sperre“</b>. <b>Abmelden</b> meldet nur das Handy ab – in Home Assistant bleibt alles. Es braucht eine <b>https</b>-Adresse (z. B. Nabu Casa).</p>
+        ${d.app_url ? `<p class="small"><b>Deine Adresse für die App:</b></p><input id="appUrl" readonly value="${esc(d.app_url)}" translate="no"><div class="btnrow"><button class="btn main" data-a="appcopy">${ic("content-copy")}Kopieren</button></div>`
+        : `<p class="small">⚠️ Home Assistant kennt keine https-Adresse für unterwegs. Mit <b>Nabu Casa</b> oder einer eigenen https-Adresse klappt es. Zu Hause geht auch: <code>${esc(location.origin)}/kegelclub/app/</code></p>`}` },
+      pin: { icon: d.pin ? "lock-outline" : "lock-open-variant-outline", color: "#f4511e", title: "Schutz", info: d.pin ? "PIN ist an" : "PIN fürs Zahnrad", html: () => this._pinSetHtml(d) },
+      privacy: { icon: "shield-lock-outline", color: "#455a64", title: "Datenschutz", info: "alles lokal", html: () => `<p class="small">🔒 Namen, Strafen und Kasse bleiben in <b>deinem</b> Home Assistant. Keine Cloud, kein Tracking, nichts geht ins Internet. In der Offline-App liegt zusätzlich eine Kopie im Handy, bis du dich abmeldest.</p>` },
+      factory: { icon: "nuke", color: "#b71c1c", title: "Werkseinstellungen", info: admin ? "alles zurücksetzen" : "nur Admins", html: () => admin ? `
+        <p><b>💣 Werkseinstellungen</b><br>Löscht <b>wirklich alles</b>: Mitglieder, Gäste, Strafen, alle Abende, die ganze Kasse und alle Schalter. Nur die <b>PIN</b> bleibt. <b>Das geht nicht rückgängig</b> – vorher unter „Import &amp; Sicherung“ → „Sicherung speichern“.</p>
+        <div class="btnrow"><button class="btn danger" data-a="factory">${ic("nuke")}Werkseinstellungen – alles löschen</button></div>` : `<p class="small">💣 Werkseinstellungen gibt es nur für Admins.</p>` },
+      log: { icon: "history", color: "#5e35b1", title: "Verlauf", info: st.log_on === false ? "aus" : `${(d.log || []).length} Einträge · wer, wann, was`, html: () => this._logHtml(d, admin) },
+      view: { icon: "eye-outline", color: "#00897b", title: "Ansicht – für alle", info: (() => { const n = KC_VIEW.filter(([k]) => (st.view || {})[k] === false).length; return n ? `${n} ausgeblendet` : "alles sichtbar"; })(), html: () => `
+        <p class="small">Gilt für <b>alle</b> – auf allen Handys, im Dashboard und in der App.</p>
+        ${this._sw("veil", "eye-off-outline", "Kassenstand verschleiern", "PC: Maus drüber · Handy: antippen = 4 Sekunden sichtbar", !!st.veil)}
+        ${KC_VIEW.map(([k, i, t, sub]) => `<label class="switch"><span>${ic(i)}<span class="vt"><b>${t}</b><small>${sub}</small></span></span><input type="checkbox" class="swchk" data-a="setview" data-v="${k}" ${(st.view || {})[k] !== false ? "checked" : ""}></label>`).join("")}` },
+      labels: { icon: "format-text", color: "#546e7a", title: "Beschriftungen", info: st.labels ? "an – für alle" : "aus", html: () => `
+        ${this._sw("labels", "format-text", "Beschriftungen anzeigen", "", !!st.labels)}
+        <p class="small">Zeigt unter den kleinen Symbol-Knöpfen einen kurzen Text. Auch ohne den Schalter gilt: <b>Länger auf ein Symbol drücken</b> zeigt kurz, was es macht.</p>` },
+      calm: { icon: "meditation", color: "#5c6bc0", title: "Ruhiger Modus", info: store.get(CALMKEY, false) ? "an – nur dieses Gerät" : "aus", html: () => `
+        <label class="switch"><span>${ic("meditation")}Ruhiger Modus</span><input type="checkbox" class="swchk" data-a="setcalm" ${store.get(CALMKEY, false) ? "checked" : ""}></label>
+        <p class="small">Nur für <b>dieses Gerät</b>. Gedämpfte Farben, keine Animationen – angenehm für alte Tablets.</p>` },
+      ...(this._app ? { theme: { icon: "theme-light-dark", color: "#37474f", title: "Hell / Dunkel", info: { light: "☀️ Hell", dark: "🌙 Dunkel" }[kcTheme()] || "🌓 Automatisch", html: () => `
+        <p class="small">Nur für die Offline-App auf diesem Gerät.</p>
+        <div class="btnrow">${[["auto", "🌓 Automatisch"], ["light", "☀️ Hell"], ["dark", "🌙 Dunkel"]].map(([v, l]) => `<button class="btn ${kcTheme() === v ? "main" : ""}" data-a="theme" data-v="${v}">${l}</button>`).join("")}</div>` } } : {}),
+      check: { icon: "check-decagram-outline", color: "#43a047", title: "Alles ok?", info: "prüfen", html: () => this._checkHtml(d) },
+      errors: { icon: "bug-outline", color: "#e53935", title: "Fehler-Protokoll", info: this._health ? (this._health.errors.length ? `${this._health.errors.length} Meldungen` : "keine Fehler 🎉") : "Meldungen ansehen", html: () => this._errorsHtml() },
+      stats: { icon: "chart-donut", color: "#00897b", title: "Ressourcen", info: "Speicher & Umfang", html: () => this._resHtml(d) },
+      news: { icon: "new-box", color: "#fb8c00", title: "Was ist neu", info: `Version ${KC_VERSION}`, html: () => this._newsHtml() },
+      credits: { icon: "hand-heart-outline", color: "#ec407a", title: "Credits", info: `v${KC_VERSION} · von Mister-M`, html: () => this._creditsHtml() },
+    };
+  }
+  _setView(d) {
+    const sh = this._sheets(d);
+    const cats = [["💶", "Regeln", ["rules"]], ["💾", "Daten", ["imp", "log", "factory"]], ["🩺", "Gesundheit", ["check", "errors", "stats"]], ["👁️", "Ansicht", ["view", "labels", "calm", ...(this._app ? ["theme"] : [])]], ["📱", "App & Info", ["app", "pin", "privacy", "news", "credits"]]];
+    return `<div class="sethead">${ic("cog-outline")}<span>Einstellungen</span></div>` + cats.map(([emo, title, keys]) => {
+      const open = this._setOpen === title;
+      const rows = open ? keys.map((k) => `<button class="lrow" data-a="sheet" data-v="${k}"><span class="ic" style="--ic:${sh[k].color}">${ic(sh[k].icon)}</span><span class="grow"><b>${sh[k].title}</b><small>${esc(sh[k].info)}</small></span>${ic("chevron-right")}</button>`).join("") : "";
+      return `<div class="lgbox"><button class="lgroup" data-a="setgrp" data-v="${esc(title)}" aria-expanded="${open}"><span class="gem">${emo}</span><span class="grow"><b>${title}</b><small>${keys.map((k) => sh[k].title).join(", ")}</small></span>${ic(open ? "chevron-up" : "chevron-down")}</button>${rows}</div>`;
+    }).join("");
+  }
+  _importHtml(d) {
+    const p = this._imp;
+    let prev = "";
+    if (p?.busy) prev = `<div class="preview">⏳ Lese die Datei …</div>`;
+    else if (p?.error) prev = `<div class="preview finding"><b>⚠️ ${esc(p.error)}</b></div>`;
+    else if (p?.res?.format === "alle_neune" && p.res.counts) {
+      const r = p.res, c = r.counts;
+      prev = `<div class="preview"><b>🔍 Gefunden in „${esc(r.club)}“</b><table>
+        <tr><td>Mitglieder</td><td>${c.members}</td></tr><tr><td>Ehemalige</td><td>${c.former}</td></tr><tr><td>Gäste</td><td>${c.guests}</td></tr>
+        <tr><td>Strafen</td><td>${c.strafen}</td></tr><tr><td>Kegelabende</td><td>${c.abende}${r.first ? ` (${fmtDate(r.first, { month: "2-digit", year: "numeric" })} – ${fmtDate(r.last, { month: "2-digit", year: "numeric" })})` : ""}</td></tr>
+        <tr><td>Kassenbuchungen</td><td>${c.kasse}</td></tr><tr><td>Kassenstand laut App</td><td><b>${money(r.kasse_total)}</b></td></tr><tr><td>Grundbetrag</td><td>${money(r.base_fee || 0)}</td></tr></table>
+        <p class="small">Spiele werden nicht übernommen. Die alten Abende zählen nicht als „offen“ – die waren in der App ja schon abgerechnet.${d.abende.length || d.kasse.length ? " <b>Achtung:</b> Was jetzt hier steht (Abende, Kasse, Mitglieder, Strafen) wird <b>ersetzt</b>." : ""}</p>
+        <div class="btnrow"><button class="btn main" data-a="impapply">${ic("check")}Übernehmen</button><button class="btn" data-a="impcancel">${ic("close")}Abbrechen</button></div></div>`;
+    } else if (p?.res?.format === "alle_neune") {
+      const r = p.res;
+      prev = `<div class="preview"><b>🤔 Unbekannte Datenbank</b><p class="small">Die Tabellen kenne ich nicht genau. Gefunden: ${r.members.length} Namen, ${r.strafen.length} Strafen.</p>${r.members.length || r.strafen.length ? `<div class="btnrow"><button class="btn main" data-a="impapply">${ic("check")}Namen und Strafen übernehmen</button><button class="btn" data-a="impcancel">${ic("close")}Abbrechen</button></div>` : ""}</div>`;
+    } else if (p?.res?.format === "sicherung") {
+      const c = p.res.counts;
+      prev = `<div class="preview"><b>💾 Sicherung</b><table><tr><td>Personen</td><td>${c.members}</td></tr><tr><td>Strafen</td><td>${c.strafen}</td></tr><tr><td>Abende</td><td>${c.abende}</td></tr><tr><td>Kassenbuchungen</td><td>${c.kasse}</td></tr></table>
+        <p class="small"><b>Achtung:</b> Alles, was jetzt hier steht, wird durch die Sicherung <b>ersetzt</b>.</p><div class="btnrow"><button class="btn main" data-a="impapply">${ic("check")}Zurückholen</button><button class="btn" data-a="impcancel">${ic("close")}Abbrechen</button></div></div>`;
+    }
+    return `<p class="small"><b>📥 Aus „Alle Neune“ umziehen:</b> In der App die Daten exportieren und die Datei hier wählen. Erst kommt eine <b>Vorschau</b>, geändert wird erst nach „Übernehmen“. Auch eine <b>Sicherung</b> (.json) von hier geht.</p>
+      <input type="file" data-a="impfile" accept=".db,.sqlite,.zip,.json,application/octet-stream,application/json,application/zip">${prev}
+      <p class="small" style="margin-top:14px"><b>💾 Sichern:</b> alles als Datei – damit holst du später alles zurück. Die Kasse gibt es zusätzlich als CSV für Excel.</p>
+      <div class="btnrow"><button class="btn" data-a="backup">${ic("content-save-outline")}Sicherung speichern</button><button class="btn" data-a="csv">${ic("file-delimited-outline")}Kasse als CSV</button></div>`;
+  }
+  _logHtml(d, admin) {
+    const on = d.settings.log_on !== false, log = (d.log || []).slice().reverse();
+    let day = "", rows = "";
+    for (const e of log.slice(0, 150)) {
+      const dt = new Date(e.ts), dk = dt.toLocaleDateString(kcLoc(), { weekday: "short", day: "2-digit", month: "2-digit", year: "numeric" });
+      if (dk !== day) { day = dk; rows += `<div class="logday">${esc(dk)}</div>`; }
+      rows += `<div class="logrow"><span class="lt">${dt.toLocaleTimeString(kcLoc(), { hour: "2-digit", minute: "2-digit" })}</span><span class="lx ${this._hidden ? "hidden-amt" : ""}" data-noicon>${esc(e.text)}</span>${e.by ? `<span class="tag" data-noicon>${esc(e.by)}</span>` : ""}</div>`;
+    }
+    return `${this._sw("log_on", "history", "Verlauf an", "", on)}
+      <p class="small">Merkt sich <b>wer wann was</b> gebucht hat. Die letzten 300 Einträge, nur in deinem Home Assistant.</p>
+      ${log.length ? rows + (log.length > 150 ? `<p class="small">… und ${log.length - 150} ältere.</p>` : "") : `<p class="okmsg">Noch nichts passiert 🙂</p>`}
+      ${admin && log.length ? `<div class="btnrow"><button class="btn" data-a="logclear">${ic("delete-sweep-outline")}Verlauf leeren</button></div>` : ""}`;
+  }
+  _checks(d) {
+    const out = [], day = 86400000;
+    const ev = evFind(d);
+    if (ev && Date.now() - (ev.started || Date.parse(ev.date) || Date.now()) > day) out.push({ t: `Der Kegelabend vom ${fmtDate(ev.date)} läuft noch`, fix: "Vergessen abzuschließen? Im Reiter „Abend“ → „Abend abschließen“." });
+    for (const s of d.strafen.filter((x) => x.active !== false && !x.amount)) out.push({ t: `Strafe „${s.name}“ kostet ${money(0)}`, fix: "Unter „Mitglieder“ → Strafen den Betrag eintragen oder sie ausschalten." });
+    if (!d.members.some((m) => !m.guest && m.active !== false)) out.push({ t: "Es gibt noch keine Mitglieder", fix: "Reiter „Mitglieder“ → ＋ Neu." });
+    if (d.summary.kasse < 0) out.push({ t: `Die Kasse steht im Minus (${money(d.summary.kasse)})`, fix: "Stimmt der Kassenstand am Anfang? ⚙️ → Regeln & Beträge." });
+    const old = d.summary.people.filter((p) => p.debt > 0 && !d.members.find((m) => m.id === p.id && m.active !== false));
+    for (const p of old) out.push({ t: `${p.name} ist ausgeblendet, hat aber noch ${money(p.debt)} offen`, fix: "Reiter „Kasse“ → bei der Person den Haken ✓ antippen, wenn bezahlt." });
+    return out;
+  }
+  _checkHtml(d) {
+    const res = this._checks(d);
+    return `<p class="small">Sucht nach Dingen, die nicht zusammenpassen – mit „so reparierst du's“.</p>
+      ${res.length ? `<p><b>${res.length} ${res.length === 1 ? "Sache" : "Sachen"} gefunden:</b></p>` + res.map((x) => `<div class="finding"><b>⚠️ ${esc(x.t)}</b><div class="small" style="margin:2px 0 0">${x.fix}</div></div>`).join("") : `<p class="okmsg">✅ Alles ok – nichts gefunden. 🎉</p>`}`;
+  }
+  async _loadHealth() {
+    try { this._health = await this._hass.callWS({ type: "kegelclub/health", ...this._bk() }); }
+    catch (_) { this._health = { errors: [], size: 0, counts: {}, offline: true }; }
+    this._force = true; this._render();
+  }
+  _errorsHtml() {
+    const h = this._health;
+    if (!h) return `<p class="small">Lade …</p>`;
+    if (h.offline) return `<p class="small">📴 Das Protokoll liegt in Home Assistant – dafür braucht es Netz.</p>`;
+    return `<p class="small">Hier steht, was beim Speichern nicht geklappt hat. Nur Art und Fehler. Wird beim Neustart von Home Assistant geleert.</p>
+      ${h.errors.length ? h.errors.map((e) => `<div class="finding"><b>${esc(e.error)}</b><div class="small" style="margin:2px 0 0">${new Date(e.ts).toLocaleString(kcLoc())} · ${esc(e.type)}${e.by ? ` · ${esc(e.by)}` : ""}</div></div>`).join("")
+        + `<div class="btnrow"><button class="btn" data-a="errclear">${ic("delete-sweep-outline")}Protokoll leeren</button></div>` : `<p class="okmsg">Keine Fehler 🎉</p>`}`;
+  }
+  _resHtml(d) {
+    const h = this._health;
+    if (!h) return `<p class="small">Lade …</p>`;
+    const kb = (n) => n > 1024 * 1024 ? `${(n / 1048576).toFixed(1).replace(".", ",")} MB` : `${Math.max(1, Math.round(n / 1024))} KB`;
+    const c = h.counts || {};
+    const rows = [["Personen", c.members], ["Strafen", c.strafen], ["Kegelabende", c.abende], ["Kassenbuchungen", c.kasse], ["Verlauf", c.log]];
+    let local = 0;
+    try { for (const k of [this._dk, this._qk, HKEY]) local += (localStorage.getItem(k) || "").length; } catch (_) { /* egal */ }
+    return `${h.offline ? `<p class="small">📴 Ohne Netz sieht man nur den Platz auf diesem Gerät.</p>` : `<table><tr><td>In Home Assistant</td><td><b>${kb(h.size)}</b></td></tr>${rows.map(([l, n]) => `<tr><td>${l}</td><td>${n ?? 0}</td></tr>`).join("")}</table>`}
+      <table><tr><td>Auf diesem Gerät</td><td><b>${kb(local)}</b></td></tr><tr><td>Im Postausgang</td><td>${this._queue.length}</td></tr></table>`;
+  }
+  _sheetPage(d) { const x = this._sheets(d)[this._sheet]; return x ? { icon: x.icon, color: x.color, title: x.title, html: x.html() } : null; }
+
+  // ---------------------------------------------------------------- 👆 Klicks
+  _bind() {
+    const root = this.shadowRoot;
+    root.querySelectorAll("input,textarea,select").forEach((el) => el.addEventListener("blur", () => {
+      setTimeout(() => { if (this._pending && !["INPUT", "TEXTAREA", "SELECT"].includes(root.activeElement?.tagName)) { this._pending = false; this._render(); } }, 150);
+    }));
+    root.querySelectorAll("form").forEach((f) => f.addEventListener("submit", (e) => { e.preventDefault(); this._submit(f); }));
+    const gsecs = [...root.querySelectorAll("details.elg-sec")];
+    let searching = false;
+    gsecs.forEach((x) => x.addEventListener("toggle", () => { if (x.open && !searching) gsecs.forEach((o) => { if (o !== x) o.open = false; }); }));
+    const gq = root.querySelector(".elg-q");
+    if (gq) {
+      const norm = (t) => String(t || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/ß/g, "ss");
+      const texts = gsecs.map((x) => norm(x.textContent));
+      gq.addEventListener("input", () => {
+        const words = norm(gq.value).split(/\s+/).filter(Boolean);
+        searching = words.length > 0;
+        let hits = 0;
+        gsecs.forEach((x, i) => { const hit = !words.length || words.every((w) => texts[i].includes(w)); x.hidden = !hit; x.open = !!words.length && hit; if (hit && words.length) hits++; });
+        root.querySelector(".elg-none").hidden = !words.length || hits > 0;
+      });
+    }
+    root.querySelectorAll("[data-grip]").forEach((g) => { g.addEventListener("pointerdown", (e) => this._startDrag(g, e)); g.addEventListener("click", (e) => e.stopPropagation()); });
+    root.querySelectorAll("[data-a]").forEach((el) => {
+      if (el.tagName === "FORM") return;
+      const ev = el.tagName === "INPUT" || el.tagName === "SELECT" ? "change" : "click";
+      el.addEventListener(ev, (e) => { e.stopPropagation(); this._act(el, e); });
+    });
+  }
+  _undoFor(label, op) {
+    clearTimeout(this._undoT);
+    this._undo = { label, op };
+    this._undoT = setTimeout(() => { this._undo = null; this._force = true; this._render(); }, 8000);
+  }
+  _act(el, e) {
+    const a = el.dataset.a, id = el.dataset.id, d = this._data;
+    const redraw = () => { this._force = true; this._render(); };
+    const ev = d && evFind(d);
+    if (a === "tab") { this._view = el.dataset.v; this._open = null; this._sheet = null; this._guestPick = false; if (this._pad?.step !== "unlock") this._pad = null; redraw(); }
+    else if (a === "lock") {
+      const appLock = this._app && window.__kcAppLock?.on?.();
+      if (appLock) { PIN_LOCK.until = 0; this._pad = null; this._sheet = null; this._view = "abend"; this._open = null; redraw(); window.__kcAppLock.now(); return; }
+      if (!d?.pin) { this._toast("🔒 Erst eine PIN festlegen – dann sperrt das Schloss ⚙️ und Mitglieder"); this._view = "set"; this._sheet = "pin"; this._pad = null; }
+      else if (pinOpen()) { PIN_LOCK.until = 0; this._pad = null; this._toast("🔒 Gesperrt"); if (this._view === "edit" || this._view === "set") { this._view = "abend"; this._sheet = null; } }
+      else this._view = "set";
+      this._open = null; redraw();
+    }
+    else if (a === "back") {
+      if (this._pad) { const back = this._pad.back; this._pad = null; if (back !== "sheet") { this._view = "abend"; this._sheet = null; } }
+      else if (this._view === "set" && this._sheet) { this._sheet = null; this._imp = null; }
+      else { this._view = "abend"; this._sheet = null; }
+      this._open = null; redraw();
+    }
+    else if (a === "hide") { this._hidden = !this._hidden; store.put(HKEY, this._hidden); redraw(); }
+    else if (a === "pkey") this._padPress(el.dataset.v);
+    else if (a === "padstart") { this._pad = { purpose: el.dataset.v, step: d.pin ? "old" : "new", buf: "", back: "sheet" }; redraw(); }
+    else if (a === "reload") {
+      try { caches?.keys?.().then((ks) => ks.filter((k) => k.startsWith("kegelclub-")).forEach((k) => caches.delete(k))); } catch (_) { /* egal */ }
+      try { navigator.serviceWorker?.getRegistrations?.().then((rs) => rs.forEach((r) => { if (/\/kegelclub\/app\//.test(r.scope)) r.update().catch(() => {}); })); } catch (_) { /* egal */ }
+      setTimeout(() => location.reload(), 300);
+    }
+    else if (a === "sheet") { this._sheet = el.dataset.v; this._imp = null; redraw(); if (["errors", "stats"].includes(this._sheet)) this._loadHealth(); }
+    else if (a === "setgrp") { this._setOpen = this._setOpen === el.dataset.v ? null : el.dataset.v; redraw(); }
+    else if (a === "errclear") { this._hass.callWS({ type: "kegelclub/errors_clear", ...this._bk() }).then(() => this._loadHealth(), () => this._toast("📴 Geht nur mit Netz")); }
+    else if (a === "peek") { clearTimeout(this._peekT); this._peek = { key: el.dataset.v, until: Date.now() + 4000 }; el.classList.add("peek"); this._peekT = setTimeout(() => { this._peek = null; this.shadowRoot.querySelectorAll(".veil.peek").forEach((x) => x.classList.remove("peek")); }, 4000); }
+    // 🧭 Einrichten
+    else if (a === "wiz") {
+      const v = el.dataset.v;
+      if (v === "template") { this._send({ type: "template" }); this._send({ type: "setup_done" }); this._view = "edit"; this._toast("📋 Beispiel-Strafen geladen – jetzt Mitglieder anlegen"); }
+      else if (v === "empty") { this._send({ type: "setup_done" }); this._view = "edit"; }
+      else { this._view = "set"; this._sheet = "imp"; }
+      redraw();
+    }
+    else if (a === "template") this._send({ type: "template" });
+    // 🎳 Abend
+    else if (a === "pick") { this._sel = this._sel === id ? null : id; redraw(); }
+    else if (a === "status" && ev) { const cur = ev.status[id] || "play"; this._send({ type: "abend_status", abend: ev.id, member: id, status: STATUS_NEXT[cur] }); }
+    else if (a === "fine" && ev && this._sel) {
+      try { navigator.vibrate?.(15); } catch (_) { /* egal */ }
+      const s = d.strafen.find((x) => x.id === id);
+      this._send({ type: "abend_count", abend: ev.id, member: this._sel, strafe: id, delta: 1 });
+      this._undoFor(`💸 ${s?.name || ""} für ${this._name(d, this._sel)}`, { type: "abend_count", abend: ev.id, member: this._sel, strafe: id, delta: -1 });
+      redraw();
+    }
+    else if (a === "minus" && ev) this._send({ type: "abend_count", abend: ev.id, member: id, strafe: el.dataset.v, delta: -1 });
+    else if (a === "evhours" && ev) { const h = Number(String(el.value).replace(",", ".")); if (Number.isFinite(h) && h >= 0) this._send({ type: "abend_hours", abend: ev.id, hours: h }); }
+    else if (a === "nofines") { const target = id || ev?.id || this._evId; if (target) this._send({ type: "abend_nofines", abend: target, value: el.checked }); }
+    else if (a === "guest") { this._guestPick = !this._guestPick; redraw(); }
+    else if (a === "guestadd" && ev) { this._send({ type: "abend_status", abend: ev.id, member: id, status: "play" }); this._sel = id; }
+    else if (a === "evclose") {
+      const b = billEvening(ev, ...maps(d), d.settings);
+      if (!kcConfirm(`Kegelabend abschließen?\n\nZusammen ${money(b.total)}. Danach steht es bei „Kasse“ unter „Wer schuldet was“.`)) return;
+      this._sel = null; this._guestPick = false;
+      this._send({ type: "abend_close", abend: id, value: true });
+      this._evId = id; this._view = "ev"; redraw();
+    }
+    else if (a === "evopen") { this._evId = id; this._view = "ev"; redraw(); }
+    else if (a === "evreopen") {
+      if (ev) { this._toast("Es läuft schon ein anderer Kegelabend"); return; }
+      this._send({ type: "abend_close", abend: id, value: false }); this._view = "abend"; redraw();
+    }
+    else if (a === "evdel") {
+      const x = d.abende.find((y) => y.id === id);
+      if (!x || !kcConfirm(`Kegelabend vom ${fmtDate(x.date)} löschen?\n\nAlle Strafen und Beträge dieses Abends sind dann weg.`)) return;
+      this._view = "abend"; this._removeWithUndo("abend", id, `🗑️ Kegelabend ${fmtDate(x.date)} gelöscht`);
+    }
+    else if (a === "evdate") { if (/^\d{4}-\d{2}-\d{2}$/.test(el.value)) this._send({ type: "abend_date", abend: this._evId, date: el.value }); }
+    else if (a === "evnote") this._send({ type: "abend_note", abend: this._evId, note: el.value });
+    else if (a === "allpast") { this._allPast = true; redraw(); }
+    else if (a === "share") {
+      const x = d.abende.find((y) => y.id === id); if (!x) return;
+      const text = this._shareText(d, x);
+      if (navigator.share) navigator.share({ text }).catch(() => {});
+      else (navigator.clipboard?.writeText(text) || Promise.reject()).then(() => this._toast("📋 Kopiert – jetzt z. B. in WhatsApp einfügen"), () => prompt(kcT("Zum Kopieren:"), text));
+    }
+    // 🏦 Kasse
+    else if (a === "payall") {
+      const p = d.summary.people.find((x) => x.id === id); if (!p || p.debt <= 0) return;
+      const op = this._send({ type: "pay", member: id, amount: p.debt, id: uid() });
+      this._undoFor(`✓ ${p.name} hat ${money(p.debt)} bezahlt`, { type: "kasse_delete", id: op.id });
+    }
+    else if (a === "kform") { this._kform = el.dataset.v; redraw(); }
+    else if (a === "kdel") this._removeWithUndo("kasse", id, "🗑️ Buchung gelöscht");
+    else if (a === "allk") { this._allK = true; redraw(); }
+    else if (a === "year") { this._year += Number(el.dataset.v); redraw(); }
+    // 👥 Mitglieder & Strafen
+    else if ((a === "open" || a === "new") && this._dragEnd && Date.now() - this._dragEnd < 400) { /* gerade gezogen */ }
+    else if (a === "open" || a === "new") { this._open = { kind: el.dataset.k, id: a === "new" ? "new" : id }; redraw(); }
+    else if (a === "cancel") { this._open = null; redraw(); }
+    else if (a === "payer") { const f = el.closest("form"); f.querySelector('input[name="payer"]').value = el.dataset.v; el.parentElement.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b === el)); }
+    else if (a === "icon") { const f = el.closest("form"); f.querySelector('input[name="icon"]').value = "mdi:" + el.dataset.v; el.parentElement.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b === el)); }
+    else if (a === "del") { const k = el.dataset.k; this._open = null; this._removeWithUndo(k, id, "🗑️ Gelöscht"); }
+    // ⚙️ Schalter
+    else if (a === "set") this._send({ type: "settings", settings: { [el.dataset.v]: el.checked } });
+    else if (a === "setnum") { const v = el.dataset.v === "lane_hours" ? Number(String(el.value).replace(",", ".")) : parseMoney(el.value); if (Number.isFinite(v)) this._send({ type: "settings", settings: { [el.dataset.v]: v } }); else this._toast("Bitte eine Zahl eintippen"); }
+    else if (a === "lane") this._send({ type: "settings", settings: { lane_mode: el.dataset.v } });
+    else if (a === "setcur") this._send({ type: "settings", settings: { currency: el.value } });
+    else if (a === "setview") this._send({ type: "settings", settings: { view: { [el.dataset.v]: el.checked } } });
+    else if (a === "setcalm") { store.put(CALMKEY, el.checked); redraw(); }
+    else if (a === "theme") {
+      const v = el.dataset.v;
+      try { v === "auto" ? localStorage.removeItem(THEMEKEY) : localStorage.setItem(THEMEKEY, v); } catch (_) { /* egal */ }
+      v === "auto" ? document.documentElement.removeAttribute("data-theme") : document.documentElement.setAttribute("data-theme", v);
+      redraw();
+    }
+    else if (a === "logclear") { if (kcConfirm("Den ganzen Verlauf löschen?")) this._send({ type: "log_clear" }); }
+    else if (a === "appcopy") { const u = d.app_url || ""; (navigator.clipboard?.writeText(u) || Promise.reject()).then(() => this._toast("📋 Adresse kopiert"), () => prompt(kcT("Adresse zum Kopieren:"), u)); }
+    else if (a === "factory") {
+      if (!kcConfirm("Wirklich ALLES löschen?\n\nMitglieder, Strafen, alle Abende und die ganze Kasse. Nur die PIN bleibt.\n\nDas geht nicht rückgängig.")) return;
+      if (!kcConfirm("Letzte Frage: Wirklich ALLES auf Werkseinstellungen setzen?")) return;
+      this._queue = []; store.put(this._qk, this._queue);
+      this._hass.callWS({ type: "kegelclub/factory_reset", ...this._bk() }).then(() => { this._toast("💣 Alles zurückgesetzt"); this._sheet = null; this._view = "abend"; redraw(); }, (err) => this._toast("⚠️ " + (err?.message || "Das hat nicht geklappt")));
+    }
+    // 📥 Import & Sicherung
+    else if (a === "impfile") {
+      const file = el.files?.[0]; if (!file) return;
+      if (file.size > 8 * 1024 * 1024) { this._toast("Die Datei ist zu groß (höchstens 8 MB)"); return; }
+      this._imp = { busy: true }; redraw();
+      const rd = new FileReader();
+      rd.onload = () => { const b64 = String(rd.result).split(",")[1] || ""; this._imp = { busy: true, name: file.name, data: b64 }; this._importCall(false); };
+      rd.onerror = () => { this._imp = { error: "Die Datei ließ sich nicht lesen" }; redraw(); };
+      rd.readAsDataURL(file);
+    }
+    else if (a === "impapply") this._importCall(true);
+    else if (a === "impcancel") { this._imp = null; redraw(); }
+    else if (a === "backup") this._download(`kegelclub-sicherung-${todayIso()}.json`, JSON.stringify({ kegelclub: 1, version: KC_VERSION, exported: new Date().toISOString(), members: d.members, strafen: d.strafen, abende: d.abende, kasse: d.kasse, settings: d.settings }, null, 1), "application/json");
+    else if (a === "csv") {
+      const q = (x) => /[;"\n]/.test(String(x)) ? `"${String(x).replace(/"/g, '""')}"` : String(x ?? "");
+      const lines = ["Datum;Art;Wofür;Wer;Betrag", ...d.kasse.slice().sort((x, y) => (x.ts || 0) - (y.ts || 0)).map((k) => [k.ts ? new Date(k.ts).toLocaleDateString("de-DE") : "", k.kind === "out" ? "Ausgabe" : "Einzahlung", k.name, k.member ? this._name(d, k.member) : "", String((k.kind === "out" ? -k.amount : k.amount).toFixed(2)).replace(".", ",")].map(q).join(";"))];
+      this._download(`kegelkasse-${todayIso()}.csv`, "﻿" + lines.join("\n"), "text/csv");
+    }
+  }
+  _download(name, text, type) {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([text], { type }));
+    a.download = name; a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  }
+  async _importCall(apply) {
+    const p = this._imp;
+    if (!p?.data) return;
+    if (apply && !kcConfirm("Jetzt übernehmen?\n\nWas hier steht, wird ersetzt. Vorher lieber „Sicherung speichern“.")) return;
+    this._imp = { ...p, busy: true }; this._force = true; this._render();
+    try {
+      const res = await this._hass.callWS({ type: "kegelclub/import", name: p.name || "", data: p.data, apply, replace: true, ...this._bk() });
+      if (apply) { this._imp = null; this._sheet = null; this._view = "abend"; this._toast(`✅ Übernommen${res.counts ? `: ${res.counts.abende ?? 0} Abende` : ""}`); }
+      else this._imp = { ...p, busy: false, res };
+    } catch (err) { this._imp = { error: err?.message || "Einlesen ging nicht (ohne Netz geht das nicht)" }; }
+    this._force = true; this._render();
+  }
+  _submit(f) {
+    const a = f.dataset.a, data = Object.fromEntries(new FormData(f).entries()), d = this._data;
+    const done = () => { this.shadowRoot.activeElement?.blur(); this._force = true; };
+    if (a === "evstart") {
+      const hours = data.hours != null ? Number(String(data.hours).replace(",", ".")) : undefined;
+      done(); this._sel = null;
+      this._send({ type: "abend_start", id: uid(), date: data.date || todayIso(), ...(Number.isFinite(hours) ? { hours } : {}) });
+      return;
+    }
+    if (a === "guestnew") {
+      const name = String(data.name || "").trim(); const ev = evFind(d);
+      if (!name || !ev) { this._toast("Name fehlt"); return; }
+      const old = d.members.find((m) => m.name.toLowerCase() === name.toLowerCase());
+      const mid = old?.id || uid();
+      if (!old) this._send({ type: "member_save", item: { id: mid, name, guest: true } });
+      done(); this._sel = mid;
+      this._send({ type: "abend_status", abend: ev.id, member: mid, status: "play" });
+      return;
+    }
+    if (a === "paypart") {
+      const v = parseMoney(data.amount);
+      if (!v || Number.isNaN(v) || v <= 0) { this._toast("Bitte einen Betrag eintippen"); return; }
+      this._open = null; done();
+      const op = this._send({ type: "pay", member: f.dataset.id, amount: v, id: uid() });
+      this._undoFor(`✓ ${this._name(d, f.dataset.id)} hat ${money(v)} bezahlt`, { type: "kasse_delete", id: op.id });
+      return;
+    }
+    if (a === "kadd") {
+      const v = Math.abs(parseMoney(data.amount));
+      if (!v || Number.isNaN(v)) { this._toast("Bitte einen Betrag eintippen"); return; }
+      const when = data.date ? new Date(data.date + "T12:00:00").getTime() : Date.now();
+      done(); f.reset();
+      if (this._kform === "in" && data.member) this._send({ type: "pay", member: data.member, amount: v, name: (data.name || "").trim() || "Einzahlung", id: uid() });
+      else this._send({ type: "kasse_add", kind: this._kform, name: (data.name || "").trim(), amount: v, when, id: uid() });
+      return;
+    }
+    if (a === "save") {
+      const kind = f.dataset.k, item = { name: (data.name || "").trim() };
+      if (!item.name) { this._toast("Name fehlt"); return; }
+      item.id = f.dataset.id || uid();
+      if (kind === "member") { item.note = data.note || ""; item.guest = !!f.querySelector('input[name="guest"]')?.checked; }
+      else {
+        const amount = parseMoney(data.amount || 0);
+        if (Number.isNaN(amount)) { this._toast("Betrag stimmt nicht"); return; }
+        item.amount = Math.abs(amount); item.payer = data.payer === "others" ? "others" : "self"; item.icon = data.icon || "mdi:bowling";
+      }
+      const act = f.querySelector('input[name="active"]');
+      if (act) item.active = !!act.checked;
+      this._open = null; done();
+      this._send({ type: `${kind}_save`, item });
+    }
+  }
+}
+// ↩️ Zurück-Taste am Handy (wie bei der Einkaufsliste): Solange in der Karte eine Unterseite offen ist, liegt ein „Merkzettel“ im Verlauf.
+// Zurück nimmt ihn weg und geht genau einen Schritt zurück (PIN → Einstellungen → Übersicht) – die Seite selbst bleibt stehen.
+(function kcBackGuard() {
+  if (window.__kcBackGuard) return;
+  window.__kcBackGuard = true;
+  let timer = null, ignorePop = false;
+  const live = () => [...KC_CARDS].filter((c) => c.isConnected);
+  const isOpen = () => live().some((c) => !c.kegelclubIsRoot());
+  const push = (state) => {
+    const prev = history.scrollRestoration;
+    try { history.scrollRestoration = "manual"; } catch (_) { /* egal */ }
+    history.pushState(state, "");
+    try { history.scrollRestoration = prev || "auto"; } catch (_) { /* egal */ }
+  };
+  const sync = () => {
+    timer = null;
+    const open = isOpen(), st = history.state;
+    if (open && !st?.kcCardGuard) push({ ...(st || {}), kcCardGuard: 1 });
+    else if (!open && st?.kcCardGuard) { ignorePop = true; history.back(); }
+  };
+  window.addEventListener("popstate", () => {
+    if (ignorePop) { ignorePop = false; return; }
+    if (history.state?.kcCardGuard) return;
+    const c = live().find((x) => !x.kegelclubIsRoot());
+    if (c?.kegelclubBack()) setTimeout(sync, 60);
+  });
+  window.addEventListener("kegelclub-nav", () => { if (!timer) timer = setTimeout(sync, 80); });
+})();
+
+if (!customElements.get("kegelclub-card")) customElements.define("kegelclub-card", KegelclubCard);
+KegelclubCard.bill = billEvening; KegelclubCard.summary = summary; KegelclubCard.applyLocal = applyLocal; // 🧪 für Tests: Rechnen
+KegelclubCard.i18n = { kcBlockKey, kcNorm, kcT, skip: KC_SKIP, attrs: KC_ATTRS }; // 🧪 für Tests: Übersetzung
+
+// ✏️ Karten-Editor: Titel, welcher Club, Beträge erst nach Antippen zeigen
+class KegelclubCardEditor extends HTMLElement {
+  setConfig(config) { this._config = { ...config }; this._draw(); }
+  set hass(hass) {
+    const first = !this._hass; this._hass = hass;
+    if (first) hass.callWS({ type: "kegelclub/books" }).then((r) => { this._books = r.books || []; this._draw(); }, () => { this._books = []; this._draw(); });
+  }
+  _set(key, value) {
+    const c = { ...this._config };
+    if (value === "" || value === false || value == null) delete c[key]; else c[key] = value;
+    this._config = c;
+    this.dispatchEvent(new CustomEvent("config-changed", { detail: { config: c }, bubbles: true, composed: true }));
+  }
+  _draw() {
+    if (!this._config) return;
+    const c = this._config, books = this._books || [];
+    const esc2 = (x) => String(x ?? "").replace(/[&<>"]/g, (m) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[m]));
+    const opts = books.map((b) => `<option value="${b.primary ? "" : esc2(b.title)}" ${(b.primary ? !c.buch : String(c.buch || "").toLowerCase() === b.title.toLowerCase()) ? "selected" : ""}>${esc2(b.title)}${b.primary ? " (erster Club)" : ""}</option>`).join("");
+    this.innerHTML = `<div style="display:grid;gap:12px;padding:4px 0">
+      <label style="display:grid;gap:4px">Titel<input data-k="title" value="${esc2(c.title || "")}" style="padding:8px;border-radius:8px;border:1px solid var(--divider-color,#ccc);background:none;color:inherit;font:inherit"></label>
+      <label style="display:grid;gap:4px">🏠 Welcher Club?<select data-k="buch" style="padding:8px;border-radius:8px;border:1px solid var(--divider-color,#ccc);background:var(--card-background-color,#fff);color:inherit;font:inherit">${opts || `<option value="">Kegelclub</option>`}</select>
+        <small style="opacity:.7">Weitere Clubs: Einstellungen → Geräte &amp; Dienste → Kegelclub → Eintrag hinzufügen.</small></label>
+      <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" data-k="privat" ${c.privat ? "checked" : ""}> 🙈 Beträge erst nach Antippen zeigen</label>
+      <label style="display:grid;gap:4px">🌍 Sprache / Language<select data-k="language" style="padding:8px;border-radius:8px;border:1px solid var(--divider-color,#ccc);background:var(--card-background-color,#fff);color:inherit;font:inherit">${[["", "Automatisch (wie Home Assistant)"], ["de", "Deutsch"], ["en", "English"]].map(([v, t]) => `<option value="${v}" ${(c.language || "") === v ? "selected" : ""}>${t}</option>`).join("")}</select></label></div>`;
+    this.querySelector('[data-k="title"]').addEventListener("change", (e) => this._set("title", e.target.value));
+    this.querySelector('[data-k="buch"]').addEventListener("change", (e) => this._set("buch", e.target.value));
+    this.querySelector('[data-k="privat"]').addEventListener("change", (e) => this._set("privat", e.target.checked));
+    this.querySelector('[data-k="language"]').addEventListener("change", (e) => this._set("language", e.target.value));
+  }
+}
+if (!customElements.get("kegelclub-card-editor")) customElements.define("kegelclub-card-editor", KegelclubCardEditor);
+window.customCards = window.customCards || [];
+if (!window.customCards.some((c) => c.type === "kegelclub-card")) {
+  window.customCards.push({ type: "kegelclub-card", name: "Kegelclub", description: "Kegelabende, Strafen und Kegelkasse – auch ohne Netz.", preview: false });
+}
+console.info(`%c 🎳 KEGELCLUB %c v${KC_VERSION} `, "background:#fb8c00;color:#fff;border-radius:3px 0 0 3px", "background:#333;color:#fff;border-radius:0 3px 3px 0");

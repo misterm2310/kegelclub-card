@@ -1,0 +1,139 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Kegelclub",
+        "description": "Kegelabende, Strafen und Kegelkasse in Home Assistant. Mehrere Clubs gehen auch – jeder mit eigenen Daten, Sensoren und PIN.",
+        "data": {
+          "sidebar": "In der Seitenleiste zeigen",
+          "name": "Name des Clubs"
+        }
+      }
+    },
+    "error": {
+      "name_missing": "Bitte einen Namen eingeben (z. B. „Die Pudelkönige“).",
+      "name_taken": "Einen Club mit diesem Namen gibt es schon."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Kegelclub",
+        "data": {
+          "sidebar": "In der Seitenleiste zeigen",
+          "reset_pin": "PIN zurücksetzen"
+        },
+        "data_description": {
+          "reset_pin": "Die PIN für ⚙️ und Bearbeiten wird entfernt. Danach in der Karte eine neue festlegen.",
+          "sidebar": "Kegelclub als eigener Eintrag in der Seitenleiste."
+        }
+      }
+    }
+  },
+  "services": {
+    "strafe_buchen": {
+      "name": "Strafe buchen",
+      "description": "Zählt eine Strafe beim laufenden (oder genannten) Abend hoch – oder mit negativer Anzahl wieder runter.",
+      "fields": {
+        "mitglied": {
+          "name": "Mitglied",
+          "description": "Name (oder Vorname) der Person."
+        },
+        "strafe": {
+          "name": "Strafe",
+          "description": "Name der Strafe, z. B. Pumpe."
+        },
+        "anzahl": {
+          "name": "Anzahl",
+          "description": "Wie oft (Standard 1)."
+        },
+        "abend": {
+          "name": "Abend",
+          "description": "Datum des Abends (leer = laufender Abend)."
+        },
+        "club": {
+          "name": "Club",
+          "description": "Nur bei mehreren Clubs: Name des Clubs (leer = erster Club)."
+        }
+      }
+    },
+    "abend_starten": {
+      "name": "Abend starten",
+      "description": "Startet einen neuen Kegelabend.",
+      "fields": {
+        "datum": {
+          "name": "Datum",
+          "description": "Leer = heute."
+        },
+        "stunden": {
+          "name": "Stunden Kegelbahn",
+          "description": "Wie lange die Bahn gebucht ist."
+        },
+        "club": {
+          "name": "Club",
+          "description": "Nur bei mehreren Clubs: Name des Clubs (leer = erster Club)."
+        }
+      }
+    },
+    "abend_abschliessen": {
+      "name": "Abend abschließen",
+      "description": "Schließt den laufenden (oder genannten) Abend ab.",
+      "fields": {
+        "abend": {
+          "name": "Abend",
+          "description": "Datum des Abends (leer = laufender Abend)."
+        },
+        "club": {
+          "name": "Club",
+          "description": "Nur bei mehreren Clubs: Name des Clubs (leer = erster Club)."
+        }
+      }
+    },
+    "einzahlung": {
+      "name": "Einzahlung",
+      "description": "Trägt eine Einzahlung eines Mitglieds in die Kasse ein.",
+      "fields": {
+        "mitglied": {
+          "name": "Mitglied",
+          "description": "Wer zahlt."
+        },
+        "betrag": {
+          "name": "Betrag",
+          "description": "Betrag in der eingestellten Währung."
+        },
+        "club": {
+          "name": "Club",
+          "description": "Nur bei mehreren Clubs: Name des Clubs (leer = erster Club)."
+        }
+      }
+    },
+    "ausgabe": {
+      "name": "Ausgabe",
+      "description": "Trägt eine Ausgabe aus der Kasse ein.",
+      "fields": {
+        "name": {
+          "name": "Name",
+          "description": "Wofür das Geld war."
+        },
+        "betrag": {
+          "name": "Betrag",
+          "description": "Betrag in der eingestellten Währung."
+        },
+        "club": {
+          "name": "Club",
+          "description": "Nur bei mehreren Clubs: Name des Clubs (leer = erster Club)."
+        }
+      }
+    },
+    "daten_abrufen": {
+      "name": "Daten abrufen",
+      "description": "Gibt Kasse, offene Beträge und Personen als Antwort zurück (für Skripte).",
+      "fields": {
+        "club": {
+          "name": "Club",
+          "description": "Nur bei mehreren Clubs: Name des Clubs (leer = erster Club)."
+        }
+      }
+    }
+  }
+}

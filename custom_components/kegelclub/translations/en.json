@@ -1,0 +1,139 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Kegelclub",
+        "description": "Bowling evenings, fines and the club cash in Home Assistant. Several clubs are possible – each with its own data, sensors and PIN.",
+        "data": {
+          "sidebar": "Show in sidebar",
+          "name": "Name of the club"
+        }
+      }
+    },
+    "error": {
+      "name_missing": "Please enter a name (e.g. “Gutter Kings”).",
+      "name_taken": "A club with this name already exists."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Kegelclub",
+        "data": {
+          "sidebar": "Show in sidebar",
+          "reset_pin": "Reset PIN"
+        },
+        "data_description": {
+          "reset_pin": "The PIN for ⚙️ and Edit is removed. Set a new one in the card afterwards.",
+          "sidebar": "Bowling club as its own entry in the sidebar."
+        }
+      }
+    }
+  },
+  "services": {
+    "strafe_buchen": {
+      "name": "Book fine",
+      "description": "Counts a fine up on the running (or given) evening – or down with a negative count.",
+      "fields": {
+        "mitglied": {
+          "name": "Member",
+          "description": "Name (or first name) of the person."
+        },
+        "strafe": {
+          "name": "Fine",
+          "description": "Name of the fine, e.g. Gutter."
+        },
+        "anzahl": {
+          "name": "Count",
+          "description": "How often (default 1)."
+        },
+        "abend": {
+          "name": "Evening",
+          "description": "Date of the evening (empty = running evening)."
+        },
+        "club": {
+          "name": "Club",
+          "description": "Only with several clubs: name of the club (empty = first club)."
+        }
+      }
+    },
+    "abend_starten": {
+      "name": "Start evening",
+      "description": "Starts a new bowling evening.",
+      "fields": {
+        "datum": {
+          "name": "Date",
+          "description": "Empty = today."
+        },
+        "stunden": {
+          "name": "Lane hours",
+          "description": "How long the lane is booked."
+        },
+        "club": {
+          "name": "Club",
+          "description": "Only with several clubs: name of the club (empty = first club)."
+        }
+      }
+    },
+    "abend_abschliessen": {
+      "name": "Close evening",
+      "description": "Closes the running (or given) evening.",
+      "fields": {
+        "abend": {
+          "name": "Evening",
+          "description": "Date of the evening (empty = running evening)."
+        },
+        "club": {
+          "name": "Club",
+          "description": "Only with several clubs: name of the club (empty = first club)."
+        }
+      }
+    },
+    "einzahlung": {
+      "name": "Payment",
+      "description": "Records a payment of a member into the club cash.",
+      "fields": {
+        "mitglied": {
+          "name": "Member",
+          "description": "Who pays."
+        },
+        "betrag": {
+          "name": "Amount",
+          "description": "Amount in the configured currency."
+        },
+        "club": {
+          "name": "Club",
+          "description": "Only with several clubs: name of the club (empty = first club)."
+        }
+      }
+    },
+    "ausgabe": {
+      "name": "Expense",
+      "description": "Records an expense from the club cash.",
+      "fields": {
+        "name": {
+          "name": "Name",
+          "description": "What the money was for."
+        },
+        "betrag": {
+          "name": "Amount",
+          "description": "Amount in the configured currency."
+        },
+        "club": {
+          "name": "Club",
+          "description": "Only with several clubs: name of the club (empty = first club)."
+        }
+      }
+    },
+    "daten_abrufen": {
+      "name": "Get data",
+      "description": "Returns cash, open amounts and people as a response (for scripts).",
+      "fields": {
+        "club": {
+          "name": "Club",
+          "description": "Only with several clubs: name of the club (empty = first club)."
+        }
+      }
+    }
+  }
+}

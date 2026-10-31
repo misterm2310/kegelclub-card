@@ -1,0 +1,111 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Kegelclub Test</title>
+<style>
+:root { --primary-color:#03a9f4; --primary-text-color:#e1e1e1; --secondary-text-color:#9b9b9b; --divider-color:rgba(225,225,225,.12);
+  --primary-background-color:#111418; --secondary-background-color:#262a31; --card-background-color:#1c1f24; --ha-card-background:#1c1f24; color-scheme:dark; }
+body { margin:0; padding:16px; background:var(--primary-background-color); color:var(--primary-text-color); font:15px Roboto, system-ui, sans-serif; }
+ha-card { display:block; background:var(--ha-card-background); border-radius:12px; }
+#c1 { display:block; max-width:520px; }
+</style></head>
+<body>
+<kegelclub-card id="c1"></kegelclub-card>
+<script>
+// 🧪 Ein nachgebautes Home Assistant mit AUSGEDACHTEN Namen und Zahlen (keine echten Clubdaten!)
+const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+const daysAgo = (n) => { const d = new Date(); d.setDate(d.getDate() - n); return iso(d); };
+window.fake = {
+  online: true, applied: [],
+  data: {
+    members: [
+      { id: "m1", name: "Anna Beispiel", active: true }, { id: "m2", name: "Bernd Muster", active: true },
+      { id: "m3", name: "Carla Kugel", active: true }, { id: "m4", name: "Dieter Pumpe", active: true },
+      { id: "m5", name: "Emil Neuner", active: true }, { id: "m6", name: "Frida Holz", active: true },
+      { id: "g1", name: "Gast Gustav", active: true, guest: true },
+    ],
+    strafen: [
+      { id: "s1", name: "Pumpe", icon: "mdi:bowling", amount: 0.1, payer: "self", active: true },
+      { id: "s2", name: "Klingeln", icon: "mdi:bell-ring-outline", amount: 1, payer: "self", active: true },
+      { id: "s3", name: "Schnapszahl", icon: "mdi:glass-mug-variant", amount: 0.5, payer: "self", active: true },
+      { id: "s4", name: "Alle Neune", icon: "mdi:target", amount: 0.1, payer: "others", active: true },
+      { id: "s5", name: "Durchlauf", icon: "mdi:sync", amount: 0.1, payer: "self", active: true },
+    ],
+    abende: [], kasse: [], log: [], pin: false, setup_done: true,
+    settings: { base_fee: 7.5, watch_pays: true, missing_pays: true, unexcused_extra: 5, lane_mode: "kasse", lane_rate: 10, lane_hours: 3, start_balance: 250, currency: "EUR", log_on: true, view: {} },
+  },
+};
+// 🎳 Ein paar ausgedachte Abende – mit der Rechen-Logik der Karte selbst gebaut
+window.seed = (A) => {
+  const d = fake.data; let n = 0;
+  const op = (o) => A(d, { op_id: "seed" + ++n, ts: Date.now() - 1e6 + n, ...o });
+  const evs = [[63, { m4: "watch", m6: "excused" }], [35, { m6: "absent" }], [7, { m3: "excused" }]];
+  for (const [ago, st] of evs) {
+    const id = "ev" + ago;
+    op({ type: "abend_start", id, date: daysAgo(ago), hours: 3 });
+    for (const [m, s] of Object.entries(st)) op({ type: "abend_status", abend: id, member: m, status: s });
+    op({ type: "abend_status", abend: id, member: "g1", status: ago === 35 ? "play" : "out" });
+    const counts = { m1: { s1: 3, s4: 2 }, m2: { s1: 7, s2: 1, s5: 1 }, m3: { s3: 1, s1: 2 }, m5: { s4: 4, s1: 1 }, g1: { s1: 2 } };
+    for (const [m, per] of Object.entries(counts)) for (const [s, c] of Object.entries(per)) op({ type: "abend_count", abend: id, member: m, strafe: s, delta: c + (ago % 3) });
+    op({ type: "abend_close", abend: id, value: true });
+  }
+  for (const [m, a] of [["m1", 30], ["m2", 40], ["m3", 20], ["m4", 22.5], ["m5", 30], ["g1", 9.6]]) op({ type: "pay", member: m, amount: a });
+  op({ type: "kasse_add", kind: "out", name: "Kranz Jubiläum", amount: 35 });
+  op({ type: "abend_start", id: "evnow", date: daysAgo(0), hours: 3 });
+  op({ type: "abend_status", abend: "evnow", member: "m6", status: "watch" });
+  op({ type: "abend_count", abend: "evnow", member: "m2", strafe: "s1", delta: 4 });
+  op({ type: "abend_count", abend: "evnow", member: "m5", strafe: "s4", delta: 2 });
+  op({ type: "abend_count", abend: "evnow", member: "m1", strafe: "s2", delta: 1 });
+  clean(d);
+};
+const clean = (d) => { for (const k of ["abende", "kasse"]) for (const x of d[k]) delete x.waiting; };
+// 🎨 <ha-icon> nachbauen (wie in der Offline-App), damit die Bilder Symbole zeigen
+let ICONS = null; const waitIc = new Set();
+fetch("/custom_components/kegelclub/www/app/icons.json").then((r) => r.json()).then((j) => { ICONS = j; waitIc.forEach((e) => e.draw()); });
+customElements.define("ha-icon", class extends HTMLElement {
+  connectedCallback() { if (!this.shadowRoot) this.attachShadow({ mode: "open" }).innerHTML = `<style>:host{display:inline-flex;width:var(--mdc-icon-size,24px);height:var(--mdc-icon-size,24px);vertical-align:middle}svg{width:100%;height:100%;fill:currentColor}</style><svg viewBox="0 0 24 24"><path></path></svg>`; this.draw(); }
+  draw() { if (!ICONS) { waitIc.add(this); return; } const n = (this.getAttribute("icon") || "").replace("mdi:", ""); if (!ICONS[n]) console.warn("Symbol fehlt: " + n); this.shadowRoot?.querySelector("path")?.setAttribute("d", ICONS[n] || ""); }
+});
+let cb = null;
+const hass = () => ({
+  connected: fake.online, user: { name: "Test", is_admin: true }, states: {}, language: "de",
+  connection: { subscribeMessage: async (f, m) => { (fake.msgs ||= []).push(m); cb = f; setTimeout(() => f(JSON.parse(JSON.stringify(fake.data))), 10); return () => {}; } },
+  callWS: async (msg) => {
+    if (!fake.online) throw { code: "lost", message: "offline" };
+    (fake.msgs ||= []).push(msg);
+    if (msg.type === "kegelclub/books") return { books: [{ id: "e1", title: "Kegelclub", primary: true }, { id: "e2", title: "Damenclub", primary: false }] };
+    if (msg.type === "kegelclub/apply") {
+      // wie Home Assistant: erst neuen Stand schicken, dann die Antwort
+      fake.applied.push(...msg.ops);
+      for (const o of msg.ops) {
+        if (o.type !== "log_clear") fake.data.log.push({ ts: o.ts || Date.now(), by: "Test", text: "✏️ " + o.type });
+        customElements.get("kegelclub-card").applyLocal(fake.data, o);
+      }
+      clean(fake.data);
+      cb && cb(JSON.parse(JSON.stringify(fake.data)));
+      return { results: msg.ops.map((o) => ({ op_id: o.op_id, ok: true })) };
+    }
+    if (msg.type === "kegelclub/import") return { format: "alle_neune", club: "Beispielclub", applied: !!msg.apply, counts: { members: 9, former: 2, guests: 4, strafen: 6, abende: 40, kasse: 310 }, kasse_total: 812.4, first: "2023-01-14", last: "2026-10-17", base_fee: 7.5, strafen: [{ name: "Pumpe", amount: 0.1, payer: "self", active: true }, { name: "Alle Neune", amount: 0.1, payer: "others", active: true }] };
+    if (msg.type === "kegelclub/pin/set") {
+      if (fake.pin && msg.old !== fake.pin) throw { code: "pin", message: "Die alte PIN stimmt nicht" };
+      fake.pin = msg.pin || null; fake.data.pin = !!fake.pin;
+      cb && cb(JSON.parse(JSON.stringify(fake.data)));
+      return { ok: true };
+    }
+    if (msg.type === "kegelclub/pin/check") return { ok: !fake.pin || msg.pin === fake.pin };
+    if (msg.type === "kegelclub/health") return { errors: [], size: 4321, counts: { members: fake.data.members.length, abende: fake.data.abende.length, kasse: fake.data.kasse.length }, seen: 0 };
+    if (msg.type === "kegelclub/errors_clear") return { ok: true };
+    return {};
+  },
+});
+window.toasts = [];
+window.addEventListener("hass-notification", (e) => toasts.push(e.detail.message));
+window.setOnline = (on) => { fake.online = on; document.querySelector("#c1").hass = hass(); };
+localStorage.clear();
+import("/custom_components/kegelclub/www/kegelclub-card.js").then(() => {
+  seed(customElements.get("kegelclub-card").applyLocal);
+  const c = document.querySelector("#c1");
+  c.setConfig({ title: "Kegelclub" });
+  c.hass = hass();
+  setTimeout(() => (window.__ready = true), 100);
+});
+</script>
+</body></html>
