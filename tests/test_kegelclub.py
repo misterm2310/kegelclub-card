@@ -246,5 +246,8 @@ async def test_pay_at_table_and_hand_fine(hass, setup):
     ok(m, {"type": "abend_extra_delete", "abend": "e1", "id": "x1"})
     assert {p["id"]: p["debt"] for p in m.summary()["people"]}["a"] == -2.0  # Guthaben
     assert m.summary()["kasse"] == 30 + 2.3  # Bahn noch nicht abgezogen
+    ok(m, {"type": "abend_status", "abend": "e1", "member": "d", "status": "excused"})  # 💶 doch nicht da → Grundbetrag zurück
+    assert not any(k.get("member") == "d" and k.get("tag") == "base" for k in m.data["kasse"])
+    assert {p["id"]: p["debt"] for p in m.summary()["people"]}["d"] == 7.5
     ok(m, {"type": "abend_close", "abend": "e1", "value": True})
-    assert m.summary()["kasse"] == round(30 + 2.3 - 20, 2)
+    assert m.summary()["kasse"] == round(22.5 + 2.3 - 20, 2)

@@ -72,21 +72,24 @@ check("Eigene Strafe wieder raus", (await heroBig()) === "2,70 €", await heroB
 await tap('.stbtn[data-id="m6"]');
 last = await p.evaluate(() => fake.applied.at(-1));
 check("Status weiter: schaut zu → abgemeldet", last?.type === "abend_status" && last.status === "excused", JSON.stringify(last));
-check("Abgemeldet: blasse Kachel, keine Zeile „Fehlen heute“, nicht in der Abrechnung", await sr(`return h.querySelector('.pp[data-id="m6"]').classList.contains('off') && !h.querySelector('.away') && !/Frida Holz/.test([...h.querySelectorAll('.bill .item b')].map((x) => x.textContent).join());`));
+check("Abgemeldet: blasse Kachel, keine Zeile „Fehlen heute“, blass in der Abrechnung mit offenem Grundbetrag", await sr(`const it = [...h.querySelectorAll('.bill .item')].find((x) => /Frida Holz/.test(x.textContent)); return h.querySelector('.pp[data-id="m6"]').classList.contains('off') && !h.querySelector('.away') && it?.classList.contains('off') && /Grundbetrag 7,50\\s€ offen/.test(it.textContent);`));
 await tap('.pp[data-id="m6"]');
 check("Fehlende: normale Strafen gesperrt, „Eigene“ geht", await sr(`return [...h.querySelectorAll('.fine[data-a="fine"]')].every((b) => b.disabled) && !h.querySelector('[data-a="handopen"]').disabled;`));
 await tap('[data-a="handopen"]');
 await p.locator("#c1").locator('form[data-a="hand"] input[name="name"]').fill("Kranzgeld");
 await p.locator("#c1").locator('form[data-a="hand"] input[name="amount"]').fill("3");
 await tap('form[data-a="hand"] button[type="submit"]');
-check("Fehlende mit Hand-Strafe erscheint in der Abrechnung", await sr(`return /Frida Holz/.test([...h.querySelectorAll('.bill .item b')].map((x) => x.textContent).join());`));
+check("Fehlende mit Hand-Strafe: Betrag steht in der Abrechnung", await sr(`const it = [...h.querySelectorAll('.bill .item')].find((x) => /Frida Holz/.test(x.textContent)); return /Kranzgeld/.test(it?.textContent || '') && /3,00/.test(it.querySelector('.amt').textContent);`));
 await tap('[data-a="handdel"]');
 await tap('.pp[data-id="m2"]');
-check("Abrechnung in fester Reihenfolge wie unter Mitglieder", await sr(`return [...h.querySelectorAll('.bill .item b')].map((x) => x.textContent).join() === "Anna Beispiel,Bernd Muster,Carla Kugel,Dieter Pumpe,Emil Neuner";`), await sr(`return [...h.querySelectorAll('.bill .item b')].map((x) => x.textContent).join();`));
+check("Abrechnung in fester Reihenfolge wie unter Mitglieder", await sr(`return [...h.querySelectorAll('.bill .item b')].map((x) => x.textContent).join() === "Anna Beispiel,Bernd Muster,Carla Kugel,Dieter Pumpe,Emil Neuner,Frida Holz";`), await sr(`return [...h.querySelectorAll('.bill .item b')].map((x) => x.textContent).join();`));
 // 💶 Grundbetrag kassiert + Münze
+check("Knopf zeigt, von wem kassiert wird", await sr(`return /Grundbetrag kassiert: Anna, Bernd, Carla, Dieter, Emil/.test(h.querySelector('[data-a="basepay"]').textContent);`), await sr(`return h.querySelector('[data-a="basepay"]').textContent;`));
 await tap('[data-a="basepay"]');
 const base = await p.evaluate(() => fake.applied.filter((o) => o.type === "pay" && o.tag === "base"));
 check("Grundbetrag kassiert: 5 × 7,50 € mit Abend", base.length === 5 && base.every((o) => o.amount === 7.5 && o.abend === "evnow"), JSON.stringify(base));
+await tap('.stbtn[data-id="m4"]'); await tap('.stbtn[data-id="m4"]');
+check("Dieter danach abgemeldet → sein Grundbetrag ist wieder aus der Kasse", await p.evaluate(() => fake.data.kasse.filter((k) => k.tag === "base").length === 4 && !fake.data.kasse.some((k) => k.tag === "base" && k.member === "m4")));
 await tap('.bill [data-a="coin"][data-id="m2"]');
 last = await p.evaluate(() => fake.applied.at(-1));
 check("Münze: Bernd zahlt seine Strafen (0,70 €)", last?.type === "pay" && last.tag === "fines" && last.amount === 0.7, JSON.stringify(last));
@@ -103,7 +106,7 @@ await tap('[data-a="nofines"]');
 
 // 🏦 Kasse
 await tap('[data-a="tab"][data-v="kasse"]');
-check("Kegelkasse (Bahn nur für abgeschlossene Abende)", (await heroBig()) === "315,30 €", await heroBig());
+check("Kegelkasse (Bahn nur für abgeschlossene Abende)", (await heroBig()) === "307,80 €", await heroBig());
 check("Kegelbahn als eigene Zeile in den Buchungen", await sr(`return [...h.querySelectorAll('.item b')].filter((x) => /^Kegelbahn /.test(x.textContent)).length === 3;`));
 check("Schuldner-Liste da", await sr(`return h.querySelectorAll('[data-a="open"][data-k="pay"]').length >= 3;`), await sr(`return h.querySelectorAll('[data-a="open"][data-k="pay"]').length;`));
 await shot("3-kasse.png");

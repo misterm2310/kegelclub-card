@@ -604,6 +604,8 @@ class KegelclubManager:
             if (ev.get("status_ts") or {}).get(mid, 0) > ts:
                 return  # 🕒 neuere Änderung gewinnt
             ev.setdefault("status_ts", {})[mid] = ts
+            if st in ("excused", "absent", "out"):  # 💶 nicht da → am Tisch kassierter Grundbetrag zurück (steht dann unter „Wer schuldet was“)
+                d["kasse"] = [k for k in d["kasse"] if not (k.get("abend") == ev["id"] and k.get("member") == mid and k.get("tag") == "base")]
             if st == "out":  # 👋 ganz aus dem Abend nehmen (nur für Gäste gedacht)
                 ev["status"].pop(mid, None)
                 return

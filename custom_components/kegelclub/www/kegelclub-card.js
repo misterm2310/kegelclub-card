@@ -6,7 +6,7 @@
 // - Jede Änderung (Pumpe, Einzahlung, wer da ist …) wird als kleine „Änderung“ verschickt.
 // - Klappt das Verschicken nicht (kein Netz auf der Kegelbahn), landet die Änderung im Postausgang und wird
 //   später nachgeschickt. Bis dahin rechnet die Karte selbst so, als wäre sie schon angekommen.
-const KC_VERSION = "0.1.0-beta.3";
+const KC_VERSION = "0.1.0-beta.4";
 
 const MONTHS = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
 const QKEY = "kegelclub_queue";
@@ -48,6 +48,7 @@ const KC_GUIDE = [
 ];
 // 🆕 Was ist neu – das Neueste oben (wie bei der Einkaufsliste)
 const KC_NEWS = [
+  ["0.1.0-beta.4", "💶 Fix: Wer nach „Grundbetrag kassiert“ auf abgemeldet gestellt wird, bekommt den Grundbetrag automatisch wieder aus der Kasse (steht dann unter „Wer schuldet was“) · 👥 Der Knopf zeigt, <b>von wem</b> er kassiert · 🧾 In der Abrechnung stehen Fehlende wieder mit drin – blass, mit offenem Grundbetrag (+ Extra bei nicht abgemeldet)"],
   ["0.1.0-beta.3", "🙈 Keine extra Zeile „Fehlen heute“ mehr: Wer fehlt, bleibt als <b>blasse Kachel</b> stehen · ✍️ Für Fehlende geht nur <b>„Eigene“</b> (Strafe per Hand) – sie erscheinen dann auch in der Abrechnung"],
   ["0.1.0-beta.2", "➖ <b>Minus oben links</b> auf der Strafen-Kachel · ✍️ <b>Eigene Strafe</b> mit Betrag und Grund · 💶 <b>Grundbetrag kassiert</b> am Anfang und 🪙 <b>Münze</b> in der Abrechnung (rechts nur noch die Strafen) · 🙈 Wer fehlt, ist ausgeblendet („Fehlen heute“) · ⠿ feste Reihenfolge wie unter „Mitglieder“ · 🎳 Kegelbahn erst beim Abschließen aus der Kasse, als eigene Zeile · ⚠️ Hinweis beim Abschließen, wenn noch jemand offen ist · ↩️ Rückgängig-Knopf repariert"],
   ["0.1.0-beta.1", "🎉 <b>Erste Beta!</b> · 🎳 Kegelabend mit großen Strafen-Knöpfen, vier Zuständen (kegelt, schaut zu, abgemeldet, nicht abgemeldet) und Gästen · 💸 eigenes Sündenregister, auch „<b>alle anderen zahlen</b>“ (Alle Neune) · 🙌 Strafen erlassen · 🏦 Kegelkasse mit „Wer schuldet was“, Einzahlungen, Ausgaben und Kegelbahn (aus der Kasse, aufgeteilt oder aus) · 📊 Statistik mit Königen, Säulen, Kuchen und Linie · 📥 Umzug aus <b>„Alle Neune“</b> inkl. aller alten Abende und der Kasse · 💾 Sicherung · 📱 Offline-App für die Kegelbahn · 🔒 PIN · 📖 Anleitung"],
@@ -380,6 +381,7 @@ function applyLocal(d, op) {
     if (t === "abend_status") {
       if ((ev.status_ts?.[op.member] || 0) > op.ts) return;
       (ev.status_ts = ev.status_ts || {})[op.member] = op.ts;
+      if (["excused", "absent", "out"].includes(op.status)) d.kasse = d.kasse.filter((k) => !(k.abend === ev.id && k.member === op.member && k.tag === "base")); // 💶 nicht da → Grundbetrag zurück
       if (op.status === "out") delete ev.status[op.member]; else ev.status[op.member] = op.status;
     } else if (t === "abend_count") {
       if (!(op.member in ev.status)) return;
@@ -757,6 +759,7 @@ ol.steps li { margin:3px 0; }
 .coin { color:var(--secondary-text-color); }
 .coin.ok { color:var(--kc-green, #43a047); }
 .coin ha-icon { --mdc-icon-size:26px; }
+.bill .item.off { opacity:.6; }
 `;
 
 const initials = (n) => { const p = String(n || "?").trim().split(/\s+/); return ((p[0]?.[0] || "?") + (p.length > 1 ? p[p.length - 1][0] : (p[0]?.[1] || ""))).toUpperCase(); };
@@ -1049,7 +1052,7 @@ class KegelclubCard extends HTMLElement {
       <div class="lbl">Strafen heute${feeSum ? ` · Grundbeträge ${money(feeSum)}` : ""}${b.lane ? ` · Kegelbahn ${money(b.lane)}${b.rules.lane_mode === "kasse" ? " beim Abschließen aus der Kasse" : " aufgeteilt"}` : ""}</div></div>`;
     h += `<div class="evbar">${b.rules.lane_mode === "off" ? "" : `<label class="hrs">${ic("timer-outline")}<input data-a="evhours" inputmode="decimal" value="${numDe(ev.hours || 0)}" aria-label="Stunden Kegelbahn"> Std.</label>`}
       <button class="btn small" data-a="guest">${ic("account-plus-outline")}Gast</button>
-      ${feeSum ? feeOpen.length ? `<button class="btn small main" data-a="basepay">${ic("hand-coin-outline")}Grundbetrag kassiert (${feeOpen.length})</button>` : `<span class="tag ok">${ic("check")}Grundbetrag kassiert</span>` : ""}
+      ${feeSum ? feeOpen.length ? `<button class="btn small main" data-a="basepay" title="Kassiert jetzt von allen, die da sind">${ic("hand-coin-outline")}<span>Grundbetrag kassiert: <span data-noicon>${esc(feeOpen.map((m) => String(members[m]?.name || "?").split(" ")[0]).join(", "))}</span></span></button>` : `<span class="tag ok">${ic("check")}Grundbetrag kassiert</span>` : ""}
       <label class="switch" style="border:0;padding:0 4px"><span>${ic("hand-okay")}Strafen erlassen</span><input type="checkbox" class="swchk" data-a="nofines" ${ev.no_fines ? "checked" : ""}></label></div>`;
     if (this._guestPick) {
       const known = d.members.filter((m) => m.guest && m.active !== false && !(m.id in ev.status));
@@ -1077,13 +1080,13 @@ class KegelclubCard extends HTMLElement {
     h += `<div class="btnrow"><button class="btn main" data-a="evclose" data-id="${esc(ev.id)}">${ic("flag-checkered")}Abend abschließen</button><button class="btn" data-a="share" data-id="${esc(ev.id)}">${ic("share-variant-outline")}Teilen</button></div>`;
     return h;
   }
-  // 🧾 Abrechnung: nur wer da ist, feste Reihenfolge; rechts nur die Strafen + 💰 Münze = bezahlt
+  // 🧾 Abrechnung: alle in fester Reihenfolge (Fehlende blass); rechts nur die Strafen + 💰 Münze = bezahlt
   _billHtml(d, ev, b, live) {
     const [members, strafen] = maps(d);
-    const here = (mid) => ["play", "watch"].includes(b.people[mid].status) || (!ev.imported && b.people[mid].hand > 0) || (ev.extra || []).some((x) => x.member === mid);
-    const ids = this._order(d, Object.keys(b.people).filter(here));
-    const away = this._order(d, Object.keys(b.people).filter((m) => !here(m)));
+    const ids = this._order(d, Object.keys(b.people)), away = [];
+    const isAway = (mid) => !["play", "watch"].includes(b.people[mid].status);
     const sumF = r2(ids.reduce((s, m) => s + (ev.imported ? b.people[m].total : b.people[m].fines + b.people[m].lane), 0));
+    // (Fehlende stehen mit drin – blass, mit offenem Grundbetrag)
     let h = this._gh("receipt-text-outline", "#3949ab", "Abrechnung", this._m(sumF));
     if (ev.imported) h += `<p class="small">📥 Aus „Alle Neune“ übernommen: Die Beträge sind die, die damals wirklich in die Kasse gebucht wurden.</p>`;
     h += `<div class="bill">${ids.map((mid) => {
@@ -1097,13 +1100,12 @@ class KegelclubCard extends HTMLElement {
       if (ev.imported) return `<div class="item" style="--cc:${st.color}"><div class="n"><b data-noicon>${esc(members[mid]?.name || "?")}</b>${chips ? `<div class="chips" style="margin-top:3px">${chips}</div>` : ""}</div><div class="amt">${this._m(p.total)}</div></div>`;
       const due = r2(p.fines + p.lane), paidF = this._paidAt(d, ev.id, mid, "fines"), paidB = this._paidAt(d, ev.id, mid, "base");
       const baseOk = !p.fee || paidB >= p.fee - 0.004, finesOk = due <= 0.004 || paidF >= due - 0.004;
-      const tags = [`<span class="tag">${st.label}</span>`,
+      const tags = isAway(mid) ? [`<span class="tag">${st.label}</span>`, p.fee ? `<span class="tag no">Grundbetrag ${money(p.fee)} offen</span>` : "", p.extra ? `<span class="tag no">+ ${money(p.extra)} nicht abgemeldet</span>` : ""].join("") : [`<span class="tag">${st.label}</span>`,
         p.fee ? `<button class="tag ${baseOk ? "ok" : "no"}" data-a="basetoggle" data-id="${esc(mid)}" title="Antippen = Grundbetrag bezahlt / nicht bezahlt">Grundbetrag ${money(p.fee)} ${baseOk ? "✓" : "offen"}</button>` : "",
         p.lane ? `<span class="tag">inkl. Bahn ${money(p.lane)}</span>` : "", ev.no_fines && Object.keys(p.items).length ? `<span class="tag">Strafen erlassen</span>` : ""].join("");
       const coin = due > 0.004 || paidF > 0 ? `<button class="iconbtn coin ${finesOk ? "ok" : ""}" data-a="coin" data-id="${esc(mid)}" title="${finesOk ? "Bezahlt ✓ – antippen = zurücknehmen" : "Antippen = Strafen bezahlt"}" aria-label="bezahlt">${ic(finesOk ? "check-circle" : "hand-coin-outline")}</button>` : `<span class="iconbtn coin"></span>`;
-      return `<div class="item" style="--cc:${st.color}"><div class="n"><b data-noicon>${esc(members[mid]?.name || "?")}</b><div class="meta">${tags}</div>${chips ? `<div class="chips" style="margin-top:3px">${chips}</div>` : ""}</div><div class="amt">${this._m(due, finesOk ? "" : "neg")}</div>${coin}</div>`;
+      return `<div class="item ${isAway(mid) ? "off" : ""}" style="--cc:${st.color}"><div class="n"><b data-noicon>${esc(members[mid]?.name || "?")}</b><div class="meta">${tags}</div>${chips ? `<div class="chips" style="margin-top:3px">${chips}</div>` : ""}</div><div class="amt">${this._m(due, finesOk ? "" : "neg")}</div>${coin}</div>`;
     }).join("")}</div>`;
-    if (away.length && !ev.imported) h += `<p class="small">Fehlten (stehen unter „Wer schuldet was“): ${away.map((mid) => `<span data-noicon>${esc(members[mid]?.name || "?")}</span> ${money(b.people[mid].total)}`).join(" · ")}</p>`;
     return h;
   }
   // 🕘 Alter Abend: ansehen, wieder öffnen, Datum, Strafen erlassen, löschen
