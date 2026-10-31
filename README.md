@@ -14,7 +14,8 @@
 
 ## ✨ Was kann das Ding?
 
-- 🎳 **Kegelabend**: Person antippen, Strafe antippen, fertig. Jeder Tipp = +1, mit ↩️ Rückgängig.
+- 🎳 **Kegelabend**: Person antippen, Strafe antippen, fertig. Jeder Tipp = +1, mit **−** und ↩️ Rückgängig, dazu **eigene Strafen** per Hand.
+- 💶 **Kassieren am Tisch**: Grundbetrag am Anfang, Strafen per Münze in der Abrechnung.
 - 👥 **Vier Zustände**: kegelt · schaut zu · abgemeldet · nicht abgemeldet – dazu **Gäste** mit den gleichen Regeln.
 - 💸 **Eigenes Sündenregister**: Name, Symbol, Betrag und **wer zahlt** – er selbst oder **alle anderen, die mitkegeln** (z. B. „Alle Neune“).
 - 🧮 **Regeln als Einstellung**: Grundbetrag, Zuschauer zahlen ja/nein, Fehlende zahlen ja/nein, Extra bei „nicht abgemeldet“, Kegelbahn pro Stunde (aus der Kasse, aufgeteilt oder aus). Passt so für jeden Club.
@@ -54,8 +55,10 @@ Den Ordner `custom_components/kegelclub` nach `/config/custom_components/kegelcl
 1. **Erster Start**: Die Karte fragt, wie ihr starten wollt – **leer**, mit **Beispiel-Strafen** oder mit der **Datei aus „Alle Neune“**.
 2. **Mitglieder** anlegen (Reiter „Mitglieder“) und unter ⚙️ → **Regeln & Beträge** Grundbetrag und Kegelbahn einstellen.
 3. **Kegelabend starten**. Der kleine Knopf unter jeder Person schaltet weiter: kegelt → schaut zu → abgemeldet → nicht abgemeldet.
-4. **Strafe buchen**: erst die Person, dann die Strafe antippen.
-5. **Abend abschließen** → die Abrechnung landet in der **Kasse** unter „Wer schuldet was“. Bezahlt? Grünen Haken antippen.
+4. **„Grundbetrag kassiert“** antippen, wenn am Anfang alle bezahlt haben.
+5. **Strafe buchen**: erst die Person, dann die Strafe antippen. Das rote **−** oben links nimmt eine zurück, **„Eigene“** = Betrag und Grund selbst eintippen.
+6. Zum Schluss in der **Abrechnung** auf die **Münze** tippen, wenn jemand seine Strafen bezahlt hat.
+7. **Abend abschließen**. Wer noch offen ist, landet unter „Wer schuldet was“. Die Kegelbahn wird jetzt aus der Kasse gebucht.
 
 Alles Weitere steht in der Karte unter **📖 Anleitung** (mit Suche).
 </details>

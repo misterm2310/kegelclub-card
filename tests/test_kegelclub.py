@@ -135,9 +135,10 @@ async def test_services(hass, setup):
         await hass.services.async_call(DOMAIN, "strafe_buchen", {"mitglied": "Niemand", "strafe": "Pumpe"}, blocking=True)
     await hass.services.async_call(DOMAIN, "einzahlung", {"mitglied": "Anna", "betrag": 20}, blocking=True)
     res = await hass.services.async_call(DOMAIN, "daten_abrufen", {}, blocking=True, return_response=True)
-    assert res["kasse"] == 20 - 30 and res["running"]
+    assert res["kasse"] == 20 and res["running"]  # Kegelbahn geht erst beim Abschließen raus
     await hass.services.async_call(DOMAIN, "abend_abschliessen", {}, blocking=True)
     assert m.open_evening() is None
+    assert m.summary()["kasse"] == 20 - 30
 
 
 def _fake_alle_neune() -> bytes:
@@ -224,3 +225,26 @@ async def test_delete_used_member_only_hides(hass, setup):
     a = m.find("member", "a")
     assert a and a["active"] is False
     assert m.find("member", "g") is None  # nie dabei gewesen → ganz weg
+
+
+async def test_pay_at_table_and_hand_fine(hass, setup):
+    """💶 Grundbetrag am Anfang, ✍️ Strafe per Hand, Münze = Strafen bezahlt."""
+    m = mgr(hass)
+    club(m)
+    ok(m, {"type": "abend_start", "id": "e1", "hours": 2})
+    ok(m, *({"type": "pay", "member": x, "amount": 7.5, "abend": "e1", "tag": "base", "id": f"b{x}"} for x in "abcd"))
+    ok(m, {"type": "abend_extra_add", "abend": "e1", "member": "a", "name": "Bier umgekippt", "amount": "2,00", "id": "x1"},
+       {"type": "abend_count", "abend": "e1", "member": "a", "strafe": "pumpe", "delta": 3})
+    res = m.apply([{"type": "abend_extra_add", "abend": "e1", "member": "g", "name": "?", "amount": 1}])
+    assert not res[0]["ok"]  # Gast ist heute nicht dabei
+    debt = {p["id"]: p["debt"] for p in m.summary()["people"]}
+    assert debt["a"] == 2.3 and debt["b"] == 0
+    k = next(x for x in m.data["kasse"] if x["id"] == "ba")
+    assert k["abend"] == "e1" and k["tag"] == "base"
+    ok(m, {"type": "pay", "member": "a", "amount": 2.3, "abend": "e1", "tag": "fines"})
+    assert {p["id"]: p["debt"] for p in m.summary()["people"]}["a"] == 0
+    ok(m, {"type": "abend_extra_delete", "abend": "e1", "id": "x1"})
+    assert {p["id"]: p["debt"] for p in m.summary()["people"]}["a"] == -2.0  # Guthaben
+    assert m.summary()["kasse"] == 30 + 2.3  # Bahn noch nicht abgezogen
+    ok(m, {"type": "abend_close", "abend": "e1", "value": True})
+    assert m.summary()["kasse"] == round(30 + 2.3 - 20, 2)

@@ -142,7 +142,7 @@ def bill_evening(ev: dict[str, Any], members: dict[str, dict[str, Any]], strafen
         elif st in ("excused", "absent") and not guest:
             fee = base if rules.get("missing_pays", True) else 0.0
         extra = float(rules.get("unexcused_extra") or 0) if st == "absent" and not guest else 0.0
-        people[mid] = {"status": st, "fee": r2(fee), "extra": r2(extra), "own": 0.0, "from_others": 0.0, "lane": 0.0, "items": {}}
+        people[mid] = {"status": st, "fee": r2(fee), "extra": r2(extra), "own": 0.0, "from_others": 0.0, "hand": 0.0, "lane": 0.0, "items": {}}
 
     def price(sid: str) -> tuple[float, str]:
         if sid in prices:
@@ -170,6 +170,9 @@ def bill_evening(ev: dict[str, Any], members: dict[str, dict[str, Any]], strafen
             elif mid in people:
                 people[mid]["own"] += n * amount if fines else 0.0
                 people[mid]["items"][sid] = people[mid]["items"].get(sid, 0) + n
+    for x in ev.get("extra") or []:  # ✍️ Strafe per Hand (eigener Betrag + Grund)
+        if x.get("member") in people:
+            people[x["member"]]["hand"] += float(x.get("amount") or 0) if fines else 0.0
     hours = float(ev.get("hours") or 0)
     lane = r2(hours * float(rules.get("lane_rate") or 0)) if rules.get("lane_mode") != "off" else 0.0
     lane_kasse = lane if rules.get("lane_mode") == "kasse" else 0.0
@@ -189,7 +192,9 @@ def bill_evening(ev: dict[str, Any], members: dict[str, dict[str, Any]], strafen
         p["own"] = r2(p["own"])
         p["from_others"] = r2(p["from_others"])
         p["lane"] = r2(p["lane"])
-        p["total"] = r2(p["fee"] + p["extra"] + p["own"] + p["from_others"] + p["lane"])
+        p["hand"] = r2(p["hand"])
+        p["fines"] = r2(p["own"] + p["from_others"] + p["hand"])
+        p["total"] = r2(p["fee"] + p["extra"] + p["fines"] + p["lane"])
         total += p["total"]
     return {"people": people, "lane": lane, "lane_kasse": lane_kasse, "total": r2(total)}
 
@@ -270,7 +275,8 @@ class KegelclubManager:
         last = None
         for ev in d["abende"]:
             b = bill_evening(ev, members, strafen, d["settings"])
-            lane_kasse += b["lane_kasse"]
+            if ev.get("closed"):  # 🎳 Kegelbahn geht erst beim Abschließen aus der Kasse
+                lane_kasse += b["lane_kasse"]
             if ev.get("imported"):  # 📥 alte Abende aus der App: schon in der Kasse gebucht, keine offenen Beträge
                 continue
             for mid, p in b["people"].items():
@@ -469,8 +475,13 @@ class KegelclubManager:
             return "🙌 Strafen erlassen" if op.get("value", True) is not False else "💸 Strafen zählen wieder"
         if t == "abend_hours":
             return f"⏱️ Kegelbahn {op.get('hours')} Std."
+        if t == "abend_extra_add":
+            return f"✍️ {op.get('name') or 'Strafe'} {self._eur(abs(parse_money(op.get('amount', 0))))} · {self._mname(op.get('member'))}"
+        if t == "abend_extra_delete":
+            return "↩️ Strafe per Hand entfernt"
         if t == "pay":
-            return f"💶 Einzahlung {self._mname(op.get('member'))} {self._eur(parse_money(op.get('amount', 0)))}"
+            what = {"base": "Grundbetrag", "fines": "Strafen"}.get(str(op.get("tag")), "Einzahlung") if op.get("abend") else "Einzahlung"
+            return f"💶 {what} {self._mname(op.get('member'))} {self._eur(parse_money(op.get('amount', 0)))}"
         if t == "kasse_add":
             sign = "−" if op.get("kind") == "out" else "+"
             return f"🏦 {op.get('name') or ('Ausgabe' if op.get('kind') == 'out' else 'Einnahme')} {sign}{self._eur(abs(parse_money(op.get('amount', 0))))}"
@@ -622,6 +633,21 @@ class KegelclubManager:
             self.evening(op.get("abend"))["no_fines"] = op.get("value", True) is not False
         elif t == "abend_note":
             self.evening(op.get("abend"))["note"] = str(op.get("note") or "")[:500]
+        elif t == "abend_extra_add":  # ✍️ Strafe per Hand
+            ev = self.evening(op.get("abend"))
+            mid = str(op.get("member") or "")
+            if mid not in (ev.get("status") or {}):
+                raise HomeAssistantError("Diese Person ist an dem Abend nicht dabei")
+            amount = abs(parse_money(op.get("amount")))
+            if amount <= 0:
+                raise HomeAssistantError("Betrag muss größer als 0 sein")
+            xid = str(op.get("id") or oid)
+            lst = ev.setdefault("extra", [])
+            if not any(x["id"] == xid for x in lst):
+                lst.append({"id": xid, "member": mid, "name": str(op.get("name") or "Strafe")[:60], "amount": amount, "ts": ts})
+        elif t == "abend_extra_delete":
+            ev = self.evening(op.get("abend"))
+            ev["extra"] = [x for x in ev.get("extra") or [] if x["id"] != op.get("id")]
         elif t == "abend_date":
             date = str(op.get("date") or "")[:10]
             if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", date):
@@ -647,7 +673,11 @@ class KegelclubManager:
                 raise HomeAssistantError("Betrag muss größer als 0 sein")
             kid = str(op.get("id") or oid)
             if not any(k["id"] == kid for k in d["kasse"]):
-                d["kasse"].append({"id": kid, "ts": ts, "kind": "in", "member": mid, "amount": amount, "name": str(op.get("name") or "Einzahlung")[:80], "by": user})
+                entry = {"id": kid, "ts": ts, "kind": "in", "member": mid, "amount": amount, "name": str(op.get("name") or "Einzahlung")[:80], "by": user}
+                if op.get("abend"):  # 💶 am Kegeltisch kassiert: gehört zu diesem Abend (Grundbetrag oder Strafen)
+                    entry["abend"] = str(op["abend"])
+                    entry["tag"] = "base" if op.get("tag") == "base" else "fines"
+                d["kasse"].append(entry)
         elif t == "kasse_add":
             kind = "out" if op.get("kind") == "out" else "in"
             amount = abs(parse_money(op.get("amount")))

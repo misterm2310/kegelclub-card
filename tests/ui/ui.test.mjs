@@ -38,31 +38,65 @@ const shot = async (name) => { if (shots) await p.locator("#c1").screenshot({ pa
 const tap = async (sel) => { await p.locator("#c1").locator(sel).first().click(); await p.waitForTimeout(120); };
 const heroBig = () => sr(`return h.querySelector('.hero .big')?.textContent.replace(/\\s+/g, ' ').trim();`);
 
-// 🎳 Laufender Abend: Personen, Strafen, Abrechnung
+// 🎳 Laufender Abend: Personen, Strafen, Abrechnung (oben groß = nur die Strafen von heute)
 check("Laufender Abend wird gezeigt", /Kegelabend/.test(await sr(`return h.querySelector('.hero .lbl').textContent;`)));
-check("Heute zusammen 47,20 €", (await heroBig()) === "47,20 €", await heroBig());
+check("Strafen heute 2,20 €", (await heroBig()) === "2,20 €", await heroBig());
 check("Strafen gesperrt, solange keiner gewählt ist", await sr(`return [...h.querySelectorAll('.fine')].every((b) => b.disabled);`));
 await shot("1-abend.png");
 await tap('.pp[data-id="m2"]');
 await tap('.fine[data-id="s1"]');
 let last = await p.evaluate(() => fake.applied.at(-1));
 check("Pumpe für Bernd gebucht", last?.type === "abend_count" && last.member === "m2" && last.strafe === "s1" && last.delta === 1, JSON.stringify(last));
-check("Summe +0,10 €", (await heroBig()) === "47,30 €", await heroBig());
+check("Summe +0,10 €", (await heroBig()) === "2,30 €", await heroBig());
 await tap('.fine[data-id="s4"]');
-check("Alle Neune von Bernd: 4 andere Mitkegler zahlen je 0,10 € (Zuschauerin nicht)", (await heroBig()) === "47,70 €", await heroBig());
-check("Bernd zahlt seine Neun nicht selbst", await sr(`return h.querySelector('.pp[data-id="m2"] .sum').textContent.includes("8,20");`), await sr(`return h.querySelector('.pp[data-id="m2"] .sum').textContent;`));
+check("Alle Neune von Bernd: 4 andere Mitkegler zahlen je 0,10 € (Zuschauerin nicht)", (await heroBig()) === "2,70 €", await heroBig());
+check("Bernd zahlt seine Neun nicht selbst (Kachel = nur Strafen 0,70 €)", await sr(`return h.querySelector('.pp[data-id="m2"] .sum').textContent.includes("0,70");`), await sr(`return h.querySelector('.pp[data-id="m2"] .sum').textContent;`));
+// ➖ oben links auf der Kachel
+check("Minus oben links erscheint bei gezählter Strafe", await sr(`return !!h.querySelector('.fine[data-id="s4"] .fminus') && !h.querySelector('.fine[data-id="s3"] .fminus');`));
+await tap('.fine[data-id="s4"] .fminus');
+last = await p.evaluate(() => fake.applied.at(-1));
+check("Minus nimmt eine zurück", last?.type === "abend_count" && last.strafe === "s4" && last.delta === -1 && (await heroBig()) === "2,30 €", JSON.stringify(last));
+await tap('[data-a="undo"]');
+check("Rückgängig bringt sie wieder", (await heroBig()) === "2,70 €", await heroBig());
 await shot("2-strafe.png");
+// ✍️ Eigene Strafe
+await tap('[data-a="handopen"]');
+await p.locator("#c1").locator('form[data-a="hand"] input[name="name"]').fill("Bier umgekippt");
+await p.locator("#c1").locator('form[data-a="hand"] input[name="amount"]').fill("2,00");
+await tap('form[data-a="hand"] button[type="submit"]');
+last = await p.evaluate(() => fake.applied.at(-1));
+check("Eigene Strafe gebucht", last?.type === "abend_extra_add" && last.member === "m2" && last.amount === 2 && (await heroBig()) === "4,70 €", JSON.stringify(last) + " " + (await heroBig()));
+await tap('[data-a="handdel"]');
+check("Eigene Strafe wieder raus", (await heroBig()) === "2,70 €", await heroBig());
+// 🙈 Wer fehlt, ist ausgeblendet
 await tap('.stbtn[data-id="m6"]');
 last = await p.evaluate(() => fake.applied.at(-1));
 check("Status weiter: schaut zu → abgemeldet", last?.type === "abend_status" && last.status === "excused", JSON.stringify(last));
+check("Abgemeldet: keine Kachel, aber in „Fehlen heute“, nicht in der Abrechnung", await sr(`return !h.querySelector('.pp[data-id="m6"]') && /Frida/.test(h.querySelector('.away')?.textContent || '') && !/Frida Holz/.test([...h.querySelectorAll('.bill .item b')].map((x) => x.textContent).join());`));
+check("Abrechnung in fester Reihenfolge wie unter Mitglieder", await sr(`return [...h.querySelectorAll('.bill .item b')].map((x) => x.textContent).join() === "Anna Beispiel,Bernd Muster,Carla Kugel,Dieter Pumpe,Emil Neuner";`), await sr(`return [...h.querySelectorAll('.bill .item b')].map((x) => x.textContent).join();`));
+// 💶 Grundbetrag kassiert + Münze
+await tap('[data-a="basepay"]');
+const base = await p.evaluate(() => fake.applied.filter((o) => o.type === "pay" && o.tag === "base"));
+check("Grundbetrag kassiert: 5 × 7,50 € mit Abend", base.length === 5 && base.every((o) => o.amount === 7.5 && o.abend === "evnow"), JSON.stringify(base));
+await tap('.bill [data-a="coin"][data-id="m2"]');
+last = await p.evaluate(() => fake.applied.at(-1));
+check("Münze: Bernd zahlt seine Strafen (0,70 €)", last?.type === "pay" && last.tag === "fines" && last.amount === 0.7, JSON.stringify(last));
+check("Münze wird grün", await sr(`return h.querySelector('.bill [data-a="coin"][data-id="m2"]').classList.contains('ok');`));
+await shot("3-abrechnung.png");
+// ⚠️ Abschließen mit Offenen fragt nach (hier: Nein)
+let dlg = "";
+p.once("dialog", (x) => { dlg = x.message(); x.dismiss(); });
+await tap('[data-a="evclose"]');
+check("Abschließen warnt bei Offenen", /Noch nicht bezahlt: Anna Beispiel/.test(dlg) && !/Bernd/.test(dlg), dlg);
 await tap('[data-a="nofines"]');
-check("Strafen erlassen: nur noch Grundbeträge (6 × 7,50 €)", (await heroBig()) === "45,00 €", await heroBig());
+check("Strafen erlassen: 0,00 €", (await heroBig()) === "0,00 €", await heroBig());
 await tap('[data-a="nofines"]');
 
 // 🏦 Kasse
 await tap('[data-a="tab"][data-v="kasse"]');
-check("Kegelkasse 247,10 €", (await heroBig()) === "247,10 €", await heroBig());
-check("Schuldner-Liste da", await sr(`return h.querySelectorAll('[data-a="open"][data-k="pay"]').length >= 5;`));
+check("Kegelkasse (Bahn nur für abgeschlossene Abende)", (await heroBig()) === "315,30 €", await heroBig());
+check("Kegelbahn als eigene Zeile in den Buchungen", await sr(`return [...h.querySelectorAll('.item b')].filter((x) => /^Kegelbahn /.test(x.textContent)).length === 3;`));
+check("Schuldner-Liste da", await sr(`return h.querySelectorAll('[data-a="open"][data-k="pay"]').length >= 3;`), await sr(`return h.querySelectorAll('[data-a="open"][data-k="pay"]').length;`));
 await shot("3-kasse.png");
 
 // 📴 Offline: Strafe landet im Postausgang und wird später nachgeschickt
