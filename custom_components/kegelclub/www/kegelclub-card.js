@@ -6,7 +6,7 @@
 // - Jede Änderung (Pumpe, Einzahlung, wer da ist …) wird als kleine „Änderung“ verschickt.
 // - Klappt das Verschicken nicht (kein Netz auf der Kegelbahn), landet die Änderung im Postausgang und wird
 //   später nachgeschickt. Bis dahin rechnet die Karte selbst so, als wäre sie schon angekommen.
-const KC_VERSION = "0.1.0-beta.2";
+const KC_VERSION = "0.1.0-beta.3";
 
 const MONTHS = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
 const QKEY = "kegelclub_queue";
@@ -29,7 +29,7 @@ const MEMBER_COLORS = ["#1e88e5", "#e91e63", "#8e24aa", "#fb8c00", "#00897b", "#
 // 📖 Anleitung – einfach erklärt, Kapitel zum Aufklappen
 const KC_GUIDE = [
   { icon: "rocket-launch-outline", title: "Erste Schritte", text: `Beim allerersten Öffnen fragt die Karte, wie du starten willst: <b>leer</b>, mit <b>Beispiel-Strafen</b> oder mit der <b>Datei aus „Alle Neune“</b>.<br>Danach unter <b>„Mitglieder“</b> eure Leute anlegen und unter ⚙️ → <b>„Regeln & Beträge“</b> Grundbetrag und Kegelbahn einstellen. Fertig – gut Holz! 🎳` },
-  { icon: "bowling", title: "Ein Kegelabend", text: `Reiter <b>„Abend“</b> → <b>„Kegelabend starten“</b>. Alle Mitglieder stehen als Kacheln da – in der Reihenfolge wie unter „Mitglieder“.<br><b>1.</b> Wer ist da? <b>Kleiner Knopf unten an der Kachel</b> schaltet weiter: kegelt → schaut zu → abgemeldet → nicht abgemeldet. Wer fehlt, rutscht in die Zeile <b>„Fehlen heute“</b> – antippen schaltet weiter und holt ihn zurück.<br><b>2.</b> <b>„Grundbetrag kassiert“</b> antippen, sobald alle bezahlt haben (einzeln geht es in der Abrechnung).<br><b>3.</b> Strafe buchen: <b>Person antippen</b> (blau umrandet), dann die <b>Strafe antippen</b>. Jeder Tipp = +1. Vertippt? Das rote <b>−</b> oben links auf der Kachel nimmt eine zurück. Etwas Besonderes? <b>„Eigene“</b> = Betrag und Grund selbst eintippen.<br><b>4.</b> Zum Schluss in der <b>Abrechnung</b> (rechts stehen nur die Strafen) auf die <b>Münze</b> tippen, wenn bezahlt wurde – sie wird grün ✓.<br><b>5.</b> <b>„Abend abschließen“</b>. Hat noch jemand offen, sagt die Karte vorher Bescheid. Mit Knopf zum <b>Teilen</b> (z. B. in die WhatsApp-Gruppe).` },
+  { icon: "bowling", title: "Ein Kegelabend", text: `Reiter <b>„Abend“</b> → <b>„Kegelabend starten“</b>. Alle Mitglieder stehen als Kacheln da – in der Reihenfolge wie unter „Mitglieder“.<br><b>1.</b> Wer ist da? <b>Kleiner Knopf unten an der Kachel</b> schaltet weiter: kegelt → schaut zu → abgemeldet → nicht abgemeldet. Wer fehlt, bleibt als <b>blasse Kachel</b> stehen. Für Fehlende geht nur eine Strafe per Hand (<b>„Eigene“</b>).<br><b>2.</b> <b>„Grundbetrag kassiert“</b> antippen, sobald alle bezahlt haben (einzeln geht es in der Abrechnung).<br><b>3.</b> Strafe buchen: <b>Person antippen</b> (blau umrandet), dann die <b>Strafe antippen</b>. Jeder Tipp = +1. Vertippt? Das rote <b>−</b> oben links auf der Kachel nimmt eine zurück. Etwas Besonderes? <b>„Eigene“</b> = Betrag und Grund selbst eintippen.<br><b>4.</b> Zum Schluss in der <b>Abrechnung</b> (rechts stehen nur die Strafen) auf die <b>Münze</b> tippen, wenn bezahlt wurde – sie wird grün ✓.<br><b>5.</b> <b>„Abend abschließen“</b>. Hat noch jemand offen, sagt die Karte vorher Bescheid. Mit Knopf zum <b>Teilen</b> (z. B. in die WhatsApp-Gruppe).` },
   { icon: "account-plus-outline", title: "Gäste", text: `Im laufenden Abend <b>„＋ Gast“</b> antippen: bekannten Gast wählen oder neuen Namen eintippen. Für Gäste gelten die gleichen Regeln wie für Mitglieder. Ein Gast, der nicht da ist, zahlt nichts – er gehört ja nicht zum Abend.` },
   { icon: "cash-multiple", title: "Was kostet was?", text: `Unter ⚙️ → <b>„Regeln & Beträge“</b>:<br>• <b>Grundbetrag</b> pro Person und Abend (z. B. 7,50 €).<br>• <b>Zuschauer zahlen</b> den Grundbetrag (Schalter).<br>• <b>Fehlende Mitglieder zahlen</b> den Grundbetrag (Schalter) – egal ob abgemeldet oder nicht.<br>• <b>Nicht abgemeldet</b>: Extra-Betrag obendrauf (z. B. 5,00 €).<br>• <b>Kegelbahn</b>: pro Stunde, aus der <b>Kasse</b> (wird beim <b>Abschließen</b> als Zeile „Kegelbahn“ in die Buchungen geschrieben), auf die Anwesenden <b>aufgeteilt</b> oder <b>gar nicht</b>.<br>Ändern gilt ab sofort und für den laufenden Abend. Abgeschlossene Abende bleiben, wie sie waren.` },
   { icon: "gavel", title: "Sündenregister (Strafen)", text: `Reiter <b>„Mitglieder“</b> → Bereich <b>Strafen</b> → <b>＋ Neu</b>. Jede Strafe hat Name, Symbol, Betrag und <b>„Wer zahlt?“</b>:<br>• <b>Er selbst</b> – z. B. Pumpe, Klingeln.<br>• <b>Alle anderen, die mitkegeln</b> – z. B. <b>Alle Neune</b>: Wer die Neun wirft, zahlt nichts, alle anderen Mitkegler zahlen. Zuschauer und Fehlende bleiben verschont.<br>Am Griff ⠿ ziehen = Reihenfolge der Knöpfe am Abend.` },
@@ -48,6 +48,7 @@ const KC_GUIDE = [
 ];
 // 🆕 Was ist neu – das Neueste oben (wie bei der Einkaufsliste)
 const KC_NEWS = [
+  ["0.1.0-beta.3", "🙈 Keine extra Zeile „Fehlen heute“ mehr: Wer fehlt, bleibt als <b>blasse Kachel</b> stehen · ✍️ Für Fehlende geht nur <b>„Eigene“</b> (Strafe per Hand) – sie erscheinen dann auch in der Abrechnung"],
   ["0.1.0-beta.2", "➖ <b>Minus oben links</b> auf der Strafen-Kachel · ✍️ <b>Eigene Strafe</b> mit Betrag und Grund · 💶 <b>Grundbetrag kassiert</b> am Anfang und 🪙 <b>Münze</b> in der Abrechnung (rechts nur noch die Strafen) · 🙈 Wer fehlt, ist ausgeblendet („Fehlen heute“) · ⠿ feste Reihenfolge wie unter „Mitglieder“ · 🎳 Kegelbahn erst beim Abschließen aus der Kasse, als eigene Zeile · ⚠️ Hinweis beim Abschließen, wenn noch jemand offen ist · ↩️ Rückgängig-Knopf repariert"],
   ["0.1.0-beta.1", "🎉 <b>Erste Beta!</b> · 🎳 Kegelabend mit großen Strafen-Knöpfen, vier Zuständen (kegelt, schaut zu, abgemeldet, nicht abgemeldet) und Gästen · 💸 eigenes Sündenregister, auch „<b>alle anderen zahlen</b>“ (Alle Neune) · 🙌 Strafen erlassen · 🏦 Kegelkasse mit „Wer schuldet was“, Einzahlungen, Ausgaben und Kegelbahn (aus der Kasse, aufgeteilt oder aus) · 📊 Statistik mit Königen, Säulen, Kuchen und Linie · 📥 Umzug aus <b>„Alle Neune“</b> inkl. aller alten Abende und der Kasse · 💾 Sicherung · 📱 Offline-App für die Kegelbahn · 🔒 PIN · 📖 Anleitung"],
 ];
@@ -1038,11 +1039,10 @@ class KegelclubCard extends HTMLElement {
     const [members, strafen] = maps(d);
     const b = billEvening(ev, members, strafen, d.settings);
     const here = (mid) => ["play", "watch"].includes(ev.status[mid]);
-    const ids = this._order(d, Object.keys(ev.status).filter(here));
-    const away = this._order(d, Object.keys(ev.status).filter((m) => !here(m)));
-    if (this._sel && !ids.includes(this._sel)) this._sel = null;
-    const sel = this._sel;
-    const finesSum = r2(ids.reduce((s, m) => s + b.people[m].fines, 0));
+    const all = this._order(d, Object.keys(ev.status)), ids = all.filter(here);
+    if (this._sel && !all.includes(this._sel)) this._sel = null;
+    const sel = this._sel, selAway = !!sel && !here(sel);
+    const finesSum = r2(all.reduce((s, m) => s + b.people[m].fines, 0));
     const feeSum = r2(ids.reduce((s, m) => s + b.people[m].fee, 0));
     const feeOpen = ids.filter((m) => b.people[m].fee > 0 && this._paidAt(d, ev.id, m, "base") < b.people[m].fee - 0.004);
     let h = `<div class="hero" style="--hc:#fb8c00"><div class="lbl">Kegelabend · ${esc(fmtDate(ev.date))}${ev.waiting ? " · ⏳ wartet" : ""}</div><div class="big" style="font-size:1.9em">${this._m(finesSum)}</div>
@@ -1059,17 +1059,16 @@ class KegelclubCard extends HTMLElement {
         <div class="btnrow end"><button class="btn small" data-a="guest">${ic("close")}Fertig</button></div></div>`;
     }
     h += this._gh("account-group-outline", "#1e88e5", "Wer war's?", sel ? `<span data-noicon>${esc(members[sel]?.name || "")}</span>` : "Person antippen");
-    h += `<div class="ppl">${ids.map((mid) => {
+    h += `<div class="ppl">${all.map((mid) => {
       const m = members[mid] || {}, p = b.people[mid], st = STATUS[p.status] || STATUS.play;
-      return `<div class="pp ${sel === mid ? "sel" : ""}" data-a="pick" data-id="${esc(mid)}" role="button">${m.guest ? `<span class="gst">Gast</span>` : ""}<span class="av" style="--ac:${mcol(d, mid)}">${esc(initials(m.name))}</span><span class="nm" data-noicon>${esc(m.name || "?")}</span><span class="sum">${this._m(p.fines)}</span>
+      return `<div class="pp ${sel === mid ? "sel" : ""} ${here(mid) ? "" : "off"}" data-a="pick" data-id="${esc(mid)}" role="button">${m.guest ? `<span class="gst">Gast</span>` : ""}<span class="av" style="--ac:${mcol(d, mid)}">${esc(initials(m.name))}</span><span class="nm" data-noicon>${esc(m.name || "?")}</span><span class="sum">${this._m(p.fines)}</span>
         <button class="stbtn" style="--sc:${st.color}" data-a="status" data-id="${esc(mid)}" title="Antippen = weiter: kegelt → schaut zu → abgemeldet → nicht abgemeldet">${ic(st.icon)}${st.label}</button></div>`;
     }).join("")}</div>`;
-    if (away.length) h += `<div class="away"><span class="small">Fehlen heute:</span>${away.map((mid) => { const st = STATUS[ev.status[mid]] || STATUS.excused; return `<button class="chip" data-a="status" data-id="${esc(mid)}" title="Antippen = weiter (nicht abgemeldet → kegelt wieder mit)" style="--sc:${st.color}"><span data-noicon>${esc(members[mid]?.name || "?")}</span> · ${st.label}</button>`; }).join("")}</div>`;
     const fines = d.strafen.filter((s) => s.active !== false);
-    h += this._gh("gavel", "#e53935", sel ? `Strafe für ${esc(members[sel]?.name || "")}` : "Strafen", sel ? "" : "erst Person wählen");
+    h += this._gh("gavel", "#e53935", sel ? `Strafe für ${esc(members[sel]?.name || "")}` : "Strafen", sel ? (selAway ? "fehlt – nur „Eigene“" : "") : "erst Person wählen");
     h += `<div class="fines">${fines.map((s) => {
       const n = ev.counts?.[sel]?.[s.id] || 0, pr = ev.prices?.[s.id] || [s.amount, s.payer];
-      return `<button class="fine" data-a="fine" data-id="${esc(s.id)}" ${sel ? "" : "disabled"} title="${esc(s.name)}">${n ? `<span class="fminus" data-a="fminus" data-id="${esc(s.id)}" role="button" title="eins zurück" aria-label="eins zurück">−</span><span class="cnt">${n}</span>` : ""}<ha-icon icon="${esc(s.icon || "mdi:bowling")}"></ha-icon><b data-noicon>${esc(s.name)}</b><small class="${pr[1] === "others" ? "oth" : ""}">${money(pr[0])}${pr[1] === "others" ? " · alle anderen" : ""}</small></button>`;
+      return `<button class="fine" data-a="fine" data-id="${esc(s.id)}" ${sel && !selAway ? "" : "disabled"} title="${esc(s.name)}">${n && !selAway ? `<span class="fminus" data-a="fminus" data-id="${esc(s.id)}" role="button" title="eins zurück" aria-label="eins zurück">−</span><span class="cnt">${n}</span>` : ""}<ha-icon icon="${esc(s.icon || "mdi:bowling")}"></ha-icon><b data-noicon>${esc(s.name)}</b><small class="${pr[1] === "others" ? "oth" : ""}">${money(pr[0])}${pr[1] === "others" ? " · alle anderen" : ""}</small></button>`;
     }).join("")}<button class="fine hand" data-a="handopen" ${sel ? "" : "disabled"} title="Strafe per Hand">${ic("pencil-plus-outline")}<b>Eigene</b><small>Betrag + Grund</small></button></div>`;
     if (sel && this._hand) h += `<form class="edit" data-a="hand"><div class="f"><label class="wide">Wofür? (z. B. Bier umgekippt)<input name="name" autocomplete="off"></label><label>Betrag (${KC_MONEY.sym})<input name="amount" inputmode="decimal" autocomplete="off"></label></div>
       <div class="btnrow end"><button type="button" class="btn" data-a="handopen">${ic("close")}Abbrechen</button><button class="btn main" type="submit">${ic("check")}Für ${esc(members[sel]?.name || "")} buchen</button></div></form>`;
@@ -1081,7 +1080,7 @@ class KegelclubCard extends HTMLElement {
   // 🧾 Abrechnung: nur wer da ist, feste Reihenfolge; rechts nur die Strafen + 💰 Münze = bezahlt
   _billHtml(d, ev, b, live) {
     const [members, strafen] = maps(d);
-    const here = (mid) => ["play", "watch"].includes(b.people[mid].status);
+    const here = (mid) => ["play", "watch"].includes(b.people[mid].status) || (!ev.imported && b.people[mid].hand > 0) || (ev.extra || []).some((x) => x.member === mid);
     const ids = this._order(d, Object.keys(b.people).filter(here));
     const away = this._order(d, Object.keys(b.people).filter((m) => !here(m)));
     const sumF = r2(ids.reduce((s, m) => s + (ev.imported ? b.people[m].total : b.people[m].fines + b.people[m].lane), 0));
@@ -1594,7 +1593,7 @@ class KegelclubCard extends HTMLElement {
     // 🎳 Abend
     else if (a === "pick") { this._sel = this._sel === id ? null : id; redraw(); }
     else if (a === "status" && ev) { const cur = ev.status[id] || "play"; this._send({ type: "abend_status", abend: ev.id, member: id, status: STATUS_NEXT[cur] }); }
-    else if (a === "fine" && ev && this._sel) {
+    else if (a === "fine" && ev && this._sel && ["play", "watch"].includes(ev.status[this._sel])) {
       try { navigator.vibrate?.(15); } catch (_) { /* egal */ }
       const s = d.strafen.find((x) => x.id === id);
       this._send({ type: "abend_count", abend: ev.id, member: this._sel, strafe: id, delta: 1 });

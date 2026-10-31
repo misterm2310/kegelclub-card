@@ -72,7 +72,16 @@ check("Eigene Strafe wieder raus", (await heroBig()) === "2,70 €", await heroB
 await tap('.stbtn[data-id="m6"]');
 last = await p.evaluate(() => fake.applied.at(-1));
 check("Status weiter: schaut zu → abgemeldet", last?.type === "abend_status" && last.status === "excused", JSON.stringify(last));
-check("Abgemeldet: keine Kachel, aber in „Fehlen heute“, nicht in der Abrechnung", await sr(`return !h.querySelector('.pp[data-id="m6"]') && /Frida/.test(h.querySelector('.away')?.textContent || '') && !/Frida Holz/.test([...h.querySelectorAll('.bill .item b')].map((x) => x.textContent).join());`));
+check("Abgemeldet: blasse Kachel, keine Zeile „Fehlen heute“, nicht in der Abrechnung", await sr(`return h.querySelector('.pp[data-id="m6"]').classList.contains('off') && !h.querySelector('.away') && !/Frida Holz/.test([...h.querySelectorAll('.bill .item b')].map((x) => x.textContent).join());`));
+await tap('.pp[data-id="m6"]');
+check("Fehlende: normale Strafen gesperrt, „Eigene“ geht", await sr(`return [...h.querySelectorAll('.fine[data-a="fine"]')].every((b) => b.disabled) && !h.querySelector('[data-a="handopen"]').disabled;`));
+await tap('[data-a="handopen"]');
+await p.locator("#c1").locator('form[data-a="hand"] input[name="name"]').fill("Kranzgeld");
+await p.locator("#c1").locator('form[data-a="hand"] input[name="amount"]').fill("3");
+await tap('form[data-a="hand"] button[type="submit"]');
+check("Fehlende mit Hand-Strafe erscheint in der Abrechnung", await sr(`return /Frida Holz/.test([...h.querySelectorAll('.bill .item b')].map((x) => x.textContent).join());`));
+await tap('[data-a="handdel"]');
+await tap('.pp[data-id="m2"]');
 check("Abrechnung in fester Reihenfolge wie unter Mitglieder", await sr(`return [...h.querySelectorAll('.bill .item b')].map((x) => x.textContent).join() === "Anna Beispiel,Bernd Muster,Carla Kugel,Dieter Pumpe,Emil Neuner";`), await sr(`return [...h.querySelectorAll('.bill .item b')].map((x) => x.textContent).join();`));
 // 💶 Grundbetrag kassiert + Münze
 await tap('[data-a="basepay"]');

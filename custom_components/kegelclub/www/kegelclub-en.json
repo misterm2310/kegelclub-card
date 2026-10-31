@@ -392,5 +392,6 @@
  "Zahlung von {} zurückgenommen": "Payment of {0} taken back",
  "Grundbetrag von {} kassiert": "Base fee collected from {0}",
  "{} für {} zurückgenommen": "{0} for {1} taken back",
- "{} für {}": "{0} for {1}"
+ "{} für {}": "{0} for {1}",
+ "fehlt – nur „Eigene“": "missing – only “Custom”"
 }
