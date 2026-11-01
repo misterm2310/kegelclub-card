@@ -6,7 +6,7 @@
 // - Jede Änderung (Pumpe, Einzahlung, wer da ist …) wird als kleine „Änderung“ verschickt.
 // - Klappt das Verschicken nicht (kein Netz auf der Kegelbahn), landet die Änderung im Postausgang und wird
 //   später nachgeschickt. Bis dahin rechnet die Karte selbst so, als wäre sie schon angekommen.
-const KC_VERSION = "0.1.0-beta.12";
+const KC_VERSION = "1.0.0";
 
 const MONTHS = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
 const QKEY = "kegelclub_queue";
@@ -49,6 +49,7 @@ const KC_GUIDE = [
 ];
 // 🆕 Was ist neu – das Neueste oben (wie bei der Einkaufsliste)
 const KC_NEWS = [
+  ["1.0.0", "🎉 <b>Erste offizielle Version!</b> Alles aus 12 Betas ist jetzt fest drin – Gut Holz und danke fürs Testen! · 🎳 Kegelabend mit Status (kegelt, schaut zu, gegangen, abgemeldet), Grundbetrag und eigenen Strafen als Zähler · 💰 Kasse, Schulden und Abrechnung, 📊 Statistik, 📤 Drucken &amp; Teilen als PDF · 📥 Import aus der App „Alle Neune“ · 👥 Mitglieder mit Foto und E-Mail, ℹ️ Über den Club · 🔒 PIN (auch ohne Netz), 💡 Bildschirm-an-Knopf"],
   ["0.1.0-beta.12", "📋 <b>Kopieren klappt jetzt auch in der HA-App:</b> Sperrt das Handy die Zwischenablage, kopiert die Karte auf dem Ersatzweg wie bei der Einkaufsliste – statt ein Fenster aufzumachen. Gilt für die Adresse der Offline-App und „Text kopieren“ beim Teilen."],
   ["0.1.0-beta.11", "💡 Der Knopf <b>Bildschirm immer an</b> sieht jetzt aus wie bei der Einkaufsliste (blau, wenn an) · 🌑 Geht das Handy-Display aus, ist auch „Bildschirm an“ wieder aus"],
   ["0.1.0-beta.10", "📴🔒 <b>PIN geht jetzt auch ohne Netz:</b> Ist die Verbindung auf der Kegelbahn weg, prüft die Karte die PIN selbst – ⚙️ und die ganze Karte lassen sich also auch offline entsperren. Einmal die PIN <b>mit Netz</b> eintippen, dann kennt das Gerät den Schlüssel. PIN ändern oder ausschalten geht weiter nur mit Netz."],
@@ -2063,7 +2064,7 @@ ${scope} .ksf{text-align:center;font-size:10px;color:#999;margin-top:12px}`;
     const li = (t) => `<ul>${t.split(" · ").map((x) => `<li>${x}</li>`).join("")}</ul>`;
     const cur = KC_NEWS.find((n) => n[0] === KC_VERSION);
     const beta = /-beta/.test(KC_VERSION) && cur ? `<div class="betabox"><b>🧪 Du bist in der Beta ${KC_VERSION}</b><p class="small" style="margin:4px 0 2px">Neu in dieser Beta:</p>${li(cur[1])}</div>` : "";
-    return `${beta}<p class="small">Das Neueste steht oben.</p>${KC_NEWS.filter((n) => n !== cur).map((n) => `<p style="margin:10px 0 0"><b>v${n[0]}</b></p>${li(n[1])}`).join("")}`;
+    return `${beta}<p class="small">Das Neueste steht oben.</p>${KC_NEWS.filter((n) => !beta || n !== cur).map((n) => `<p style="margin:10px 0 0"><b>v${n[0]}</b></p>${li(n[1])}`).join("")}`;
   }
   // 🙏 Credits – genau wie bei der Einkaufsliste (Logo, Version, Knöpfe, PayPal), in ⚙️ und in der Anleitung
   _creditsHtml() {
