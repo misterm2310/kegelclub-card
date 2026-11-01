@@ -25,7 +25,7 @@
 - 📤 **Drucken & Teilen**: Abrechnung eines Abends drucken, als echte PDF teilen (iPhone: Teilen → Drucken), als QR-Code fürs Handy oder als Text. 📸 Fotos für Mitglieder.
 - 🏠 **Über den Club**: Name, Gründung (mit Glückwunsch am Jahrestag), Bahn, Termin, Notizen. ✉️ E-Mail je Mitglied und „Mail an alle“. 💡 Bildschirm bleibt beim Kegelabend an.
 - 📥 **Umzug aus der App „Alle Neune“** – mit allen alten Abenden, Strafen und der kompletten Kasse.
-- 📱 **Offline-App** für die Kegelbahn, 🔒 **PIN-Sperre**, 💾 **Sicherung**, 📜 **Verlauf**.
+- 📱 **Offline-App** für die Kegelbahn, 🔒 **PIN-Sperre** (entsperren klappt auch ohne Netz), 💾 **Sicherung**, 📜 **Verlauf**.
 - 🌍 **Deutsch oder Englisch** (automatisch wie Home Assistant) und 💱 **Währung wählbar**.
 
 ---

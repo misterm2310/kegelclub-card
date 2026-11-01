@@ -10,6 +10,7 @@ VERSION: str = json.loads((Path(__file__).parent / "manifest.json").read_text(en
 
 STORAGE_KEY = DOMAIN
 STORAGE_VERSION = 1
+PIN_OFF_ITER = 100_000  # 📴 Runden für den Offline-Schlüssel der PIN (PBKDF2) – Karte rechnet ohne Netz genauso nach
 
 STATIC_URL = "/kegelclub/files"
 CARD_FILENAME = "kegelclub-card.js"

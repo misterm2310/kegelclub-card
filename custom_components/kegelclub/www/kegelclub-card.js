@@ -6,7 +6,7 @@
 // - Jede Änderung (Pumpe, Einzahlung, wer da ist …) wird als kleine „Änderung“ verschickt.
 // - Klappt das Verschicken nicht (kein Netz auf der Kegelbahn), landet die Änderung im Postausgang und wird
 //   später nachgeschickt. Bis dahin rechnet die Karte selbst so, als wäre sie schon angekommen.
-const KC_VERSION = "0.1.0-beta.9";
+const KC_VERSION = "0.1.0-beta.10";
 
 const MONTHS = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
 const QKEY = "kegelclub_queue";
@@ -49,6 +49,7 @@ const KC_GUIDE = [
 ];
 // 🆕 Was ist neu – das Neueste oben (wie bei der Einkaufsliste)
 const KC_NEWS = [
+  ["0.1.0-beta.10", "📴🔒 <b>PIN geht jetzt auch ohne Netz:</b> Ist die Verbindung auf der Kegelbahn weg, prüft die Karte die PIN selbst – ⚙️ und die ganze Karte lassen sich also auch offline entsperren. Einmal die PIN <b>mit Netz</b> eintippen, dann kennt das Gerät den Schlüssel. PIN ändern oder ausschalten geht weiter nur mit Netz."],
   ["0.1.0-beta.9", "💡 Der Knopf <b>Bildschirm anlassen</b> sitzt jetzt oben zwischen 👁️ und 🔒 – nur beim laufenden Kegelabend · 🔤 Namen in der Statistik haben wieder die normale Größe"],
   ["0.1.0-beta.8", "🚪 Neuer Zustand <b>gegangen</b> (Status-Knopf: kegelt → schaut zu → gegangen …): Grundbetrag und bisherige Strafen bleiben, spätere Neuner der anderen zahlt er nicht mehr · 💡 <b>Bildschirm anlassen</b> oben beim Kegelabend · 🏠 <b>Über den Club</b> in ⚙️ → Club (Name, Gründung, Bahn, Termin, Notizen – am Jahrestag gibt es einen Glückwunsch) · ✉️ <b>E-Mail</b> je Mitglied, „Mail an alle“ und „Per Mail schicken“ beim Teilen · 🖨️ Clubname oben auf Ausdruck und PDF, „Kasse jetzt“ steht nicht mehr drauf · 📜 Zu lange Namen in der Statistik laufen als Lauftext durch"],
   ["0.1.0-beta.7", "🙏 <b>Credits wie bei der Einkaufsliste:</b> Mister-M-Logo, Version, Knöpfe für GitHub, 💡 Idee oder Wunsch, 🐞 Fehler melden und Spenden mit PayPal – in ⚙️ → Credits und unten in der Anleitung."],
@@ -197,6 +198,62 @@ const MONTHS_EN = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep"
 const PIN_LOCK = { until: 0 };
 const pinOpen = () => PIN_LOCK.until > Date.now();
 const pinTouch = () => { if (pinOpen()) PIN_LOCK.until = Date.now() + 10 * 60 * 1000; };
+// 📴 PIN ohne Netz prüfen: HA schickt einen Offline-Schlüssel (PBKDF2-SHA256), die Karte rechnet genauso nach.
+// Ohne https (z. B. http://192.168…) gibt es kein crypto.subtle – dann rechnet ein kleines SHA-256 hier im Code.
+const PINOFF_FAIL = "kegelclub_pinfehler";
+function pinSha256(bytes) {
+  const K = [0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5, 0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174, 0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da, 0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967, 0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85, 0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070, 0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3, 0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2];
+  const H = [0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19];
+  const l = bytes.length, n = ((l + 9 + 63) >> 6) << 6, m = new Uint8Array(n);
+  m.set(bytes); m[l] = 0x80;
+  const dv = new DataView(m.buffer); dv.setUint32(n - 4, l * 8); dv.setUint32(n - 8, Math.floor(l / 0x20000000));
+  const w = new Uint32Array(64), r = (x, c) => (x >>> c) | (x << (32 - c));
+  for (let o = 0; o < n; o += 64) {
+    for (let i = 0; i < 16; i++) w[i] = dv.getUint32(o + i * 4);
+    for (let i = 16; i < 64; i++) w[i] = (w[i - 16] + (r(w[i - 15], 7) ^ r(w[i - 15], 18) ^ (w[i - 15] >>> 3)) + w[i - 7] + (r(w[i - 2], 17) ^ r(w[i - 2], 19) ^ (w[i - 2] >>> 10))) | 0;
+    let [a, b, c, d, e, f, g, h] = H;
+    for (let i = 0; i < 64; i++) {
+      const t1 = (h + (r(e, 6) ^ r(e, 11) ^ r(e, 25)) + ((e & f) ^ (~e & g)) + K[i] + w[i]) | 0;
+      const t2 = ((r(a, 2) ^ r(a, 13) ^ r(a, 22)) + ((a & b) ^ (a & c) ^ (b & c))) | 0;
+      h = g; g = f; f = e; e = (d + t1) | 0; d = c; c = b; b = a; a = (t1 + t2) | 0;
+    }
+    H[0] = (H[0] + a) | 0; H[1] = (H[1] + b) | 0; H[2] = (H[2] + c) | 0; H[3] = (H[3] + d) | 0; H[4] = (H[4] + e) | 0; H[5] = (H[5] + f) | 0; H[6] = (H[6] + g) | 0; H[7] = (H[7] + h) | 0;
+  }
+  const out = new Uint8Array(32), ov = new DataView(out.buffer);
+  H.forEach((v, i) => ov.setUint32(i * 4, v));
+  return out;
+}
+function pinPbkdf2Js(pw, salt, iter) { // 🐢 Notfall ohne crypto.subtle (1 Block = 32 Byte reicht)
+  let key = pw; if (key.length > 64) key = pinSha256(key);
+  const ip = new Uint8Array(64).fill(0x36), op = new Uint8Array(64).fill(0x5c);
+  for (let i = 0; i < key.length; i++) { ip[i] ^= key[i]; op[i] ^= key[i]; }
+  const hmacf = (msg) => { const a = new Uint8Array(64 + msg.length); a.set(ip); a.set(msg, 64); const b = new Uint8Array(96); b.set(op); b.set(pinSha256(a), 64); return pinSha256(b); };
+  const s1 = new Uint8Array(salt.length + 4); s1.set(salt); s1[salt.length + 3] = 1;
+  let u = hmacf(s1); const t = u.slice();
+  for (let i = 1; i < iter; i++) { u = hmacf(u); for (let j = 0; j < 32; j++) t[j] ^= u[j]; }
+  return t;
+}
+async function pinPbkdf2(pin, saltHex, iter) {
+  const pw = new TextEncoder().encode(String(pin)), salt = new Uint8Array((saltHex.match(/../g) || []).map((h) => parseInt(h, 16)));
+  let out;
+  try {
+    const k = await crypto.subtle.importKey("raw", pw, "PBKDF2", false, ["deriveBits"]);
+    out = new Uint8Array(await crypto.subtle.deriveBits({ name: "PBKDF2", hash: "SHA-256", salt, iterations: iter }, k, 256));
+  } catch (_) { out = pinPbkdf2Js(pw, salt, iter); }
+  return Array.from(out, (b) => b.toString(16).padStart(2, "0")).join("");
+}
+// ✔ / ✘ / Wartezeit – auch offline: 5× falsch = 1 Minute Pause, danach jedes Mal doppelt so lang (höchstens 1 Stunde)
+async function pinCheckOffline(off, pin) {
+  const f = store.get(PINOFF_FAIL, { n: 0, until: 0 });
+  if (f.until > Date.now()) return { wait: Math.ceil((f.until - Date.now()) / 1000) };
+  if (!off || !off.salt || !off.hash || !off.iter) return { unknown: true };
+  const ok = (await pinPbkdf2(pin, off.salt, off.iter)) === off.hash;
+  if (ok) { store.put(PINOFF_FAIL, { n: 0, until: 0 }); return { ok: true }; }
+  f.n = (f.n || 0) + 1;
+  if (f.n >= 5) f.until = Date.now() + Math.min(3600, 60 * 2 ** (f.n - 5)) * 1000;
+  store.put(PINOFF_FAIL, f);
+  return { ok: false };
+}
 // 🎨 Farben wie bei der Einkaufsliste: jede Gruppe bekommt ihre Farbe (Streifen links + Punkt im Kopf)
 const GROUP_COLORS = ["#1e88e5", "#fb8c00", "#8e24aa", "#00897b", "#e53935", "#6d4c41", "#3949ab"];
 const ic = (name) => `<ha-icon icon="mdi:${name}"></ha-icon>`;
@@ -2050,6 +2107,17 @@ ${scope} .ksf{text-align:center;font-size:10px;color:#999;margin-top:12px}`;
       this._pad = null; redraw();
     });
     if (p.step === "unlock") {
+      if (this._hass?.connected === false) { // 📴 ohne Netz prüft die Karte selbst (Offline-Schlüssel aus dem letzten Stand)
+        this._toast("🔎 PIN wird auf diesem Gerät geprüft …");
+        pinCheckOffline(this._data?.pin_off, v).then((r) => {
+          if (r.ok) { PIN_LOCK.until = Date.now() + 10 * 60 * 1000; this._pad = null; this._toast("🔓 Entsperrt (offline)"); }
+          else if (r.wait) this._toast(`⏳ Zu oft falsch – bitte ${r.wait} Sekunden warten`);
+          else if (r.unknown) this._toast("📴 Diese PIN kennt das Gerät noch nicht – einmal mit Netz eingeben, danach geht's auch offline");
+          else this._toast("❌ Falsche PIN");
+          redraw();
+        });
+        return;
+      }
       this._pin("kegelclub/pin/check", { pin: v }).then((r) => {
         if (r?.ok) { PIN_LOCK.until = Date.now() + 10 * 60 * 1000; this._pad = null; this._toast("🔓 Entsperrt"); }
         else if (r) this._toast("❌ Falsche PIN");
@@ -2063,10 +2131,10 @@ ${scope} .ksf{text-align:center;font-size:10px;color:#999;margin-top:12px}`;
     return `<p class="small">${d.pin ? "🔒 PIN ist <b>an</b>. ⚙️ fragt nach der PIN." : "Mit einer PIN (4–8 Ziffern) sperrst du ⚙️ (auch Mitglieder & Strafen), z. B. auf dem Tablet am Kegeltisch. Strafen buchen und die Kasse ansehen gehen weiter ohne PIN."}</p>
       <div class="btnrow">${d.pin ? `<button class="btn main" data-a="padstart" data-v="set">${ic("lock-reset")}PIN ändern</button><button class="btn" data-a="padstart" data-v="off">${ic("lock-open-variant-outline")}PIN ausschalten</button>` : `<button class="btn main" data-a="padstart" data-v="set">${ic("lock-outline")}PIN einschalten</button>`}</div>
       ${d.pin ? `<label class="switch"><span>${ic("lock-outline")}<span class="vt"><b>Ganze Karte sperren</b><small>Aus = nur ⚙️ und Mitglieder. An = ohne PIN sieht man gar nichts.</small></span></span><input type="checkbox" class="swchk" data-a="set" data-v="lock_all" ${d.settings.lock_all ? "checked" : ""}></label>` : ""}
-      <p class="small">Die PIN liegt nur als Prüfsumme in Home Assistant. Vergessen? Admin → <b>Geräte & Dienste → Kegelclub → Konfigurieren → „PIN zurücksetzen“</b>. 5× falsch = 1 Minute Pause.</p>`;
+      <p class="small">Die PIN liegt nur als Prüfsumme in Home Assistant. Vergessen? Admin → <b>Geräte & Dienste → Kegelclub → Konfigurieren → „PIN zurücksetzen“</b>. 5× falsch = 1 Minute Pause. Ohne Netz prüft die Karte die PIN selbst.</p>`;
   }
   async _pin(type, payload) {
-    if (this._hass?.connected === false) { this._toast("📴 Die PIN wird in Home Assistant geprüft – dafür braucht es Netz"); return null; }
+    if (this._hass?.connected === false) { this._toast("📴 PIN ändern oder ausschalten geht nur mit Netz – entsperren klappt auch offline"); return null; }
     try { return await this._hass.callWS({ type, ...payload, ...this._bk() }); }
     catch (err) { this._toast("⚠️ " + (err?.message || "Ging nicht")); return null; }
   }

@@ -24,7 +24,7 @@
 - 📤 **Print & share**: print an evening's bill, share a real PDF (iPhone: Share → Print), QR code for phones or plain text. 📸 Member photos.
 - 🏠 **About the club**: name, founding date (with a greeting on the anniversary), lane, schedule, notes. ✉️ E-mail per member and “Mail everyone”. 💡 Keep the screen on during the evening.
 - 📥 **Move from the “Alle Neune” app** – with all old evenings, fines and the complete cash.
-- 📱 **Offline app**, 🔒 **PIN lock**, 💾 **backup**, 📜 **history**.
+- 📱 **Offline app**, 🔒 **PIN lock** (unlocking also works offline), 💾 **backup**, 📜 **history**.
 - 🌍 **German or English** (automatic, like Home Assistant) and 💱 **selectable currency**.
 
 ---

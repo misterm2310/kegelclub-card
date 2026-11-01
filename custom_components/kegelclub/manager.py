@@ -44,6 +44,7 @@ from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util
 
 from .const import (
+    PIN_OFF_ITER,
     APP_URL,
     CURRENCIES,
     DEFAULT_SETTINGS,
@@ -116,6 +117,7 @@ def _empty() -> dict[str, Any]:
         "log": [],
         "seen": [],
         "pin": None,
+        "pin_off": None,  # 📴 Offline-Schlüssel: stark verwürfelte PIN (PBKDF2), damit die Karte ohne Netz selbst prüfen kann
     }
 
 
@@ -321,8 +323,9 @@ class KegelclubManager:
 
     def snapshot(self) -> dict[str, Any]:
         """Was die Karte bekommt (ohne interne Merkliste)."""
-        out = {k: v for k, v in self.data.items() if k not in ("seen", "pin")}
+        out = {k: v for k, v in self.data.items() if k not in ("seen", "pin", "pin_off")}
         out["pin"] = bool(self.data.get("pin"))
+        out["pin_off"] = self.data.get("pin_off") if self.data.get("pin") else None  # 📴 nie die echte PIN, nur der Offline-Schlüssel
         out["app_url"] = self._app_url()
         out["version"] = VERSION
         out["book"] = {"id": self.entry_id, "title": self.title, "primary": self.primary}
@@ -347,6 +350,12 @@ class KegelclubManager:
     def _pin_hash(pin: str, salt: str) -> str:
         return salt + "$" + hashlib.sha256((salt + str(pin)).encode()).hexdigest()
 
+    @staticmethod
+    def _pin_offline(pin: str) -> dict[str, Any]:
+        """📴 Offline-Schlüssel: PBKDF2-SHA256 mit eigenem Salz – die Karte rechnet ohne Netz genauso nach."""
+        salt = secrets.token_hex(16)
+        return {"salt": salt, "iter": PIN_OFF_ITER, "hash": hashlib.pbkdf2_hmac("sha256", str(pin).encode(), bytes.fromhex(salt), PIN_OFF_ITER).hex()}
+
     def check_pin(self, pin: str | None) -> bool:
         """PIN prüfen. 5× falsch = 60 Sekunden Pause (gegen Durchprobieren)."""
         if not self.data.get("pin"):
@@ -358,6 +367,9 @@ class KegelclubManager:
         ok = hmac.compare_digest(self._pin_hash(str(pin or ""), salt), self.data["pin"])
         if ok:
             self._pin_fails = 0
+            if not self.data.get("pin_off"):  # 📴 ältere PIN: Offline-Schlüssel beim ersten richtigen Eintippen nachholen
+                self.data["pin_off"] = self._pin_offline(str(pin))
+                self._changed()
         else:
             self._pin_fails += 1
             if self._pin_fails >= 5:
@@ -372,10 +384,12 @@ class KegelclubManager:
         if pin and not re.fullmatch(r"\d{4,8}", pin):
             raise HomeAssistantError("Die PIN muss 4 bis 8 Ziffern haben")
         self.data["pin"] = self._pin_hash(pin, secrets.token_hex(8)) if pin else None
+        self.data["pin_off"] = self._pin_offline(pin) if pin else None
         self._changed()
 
     def clear_pin(self) -> None:
         self.data["pin"] = None
+        self.data["pin_off"] = None
         self._pin_fails = 0
         self._pin_locked_until = 0.0
         self._changed()
@@ -522,9 +536,9 @@ class KegelclubManager:
 
     def factory_reset(self) -> None:
         """💣 Werkseinstellungen: alles zurück auf Anfang – nur die PIN bleibt."""
-        pin = self.data.get("pin")
+        pin, pin_off = self.data.get("pin"), self.data.get("pin_off")
         self.data = _empty()
-        self.data["pin"] = pin
+        self.data["pin"], self.data["pin_off"] = pin, pin_off
         self.errors = []
         self._changed()
 
@@ -882,13 +896,13 @@ class KegelclubManager:
             return res
         if not replace:
             raise HomeAssistantError("Eine Sicherung ersetzt immer alles – bitte „ersetzen“ wählen")
-        pin = self.data.get("pin")
+        pin, pin_off = self.data.get("pin"), self.data.get("pin_off")
         base = _empty()
         for k in ("members", "strafen", "abende", "kasse"):
             base[k] = [x for x in (data.get(k) or []) if isinstance(x, dict) and x.get("id")]
         base["settings"] = {**DEFAULT_SETTINGS, **{k: v for k, v in (data.get("settings") or {}).items() if k in DEFAULT_SETTINGS}}
         base["setup_done"] = True
-        base["pin"] = pin
+        base["pin"], base["pin_off"] = pin, pin_off
         base["log"] = self.data.get("log") or []
         self.data = base
         self._log({"type": "import"}, "📥 Sicherung eingelesen", None)
@@ -928,12 +942,12 @@ class KegelclubManager:
             return preview
         if not replace and (self.data["abende"] or self.data["kasse"]):
             raise HomeAssistantError("Hier gibt es schon Abende oder Kassenbuchungen – bitte „alles ersetzen“ wählen")
-        pin, log = self.data.get("pin"), self.data.get("log") or []
+        pin, pin_off, log = self.data.get("pin"), self.data.get("pin_off"), self.data.get("log") or []
         base = _empty()
         base.update({k: plan[k] for k in ("members", "strafen", "abende", "kasse")})
         base["settings"] = {**self.data["settings"], **plan["settings"]}
         base["setup_done"] = True
-        base["pin"], base["log"] = pin, log
+        base["pin"], base["pin_off"], base["log"] = pin, pin_off, log
         self.data = base
         c = preview["counts"]
         self._log({"type": "import"}, f"📥 Aus Alle Neune: {c['abende']} Abende, {c['members'] + c['former'] + c['guests']} Personen, {c['kasse']} Kassenbuchungen", None)

@@ -143,6 +143,26 @@ await p.evaluate(() => setOnline(true));
 await p.waitForTimeout(400);
 check("Wieder online: nachgeschickt", await p.evaluate((n) => fake.applied.length === n + 1 && JSON.parse(localStorage.getItem("kegelclub_queue") || "[]").length === 0, before));
 
+// 🔒📴 PIN ohne Netz: Karte prüft selbst mit dem Offline-Schlüssel (beta.10)
+{
+  const salt = "a1b2c3d4e5f60718293a4b5c6d7e8f90", hash = (await import("crypto")).pbkdf2Sync("4711", Buffer.from(salt, "hex"), 100000, 32, "sha256").toString("hex");
+  const keys = async (pin) => { for (const k of pin) await sr(`h.querySelector('[data-a="pkey"][data-v="${k}"]').click();`); };
+  const push = (po) => p.evaluate((po) => { fake.pin = "4711"; fake.data.pin = true; fake.data.pin_off = po; fake.data.settings.lock_all = true; cb && cb(JSON.parse(JSON.stringify(fake.data))); }, po);
+  await push(null); await p.waitForTimeout(80);
+  await p.evaluate(() => setOnline(false)); await p.waitForTimeout(60);
+  check("Offline + PIN: Zahlenfeld da", await sr(`return !!h.querySelector('.ppad');`));
+  await keys("4711✔"); await p.waitForTimeout(150);
+  check("Offline ohne Schlüssel: ehrlicher Hinweis, bleibt zu", await sr(`return !!h.querySelector('.ppad');`) && await p.evaluate(() => toasts.some((t) => t.includes("kennt das Gerät noch nicht"))), await p.evaluate(() => toasts.slice(-2).join(" | ")));
+  await p.evaluate(() => setOnline(true)); await push({ salt, iter: 100000, hash }); await p.waitForTimeout(80);
+  await p.evaluate(() => setOnline(false)); await p.waitForTimeout(60);
+  await keys("0000✔"); await p.waitForTimeout(400);
+  check("Offline: falsche PIN bleibt zu", await sr(`return !!h.querySelector('.ppad');`) && await p.evaluate(() => toasts.at(-1) === "❌ Falsche PIN"), await p.evaluate(() => toasts.slice(-2).join(" | ")));
+  await keys("4711✔"); await p.waitForTimeout(400);
+  check("Offline: richtige PIN entsperrt", !(await sr(`return !!h.querySelector('.ppad');`)), await p.evaluate(() => toasts.slice(-3).join(" | ")));
+  await p.evaluate(() => { fake.pin = null; fake.data.pin = false; fake.data.pin_off = null; fake.data.settings.lock_all = false; localStorage.removeItem("kegelclub_pinfehler"); setOnline(true); cb && cb(JSON.parse(JSON.stringify(fake.data))); });
+  await p.waitForTimeout(150);
+}
+
 // 📊 Statistik + 👥 Mitglieder + ⚙️
 await tap('[data-a="tab"][data-v="stats"]');
 check("Statistik Überblick: Zahlen, Rekorde, Könige", await sr(`return h.querySelectorAll('.kpis .tile').length >= 4 && h.querySelectorAll('.recs .tile').length > 0 && h.querySelectorAll('.kings .tile').length > 0;`));

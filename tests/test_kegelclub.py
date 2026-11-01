@@ -300,3 +300,22 @@ async def test_gone_early_club_info_email(hass, setup):
     ok(m, {"type": "member_save", "item": {"id": "a", "name": "Anna", "email": "anna@example.org"}})
     assert m.find("member", "a")["email"] == "anna@example.org"
     assert not m.apply([{"type": "member_save", "item": {"id": "a", "name": "Anna", "email": "kaputt"}}], "Test")[0]["ok"]
+
+
+async def test_pin_offline_key(hass, setup):
+    """📴 Offline-Schlüssel: Karte bekommt nur PBKDF2, nie die PIN; ältere PINs holen ihn beim ersten richtigen Eintippen nach."""
+    import hashlib  # noqa: PLC0415
+
+    m = mgr(hass)
+    assert m.snapshot()["pin_off"] is None
+    m.set_pin("4711")
+    off = m.snapshot()["pin_off"]
+    assert off and "4711" not in str(off) and off["iter"] >= 100_000
+    assert hashlib.pbkdf2_hmac("sha256", b"4711", bytes.fromhex(off["salt"]), off["iter"]).hex() == off["hash"]
+    m.data["pin_off"] = None  # wie eine PIN aus beta.9
+    assert not m.check_pin("0000") and m.data["pin_off"] is None
+    assert m.check_pin("4711") and m.data["pin_off"]
+    m.factory_reset()
+    assert m.data["pin_off"]
+    m.clear_pin()
+    assert m.snapshot()["pin_off"] is None
