@@ -6,7 +6,7 @@
 // - Jede Änderung (Pumpe, Einzahlung, wer da ist …) wird als kleine „Änderung“ verschickt.
 // - Klappt das Verschicken nicht (kein Netz auf der Kegelbahn), landet die Änderung im Postausgang und wird
 //   später nachgeschickt. Bis dahin rechnet die Karte selbst so, als wäre sie schon angekommen.
-const KC_VERSION = "0.1.0-beta.11";
+const KC_VERSION = "0.1.0-beta.12";
 
 const MONTHS = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
 const QKEY = "kegelclub_queue";
@@ -49,6 +49,7 @@ const KC_GUIDE = [
 ];
 // 🆕 Was ist neu – das Neueste oben (wie bei der Einkaufsliste)
 const KC_NEWS = [
+  ["0.1.0-beta.12", "📋 <b>Kopieren klappt jetzt auch in der HA-App:</b> Sperrt das Handy die Zwischenablage, kopiert die Karte auf dem Ersatzweg wie bei der Einkaufsliste – statt ein Fenster aufzumachen. Gilt für die Adresse der Offline-App und „Text kopieren“ beim Teilen."],
   ["0.1.0-beta.11", "💡 Der Knopf <b>Bildschirm immer an</b> sieht jetzt aus wie bei der Einkaufsliste (blau, wenn an) · 🌑 Geht das Handy-Display aus, ist auch „Bildschirm an“ wieder aus"],
   ["0.1.0-beta.10", "📴🔒 <b>PIN geht jetzt auch ohne Netz:</b> Ist die Verbindung auf der Kegelbahn weg, prüft die Karte die PIN selbst – ⚙️ und die ganze Karte lassen sich also auch offline entsperren. Einmal die PIN <b>mit Netz</b> eintippen, dann kennt das Gerät den Schlüssel. PIN ändern oder ausschalten geht weiter nur mit Netz."],
   ["0.1.0-beta.9", "💡 Der Knopf <b>Bildschirm anlassen</b> sitzt jetzt oben zwischen 👁️ und 🔒 – nur beim laufenden Kegelabend · 🔤 Namen in der Statistik haben wieder die normale Größe"],
@@ -78,6 +79,21 @@ function kcVerCmp(a, b) {
   return 0;
 }
 const esc = (x) => String(x ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+// 📋 Text kopieren – mit Ersatzweg wie bei der Einkaufsliste, falls das Handy die Zwischenablage sperrt (z. B. in der HA-App oder ohne https)
+function kcCopy(text, inp) {
+  const old = () => {
+    try {
+      let tmp = null;
+      if (!inp) { tmp = document.createElement("textarea"); tmp.value = text; tmp.setAttribute("readonly", ""); tmp.style.cssText = "position:fixed;opacity:0;top:0;left:0"; document.body.appendChild(tmp); }
+      (inp || tmp).select();
+      document.execCommand?.("copy");
+      tmp?.remove();
+    } catch (_) { /* egal */ }
+  };
+  if (navigator.clipboard?.writeText) return navigator.clipboard.writeText(text).catch(old);
+  old();
+  return Promise.resolve();
+}
 // 💱 Währung (⚙️ → Rechnen & Warnung). CHF wird schweizerisch geschrieben (CHF 1’234.50), der Rest deutsch (1.234,50 €)
 const KC_CUR = { EUR: "Euro (€)", CHF: "Schweizer Franken (CHF)", USD: "US-Dollar ($)", GBP: "Britisches Pfund (£)", PLN: "Polnischer Złoty (zł)", CZK: "Tschechische Krone (Kč)", DKK: "Dänische Krone (kr)", SEK: "Schwedische Krone (kr)", NOK: "Norwegische Krone (kr)", HUF: "Ungarischer Forint (Ft)" };
 const KC_MONEY = { key: "", fmt: null, code: "EUR", sym: "€", dec: "," };
@@ -2465,7 +2481,7 @@ ${scope} .ksf{text-align:center;font-size:10px;color:#999;margin-top:12px}`;
       const x = d.abende.find((y) => y.id === this._shareId); if (!x) return;
       const text = this._shareText(d, x);
       if (a === "shtext" && navigator.share) navigator.share({ text }).catch(() => {});
-      else (navigator.clipboard?.writeText(text) || Promise.reject()).then(() => this._toast("📋 Kopiert – jetzt z. B. in WhatsApp einfügen"), () => prompt(kcT("Zum Kopieren:"), text));
+      else kcCopy(text, null).then(() => this._toast("📋 Kopiert – jetzt z. B. in WhatsApp einfügen"));
     }
     // 🏦 Kasse
     else if (a === "payall") {
@@ -2501,7 +2517,7 @@ ${scope} .ksf{text-align:center;font-size:10px;color:#999;margin-top:12px}`;
       redraw();
     }
     else if (a === "logclear") { if (kcConfirm("Den ganzen Verlauf löschen?")) this._send({ type: "log_clear" }); }
-    else if (a === "appcopy") { const u = d.app_url || ""; (navigator.clipboard?.writeText(u) || Promise.reject()).then(() => this._toast("📋 Adresse kopiert"), () => prompt(kcT("Adresse zum Kopieren:"), u)); }
+    else if (a === "appcopy") { const u = d.app_url || ""; kcCopy(u, this.shadowRoot.getElementById("appUrl")).then(() => this._toast("📋 Adresse kopiert")); }
     else if (a === "factory") {
       if (!kcConfirm("Wirklich ALLES löschen?\n\nMitglieder, Strafen, alle Abende und die ganze Kasse. Nur die PIN bleibt.\n\nDas geht nicht rückgängig.")) return;
       if (!kcConfirm("Letzte Frage: Wirklich ALLES auf Werkseinstellungen setzen?")) return;

@@ -258,6 +258,26 @@ check("Club: eigener Postausgang im Handy", rb.qk === "kegelclub_queue_damenclub
 check("Club: Editor zeigt beide Bücher, „Damenclub“ gewählt", rb.opts.length === 2 && rb.opts[1][0] === "Damenclub" && rb.opts[1][1], JSON.stringify(rb.opts));
 check("Club: Editor zurück auf erstes Buch entfernt „buch“", rb.changed && !("buch" in rb.changed), JSON.stringify(rb.changed));
 
+// 📋 Kopieren, wenn das Handy die Zwischenablage sperrt (HA-App): Ersatzweg wie bei der Einkaufsliste, kein Fenster, kein Link
+{
+  let dialogs = 0; const onDlg = (dl) => { dialogs++; dl.dismiss(); }; p.on("dialog", onDlg);
+  const r = await p.evaluate(async () => {
+    const c = document.querySelector("#c1"), d = c._data || {};
+    const oldUrl = d.app_url; d.app_url = "https://beispiel.ui.nabu.casa/kegelclub/app/";
+    const oldCb = Object.getOwnPropertyDescriptor(Navigator.prototype, "clipboard");
+    Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText: () => Promise.reject(new Error("NotAllowedError")) } });
+    const oldEx = document.execCommand; let copied = null;
+    document.execCommand = (cmd) => { if (cmd === "copy") { const a = document.activeElement; const el = a?.shadowRoot?.activeElement || a; copied = (el?.value || "").slice(el.selectionStart, el.selectionEnd) || window.getSelection().toString(); } return true; };
+    let toast = ""; const onT = (e) => { toast = e.detail?.message || ""; }; c.addEventListener("hass-notification", onT);
+    const inp = document.createElement("input"); inp.id = "appUrl"; inp.value = d.app_url; c.shadowRoot.appendChild(inp);
+    c._act({ dataset: { a: "appcopy" } }, new Event("click"));
+    await new Promise((res) => setTimeout(res, 50));
+    inp.remove(); c.removeEventListener("hass-notification", onT); document.execCommand = oldEx; delete navigator.clipboard; if (oldCb) Object.defineProperty(Navigator.prototype, "clipboard", oldCb); d.app_url = oldUrl;
+    return { copied, toast };
+  });
+  p.off("dialog", onDlg);
+  check("Offline-App-Adresse kopieren klappt auch ohne Zwischenablage-Erlaubnis (kein Fenster)", r.copied?.includes("/app/") && dialogs === 0 && /kopiert/i.test(r.toast), JSON.stringify({ ...r, dialogs }));
+}
 check("Keine Fehler in der Konsole", errs.length === 0, errs.join(" | "));
 await b.close();
 srv.close();
