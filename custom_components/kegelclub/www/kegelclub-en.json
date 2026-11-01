@@ -445,5 +445,21 @@
  "🔒 Hat schon Strafen – Grundbetrag bleibt bezahlt": "🔒 Already has fines – base fee stays paid",
  "📄 PDF gespeichert – öffnen und drucken": "📄 PDF saved – open and print",
  "📄 PDF geöffnet – dort über Teilen drucken oder sichern": "📄 PDF opened – print or save via Share",
- "Das Bild kann ich nicht lesen": "Can't read that image"
+ "Das Bild kann ich nicht lesen": "Can't read that image",
+ "gegangen": "left early",
+ "Über den Club": "About the club",
+ "Name, Gründung, Bahn, Termin": "Name, founding, lane, schedule",
+ "Name des Clubs": "Club name",
+ "Gegründet am": "Founded on",
+ "Kegelbahn / Ort": "Bowling alley / place",
+ "Wann kegelt ihr?": "When do you bowl?",
+ "Notizen (Geschichte, Regeln, Sprüche …)": "Notes (history, rules, sayings …)",
+ "Der Name steht auch oben auf Ausdruck und PDF. Am Gründungstag gratuliert die Karte. Alles wird gespeichert, sobald du ein Feld verlässt.": "The name is also printed at the top of printouts and PDFs. The card congratulates on the founding day. Everything is saved when you leave a field.",
+ "E-Mail (für Infos)": "E-mail (for news)",
+ "Mail an alle ({})": "Mail everyone ({0})",
+ "Per Mail schicken": "Send by mail",
+ "Noch keine E-Mail-Adressen eingetragen": "No e-mail addresses yet",
+ "💡 Bildschirm bleibt an": "💡 Screen stays on",
+ "💡 Bildschirm wieder normal": "💡 Screen back to normal",
+ "Euer Club": "Your club"
 }

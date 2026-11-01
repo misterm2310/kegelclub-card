@@ -273,3 +273,30 @@ async def test_photo_and_pdf_share(hass, setup):
     assert get_pdf(hass, token)["data"].startswith(b"%PDF-")
     with pytest.raises(ValueError):
         store_pdf(hass, base64.b64encode(b"keine pdf").decode())
+
+
+async def test_gone_early_club_info_email(hass, setup):
+    """🚪 Wer früher geht, zahlt spätere Neuner der anderen nicht · 🏠 Club-Infos · ✉️ E-Mail."""
+    m = mgr(hass)
+    club(m)
+    ok(m, {"type": "abend_start", "op_id": "s1", "id": "ev1", "hours": 0})
+    ok(m, {"type": "abend_count", "abend": "ev1", "member": "a", "strafe": "neun"})  # Anna wirft eine Neun – alle anderen zahlen
+    ok(m, {"type": "abend_status", "abend": "ev1", "member": "d", "status": "gone", "ts": 50})  # Dieter geht
+    ok(m, {"type": "abend_count", "abend": "ev1", "member": "a", "strafe": "neun"})  # zweite Neun – ohne Dieter
+    ok(m, {"type": "abend_count", "abend": "ev1", "member": "b", "strafe": "neun"})  # Bernd wirft eine – auch ohne Dieter
+    members, strafen = m._maps()
+    b = bill_evening(m.evening("ev1"), members, strafen, m.data["settings"])
+    assert b["people"]["d"]["from_others"] == 0.1 and b["people"]["d"]["fee"] == 7.5
+    assert b["people"]["c"]["from_others"] == 0.3  # Carla war die ganze Zeit da: 3 Neuner
+    ok(m, {"type": "abend_status", "abend": "ev1", "member": "d", "status": "play", "ts": 60})  # doch noch da → zahlt wieder alles
+    b = bill_evening(m.evening("ev1"), members, strafen, m.data["settings"])
+    assert b["people"]["d"]["from_others"] == 0.3 and "d" not in (m.evening("ev1").get("gone") or {})
+    # 🏠 Club-Infos
+    ok(m, {"type": "settings", "settings": {"club_info": {"name": "Testclub", "founded": "2019-05-11"}}})
+    ok(m, {"type": "settings", "settings": {"club_info": {"place": "Bahn 2"}}})
+    assert m.data["settings"]["club_info"] == {"name": "Testclub", "founded": "2019-05-11", "place": "Bahn 2"}
+    assert not m.apply([{"type": "settings", "settings": {"club_info": {"founded": "gestern"}}}], "Test")[0]["ok"]
+    # ✉️ E-Mail
+    ok(m, {"type": "member_save", "item": {"id": "a", "name": "Anna", "email": "anna@example.org"}})
+    assert m.find("member", "a")["email"] == "anna@example.org"
+    assert not m.apply([{"type": "member_save", "item": {"id": "a", "name": "Anna", "email": "kaputt"}}], "Test")[0]["ok"]

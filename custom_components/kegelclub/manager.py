@@ -135,7 +135,7 @@ def bill_evening(ev: dict[str, Any], members: dict[str, dict[str, Any]], strafen
     for mid, st in status.items():
         guest = bool((members.get(mid) or {}).get("guest"))
         fee = 0.0
-        if st == "play":
+        if st in ("play", "gone"):
             fee = base
         elif st == "watch":
             fee = base if rules.get("watch_pays", True) else 0.0
@@ -152,6 +152,7 @@ def bill_evening(ev: dict[str, Any], members: dict[str, dict[str, Any]], strafen
         return float(s.get("amount") or 0), str(s.get("payer") or "self")
 
     players = [m for m, p in people.items() if p["status"] == "play"]
+    gone = {m: (ev.get("gone") or {}).get(m) or {} for m, p in people.items() if p["status"] == "gone"}  # 🚪 Stand der Zählung beim Gehen
     fines = not ev.get("no_fines")  # 🙌 „Strafen erlassen“: gezählt wird trotzdem (Statistik), bezahlt nicht
     for mid, per in counts.items():
         for sid, n in (per or {}).items():
@@ -160,11 +161,14 @@ def bill_evening(ev: dict[str, Any], members: dict[str, dict[str, Any]], strafen
                 continue
             amount, payer = price(sid)
             if payer == "others":
-                for oid in players:
+                for oid in players + [g for g in gone if g != mid]:
                     if oid != mid:
-                        people[oid]["from_others"] += n * amount if fines else 0.0
+                        k = n if oid in players else min(n, int(((gone[oid] or {}).get(mid) or {}).get(sid, 0)))  # 🚪 gegangen: nur was bis dahin fiel
+                        if k <= 0:
+                            continue
+                        people[oid]["from_others"] += k * amount if fines else 0.0
                         it = people[oid]["items"].setdefault(f"{sid}>{mid}", 0)
-                        people[oid]["items"][f"{sid}>{mid}"] = it + n
+                        people[oid]["items"][f"{sid}>{mid}"] = it + k
                 if mid in people:
                     people[mid]["items"][sid] = people[mid]["items"].get(sid, 0) + n  # 🎯 zählt für die Statistik, kostet ihn nix
             elif mid in people:
@@ -177,7 +181,7 @@ def bill_evening(ev: dict[str, Any], members: dict[str, dict[str, Any]], strafen
     lane = r2(hours * float(rules.get("lane_rate") or 0)) if rules.get("lane_mode") != "off" else 0.0
     lane_kasse = lane if rules.get("lane_mode") == "kasse" else 0.0
     if rules.get("lane_mode") == "split" and lane:
-        present = [m for m, p in people.items() if p["status"] in ("play", "watch")]
+        present = [m for m, p in people.items() if p["status"] in ("play", "watch", "gone")]
         if present:
             share = lane / len(present)
             for m in present:
@@ -469,7 +473,7 @@ class KegelclubManager:
             n = int(op.get("delta") or 1)
             return f"{'💸' if n > 0 else '↩️'} {self._sname(op.get('strafe'))} {'+' if n > 0 else ''}{n} · {self._mname(op.get('member'))}"
         if t == "abend_status":
-            st = {"play": "kegelt", "watch": "schaut zu", "excused": "abgemeldet", "absent": "fehlt (nicht abgemeldet)", "out": "nicht dabei"}.get(str(op.get("status")), "?")
+            st = {"play": "kegelt", "watch": "schaut zu", "gone": "ist gegangen", "excused": "abgemeldet", "absent": "fehlt (nicht abgemeldet)", "out": "nicht dabei"}.get(str(op.get("status")), "?")
             return f"👤 {self._mname(op.get('member'))}: {st}"
         if t == "abend_nofines":
             return "🙌 Strafen erlassen" if op.get("value", True) is not False else "💸 Strafen zählen wieder"
@@ -611,6 +615,12 @@ class KegelclubManager:
                 return
             if st not in STATUSES:
                 raise HomeAssistantError("Unbekannter Zustand")
+            if st == "gone":  # 🚪 merken, was bis jetzt gezählt ist – spätere Neuner der anderen zahlt er nicht mehr
+                ev.setdefault("gone", {})[mid] = {o: dict(per or {}) for o, per in (ev.get("counts") or {}).items() if o != mid}
+                ev.setdefault("gone_ts", {})[mid] = ts
+            else:
+                (ev.get("gone") or {}).pop(mid, None)
+                (ev.get("gone_ts") or {}).pop(mid, None)
             ev["status"][mid] = st
         elif t == "abend_count":
             ev = self.evening(op.get("abend"))
@@ -727,6 +737,18 @@ class KegelclubManager:
             elif k == "currency":
                 if v not in CURRENCIES:
                     raise HomeAssistantError("Unbekannte Währung")
+            elif k == "club_info":
+                cur = dict(st.get("club_info") or {})
+                for x, y in (v or {}).items():
+                    if x in ("name", "founded", "place", "schedule", "note"):
+                        y = str(y or "").strip()[: 2000 if x == "note" else 120]
+                        if x == "founded" and y and not re.match(r"^\d{4}(-\d{2}-\d{2})?$", y):
+                            raise HomeAssistantError("Gründung bitte als Datum")
+                        if y:
+                            cur[x] = y
+                        else:
+                            cur.pop(x, None)
+                v = cur
             elif k == "view":
                 v = {**(st.get("view") or {}), **{x: bool(y) for x, y in (v or {}).items() if x in VIEW_KEYS}}
             else:
@@ -760,6 +782,14 @@ class KegelclubManager:
                 new["guest"] = bool(item["guest"])
             if "note" in item:
                 new["note"] = str(item["note"] or "")[:200]
+            if "email" in item:  # ✉️ für „Mail an alle“
+                mail = str(item["email"] or "").strip()[:120]
+                if mail and not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", mail):
+                    raise HomeAssistantError("E-Mail-Adresse stimmt nicht")
+                if mail:
+                    new["email"] = mail
+                else:
+                    new.pop("email", None)
             if "photo" in item:  # 📸 kleines Foto als data-URL (Karte schneidet es auf 128 px zu)
                 ph = str(item["photo"] or "")
                 if ph and (not re.match(r"^data:image/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$", ph) or len(ph) > 120_000):
@@ -1067,7 +1097,8 @@ def read_alle_neune(con: sqlite3.Connection) -> dict[str, Any]:
         guest = not now_member and r["spieler_id"] not in ever
         mid = f"an{r['spieler_id']}"
         mid_of[r["spieler_id"]] = mid
-        members.append({"id": mid, "name": _nice_name(r["name"])[:60], "guest": guest, "active": now_member or guest, **({} if now_member or guest else {"left": True})})
+        mail = str(r["email"] or "").strip() if "email" in r.keys() else ""
+        members.append({"id": mid, "name": _nice_name(r["name"])[:60], "guest": guest, "active": now_member or guest, **({} if now_member or guest else {"left": True}), **({"email": mail[:120]} if "@" in mail else {})})
     order = {False: 0, True: 1}
     members.sort(key=lambda m: (order[m["guest"]], not m["active"], m["name"].casefold()))
 
@@ -1145,4 +1176,6 @@ def read_alle_neune(con: sqlite3.Connection) -> dict[str, Any]:
                       "member": mid_of.get(r["spieler_id"]) if cents > 0 and r["spieler_id"] else None, "abend": f"an{r['kegelabend_id']}" if r["kegelabend_id"] else None,
                       "imported": True})
     settings["start_balance"] = 0.0
+    if club["name"]:
+        settings["club_info"] = {"name": str(club["name"]).strip()[:120]}
     return {"club": str(club["name"] or ""), "settings": settings, "members": members, "strafen": strafen, "abende": abende, "kasse": kasse, "kasse_total": round(total / 100, 2)}

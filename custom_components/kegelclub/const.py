@@ -27,7 +27,7 @@ SIGNAL_UPDATE = f"{DOMAIN}_update"
 #   watch   = ist da, kegelt aber nicht (Zuschauer)
 #   excused = fehlt, hat sich passend abgemeldet
 #   absent  = fehlt, NICHT (passend) abgemeldet
-STATUSES = ("play", "watch", "excused", "absent")
+STATUSES = ("play", "watch", "gone", "excused", "absent")  # 🚪 gone = früher gegangen
 
 # 💸 Wer zahlt eine Strafe?  self = der, der sie „geschafft“ hat · others = alle anderen, die mitkegeln (z. B. „Alle Neune“)
 PAYERS = ("self", "others")
@@ -50,6 +50,7 @@ DEFAULT_SETTINGS = {
     "veil": False,            # 🙈 Kassenstand verschwommen (antippen = 4 Sekunden zeigen)
     "lock_all": False,        # 🔒 ganze Karte mit PIN sperren
     "view": {},               # 👁️ Ansicht für alle: Abschnitt → False = ausgeblendet
+    "club_info": {},          # 🏠 Über den Club: Name, Gründung, Bahn/Ort, Termin, Notiz
 }
 
 # 💸 Beispiel-Vorlage (nur wenn man sie beim Einrichten lädt) – alles änderbar

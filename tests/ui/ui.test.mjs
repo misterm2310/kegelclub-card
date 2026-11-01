@@ -71,7 +71,10 @@ check("Eigene Strafe wieder raus", (await heroBig()) === "2,70 €", await heroB
 // 🙈 Wer fehlt, ist ausgeblendet
 await tap('.stbtn[data-id="m6"]');
 last = await p.evaluate(() => fake.applied.at(-1));
-check("Status weiter: schaut zu → abgemeldet", last?.type === "abend_status" && last.status === "excused", JSON.stringify(last));
+check("Status weiter: schaut zu → gegangen", last?.type === "abend_status" && last.status === "gone" && await sr(`return /gegangen \\d\\d:\\d\\d/.test(h.querySelector('.stbtn[data-id="m6"]').textContent);`), JSON.stringify(last));
+await tap('.stbtn[data-id="m6"]');
+last = await p.evaluate(() => fake.applied.at(-1));
+check("Status weiter: gegangen → abgemeldet", last?.type === "abend_status" && last.status === "excused", JSON.stringify(last));
 check("Abgemeldet: blasse Kachel, keine Zeile „Fehlen heute“, blass in der Abrechnung mit offenem Grundbetrag", await sr(`const it = [...h.querySelectorAll('.bill .item')].find((x) => /Frida Holz/.test(x.textContent)); return h.querySelector('.pp[data-id="m6"]').classList.contains('off') && !h.querySelector('.away') && it?.classList.contains('off') && /Grundbetrag 7,50\\s€ offen/.test(it.textContent);`));
 await tap('.pp[data-id="m6"]');
 check("Fehlende: normale Strafen gesperrt, „Eigene“ geht", await sr(`return [...h.querySelectorAll('.fine[data-a="fine"]')].every((b) => b.disabled) && !h.querySelector('[data-a="handopen"]').disabled;`));
@@ -88,7 +91,7 @@ check("Knopf „Grundbetrag kassiert (5)“", await sr(`return /Grundbetrag kass
 await tap('[data-a="basepay"]');
 const base = await p.evaluate(() => fake.applied.filter((o) => o.type === "pay" && o.tag === "base"));
 check("Grundbetrag kassiert: 5 × 7,50 € mit Abend", base.length === 5 && base.every((o) => o.amount === 7.5 && o.abend === "evnow"), JSON.stringify(base));
-await tap('.stbtn[data-id="m4"]'); await tap('.stbtn[data-id="m4"]');
+await tap('.stbtn[data-id="m4"]'); await tap('.stbtn[data-id="m4"]'); await tap('.stbtn[data-id="m4"]');
 check("Dieter danach abgemeldet → sein Grundbetrag ist wieder aus der Kasse", await p.evaluate(() => fake.data.kasse.filter((k) => k.tag === "base").length === 4 && !fake.data.kasse.some((k) => k.tag === "base" && k.member === "m4")));
 check("Bernd hat Strafen → Grundbetrag gesperrt 🔒", await sr(`return !h.querySelector('.bill [data-a="basetoggle"][data-id="m2"]') && /🔒/.test([...h.querySelectorAll('.bill .item')].find((x) => /Bernd Muster/.test(x.textContent))?.textContent || '');`));
 await tap('.bill [data-a="basetoggle"][data-id="m4"]');
@@ -100,6 +103,7 @@ check("Münze: Bernd zahlt seine Strafen (0,70 €)", last?.type === "pay" && la
 check("Münze wird grün", await sr(`return h.querySelector('.bill [data-a="coin"][data-id="m2"]').classList.contains('ok');`));
 await shot("3-abrechnung.png");
 // 📤 Drucken & Teilen
+check("Bildschirm-an-Knopf beim Kegelabend", await sr(`return !!h.querySelector('.hero [data-a="awake"]');`));
 await tap('.bill ~ .btnrow [data-a="share"], [data-a="share"]');
 check("Drucken & Teilen: Seite mit Vorschau", await sr(`return h.querySelectorAll('.kcprev .kstab tr').length >= 6 && !!h.querySelector('[data-a="shpdf"]') && !!h.querySelector('[data-a="shprint"]');`));
 await tap('[data-a="shmode"]');
@@ -177,6 +181,17 @@ last = await p.evaluate(() => fake.applied.at(-1));
 check("Foto gespeichert (klein, JPEG)", last?.type === "member_save" && /^data:image\/jpeg;base64,/.test(last.item.photo || "") && last.item.photo.length < 20000, JSON.stringify(last).slice(0, 200));
 check("Foto in der Liste", await sr(`return !!h.querySelector('[data-id="m1"] img.phav');`));
 await shot("4f-mitglieder.png");
+await tap('[data-a="back"]');
+// 🏠 Über den Club
+await tap('[data-a="sheet"][data-v="about"]');
+await p.locator("#c1").locator('input[data-a="clubinfo"][data-v="name"]').fill("Die Testkugeln");
+await p.locator("#c1").locator('input[data-a="clubinfo"][data-v="name"]').press("Tab");
+await p.locator("#c1").locator('input[data-a="clubinfo"][data-v="founded"]').fill("2019-05-11");
+await p.locator("#c1").locator('textarea[data-a="clubinfo"]').click();
+await p.locator("#c1").locator('.sechead').click();
+await p.waitForTimeout(300);
+check("Über den Club: gespeichert + Alter", await p.evaluate(() => fake.data.settings.club_info?.name === "Die Testkugeln" && fake.data.settings.club_info?.founded === "2019-05-11") && await sr(`return /Jahre/.test(h.querySelector('.hero')?.textContent || '');`), await p.evaluate(() => JSON.stringify(fake.data.settings.club_info)));
+await shot("4g-ueber-den-club.png");
 await tap('[data-a="back"]');
 await tap('.lgbox >> nth=1');
 await tap('[data-a="sheet"][data-v="rules"]');
