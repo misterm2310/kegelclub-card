@@ -17,7 +17,7 @@ const srv = http.createServer((q, r) => {
     : url.startsWith("/kegelclub/files/") ? path.join(root, "custom_components/kegelclub/www", url.slice(17))
     : path.join(root, url);
   r.setHeader("content-type", f.endsWith(".js") ? "text/javascript" : f.endsWith(".svg") ? "image/svg+xml" : f.endsWith(".png") ? "image/png" : f.endsWith(".json") ? "application/json" : f.endsWith(".webmanifest") ? "application/manifest+json" : "text/html");
-  try { const buf = fs.readFileSync(f); r.end(f.endsWith(".png") ? buf : buf.toString().replaceAll("__KC_VERSION__", "test")); } catch (e) { r.statusCode = 404; r.end(); }
+  try { const buf = fs.readFileSync(f); r.end(/\.(png|webp)$/.test(f) ? buf : buf.toString().replaceAll("__KC_VERSION__", "test")); } catch (e) { r.statusCode = 404; r.end(); }
 }).listen(0);
 const port = srv.address().port;
 const exe = process.env.PLAYWRIGHT_CHROMIUM || (fs.existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined);

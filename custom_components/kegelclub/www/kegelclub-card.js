@@ -6,7 +6,7 @@
 // - Jede Änderung (Pumpe, Einzahlung, wer da ist …) wird als kleine „Änderung“ verschickt.
 // - Klappt das Verschicken nicht (kein Netz auf der Kegelbahn), landet die Änderung im Postausgang und wird
 //   später nachgeschickt. Bis dahin rechnet die Karte selbst so, als wäre sie schon angekommen.
-const KC_VERSION = "0.1.0-beta.6";
+const KC_VERSION = "0.1.0-beta.7";
 
 const MONTHS = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
 const QKEY = "kegelclub_queue";
@@ -48,6 +48,7 @@ const KC_GUIDE = [
 ];
 // 🆕 Was ist neu – das Neueste oben (wie bei der Einkaufsliste)
 const KC_NEWS = [
+  ["0.1.0-beta.7", "🙏 <b>Credits wie bei der Einkaufsliste:</b> Mister-M-Logo, Version, Knöpfe für GitHub, 💡 Idee oder Wunsch, 🐞 Fehler melden und Spenden mit PayPal – in ⚙️ → Credits und unten in der Anleitung."],
   ["0.1.0-beta.6", "📤 <b>Drucken & Teilen</b> wie bei der Einkaufsliste: beim Abend auf „Teilen“ → Abrechnung drucken, als echte <b>PDF</b> teilen/speichern (iPhone: Teilen-Menü → Drucken), <b>QR-Code</b> fürs Handy oder als Text · 📸 <b>Fotos</b> für Mitglieder (Kamera oder Bild), ohne Foto bleibt alles wie vorher · 👥 <b>Mitglieder & Strafen</b> sind jetzt unter ⚙️ (Reiter weg) · 💶 Knopf wieder „Grundbetrag kassiert (5)“ · 🔒 Wer schon eine Strafe hat, dessen Grundbetrag bleibt bezahlt · 🤝 Bei Fehlenden kann man Grundbetrag und „nicht abgemeldet“ in der Abrechnung antippen, wenn jemand für sie zahlt · 📊 Statistik mit vollem Namen und liegenden Balken"],
   ["0.1.0-beta.5", "📊 Statistik viel ausführlicher: oben 4 Reiter <b>Überblick · Personen · Abende · Strafen</b> · 📅 Knopf „Alle Jahre“ (alles seit Beginn) · 📋 Zahlen mit Vergleich zum Vorjahr (▲ mehr, ▼ weniger) · 🏆 Rekorde (teuerster Abend, meiste Strafe, längste Serie …) · 👤 Person antippen = eigene Seite mit Strafen-Arten und Abend für Abend · 📅 Tabelle je Abend (antippen = Abend öffnen) · 🧮 Strafen-Tabelle „Wer hat was?“"],
   ["0.1.0-beta.4", "💶 Fix: Wer nach „Grundbetrag kassiert“ auf abgemeldet gestellt wird, bekommt den Grundbetrag automatisch wieder aus der Kasse (steht dann unter „Wer schuldet was“) · 👥 Der Knopf zeigt, <b>von wem</b> er kassiert · 🧾 In der Abrechnung stehen Fehlende wieder mit drin – blass, mit offenem Grundbetrag (+ Extra bei nicht abgemeldet)"],
@@ -883,6 +884,15 @@ details.gsec .gdot ha-icon { --mdc-icon-size:17px; }
 details.gsec .gtext { padding:0 14px 12px 50px; font-size:.92em; line-height:1.5; }
 a.btn { text-decoration:none; color:inherit; }
 a.btn.paypal { background:#0070ba; border-color:#0070ba; color:#fff; }
+/* 🙏 Credits – wie bei der Einkaufsliste */
+.elcredits { text-align:center; } .elcredits p { margin:8px 0; }
+.ellogo { background:#fff; border-radius:16px; padding:10px; display:inline-block; max-width:100%; box-shadow:0 1px 4px rgba(0,0,0,.12); }
+.ellogo img { display:block; max-width:100%; width:200px; height:auto; }
+.elcbtns { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin:12px 0; }
+a.elcbtn { color:var(--primary-text-color); background:var(--secondary-background-color, rgba(127,127,127,.12)); border-radius:12px; padding:10px 14px; text-decoration:none; font-weight:500; }
+a.elcbtn.pp { display:inline-flex; align-items:center; gap:8px; background:#0070BA; color:#fff; border:2px solid #003087; font-weight:700; }
+.elcbtn.pp svg { width:20px; height:20px; flex:none; }
+.elcsmall { opacity:.7; font-size:.9em; }
 a { color:var(--pc); }
 /* 🧮 Taschenrechner */
 .calc { border-radius:12px; padding:10px; margin:0 2px 10px; background:var(--secondary-background-color, rgba(127,127,127,.1)); }
@@ -1865,11 +1875,25 @@ ${scope} .ksf{text-align:center;font-size:10px;color:#999;margin-top:12px}`;
     const beta = /-beta/.test(KC_VERSION) && cur ? `<div class="betabox"><b>🧪 Du bist in der Beta ${KC_VERSION}</b><p class="small" style="margin:4px 0 2px">Neu in dieser Beta:</p>${li(cur[1])}</div>` : "";
     return `${beta}<p class="small">Das Neueste steht oben.</p>${KC_NEWS.filter((n) => n !== cur).map((n) => `<p style="margin:10px 0 0"><b>v${n[0]}</b></p>${li(n[1])}`).join("")}`;
   }
+  // 🙏 Credits – genau wie bei der Einkaufsliste (Logo, Version, Knöpfe, PayPal), in ⚙️ und in der Anleitung
   _creditsHtml() {
-    return `<p class="small" style="margin-top:2px">Kegelclub <b>v${KC_VERSION}</b> · von <b>Mister-M</b> · <a href="${REPO}" target="_blank" rel="noopener">GitHub</a> · <a href="${REPO}/issues" target="_blank" rel="noopener">Fehler melden</a></p>
-      <p class="small">Der Kegelclub ist und bleibt <b>kostenlos</b>. Wenn du magst, kannst du mir ganz freiwillig eine kleine Spende schicken – die nächste Runde geht auf dich. 🍻</p>
-      <div class="btnrow"><a class="btn paypal" href="${PAYPAL}" target="_blank" rel="noopener">${ic("hand-heart-outline")}Spenden per PayPal</a></div>
-      <p class="small">Symbole: Material Design Icons (Pictogrammers, frei). Lizenz: MIT. Nicht verbunden mit der App „Alle Neune“ – der Import liest nur deren Export-Datei.</p>`;
+    const t = (de, en) => (KC_LANG === "en" ? en : de);
+    return `<div class="elcredits" translate="no">
+      <div class="ellogo"><img src="/kegelclub/files/mister-m.webp?v=${KC_VERSION}" alt="Mister-M" loading="lazy"></div>
+      <p class="elcv"><b>Kegelclub</b> v${KC_VERSION}</p>
+      <p>${t("Gemacht von <b>Mister-M</b> – mit Hilfe von Claude 🤖", "Made by <b>Mister-M</b> – with help from Claude 🤖")}</p>
+      <p>${t("Ich versuche, Updates und Fehler-Korrekturen zeitnah zu erledigen.", "I try to ship updates and fixes promptly.")}</p>
+      <p class="elcsmall">📅 ${t("Neue offizielle Versionen kommen immer sonntags. An den anderen Tagen gibt es nur Test-Versionen (Beta) – die siehst du in HACS unter „Beta-Versionen anzeigen“.", "New official versions always come out on Sundays. On the other days there are only test versions (beta) – you see them in HACS under “Show beta versions”.")}</p>
+      <div class="elcbtns">
+        <a class="elcbtn" href="${REPO}" target="_blank" rel="noopener">🐙 GitHub</a>
+        <a class="elcbtn" href="${REPO}/discussions" target="_blank" rel="noopener">💡 ${t("Idee oder Wunsch", "Idea or request")}</a>
+        <a class="elcbtn" href="${REPO}/issues" target="_blank" rel="noopener">🐞 ${t("Fehler melden", "Report a bug")}</a>
+        <a class="elcbtn pp" href="${PAYPAL}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7.5-4.6-9.6-9.2C1 8.6 2.7 5 6.2 5c2 0 3.5 1.1 5.8 3.4C14.3 6.1 15.8 5 17.8 5c3.5 0 5.2 3.6 3.8 6.8C19.5 16.4 12 21 12 21z" fill="#fff"/></svg><span>${t("Spenden mit PayPal", "Donate with PayPal")}</span></a>
+      </div>
+      <p class="elcsmall">${t("Der Kegelclub ist und bleibt kostenlos. Wenn er dir gefällt, freue ich mich über eine kleine Spende – ganz freiwillig, die nächste Runde geht auf dich 🍻. Beim Antippen öffnet sich PayPal im Browser; vorher geht nichts ins Internet.", "Kegelclub is and stays free. If you like it, I would be happy about a small donation – completely voluntary, the next round is on you 🍻. Tapping opens PayPal in your browser; nothing goes to the internet before that.")}</p>
+      <p>🔒 ${t("Alle Daten bleiben in deinem Home Assistant. Keine Cloud, kein Tracking – ins Internet geht nichts. Mehr unter ⚙️ → Datenschutz.", "All data stays in your Home Assistant. No cloud, no tracking – nothing goes to the internet. More under ⚙️ → Privacy.")}</p>
+      <p class="elcsmall">${t("Nicht verbunden mit der App „Alle Neune“ – der Import liest nur deren Export-Datei. · Symbole: Material Design Icons (Pictogrammers) · Lizenz: MIT", "Not affiliated with the “Alle Neune” app – the import only reads its export file. · Icons: Material Design Icons (Pictogrammers) · License: MIT")}</p>
+    </div>`;
   }
 
   // ---------------------------------------------------------------- 🔢 PIN

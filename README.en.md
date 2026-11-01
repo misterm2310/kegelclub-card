@@ -85,7 +85,9 @@ language: en       # optional: de or en (default = like Home Assistant)
 
 ## 💙 Like it?
 
-It is and stays **free**. If you like, send a small voluntary donation: [paypal.me/MarcoStrickmann](https://paypal.me/MarcoStrickmann). 🍻
+It is and stays **free**. If you like, you can send me a small donation via PayPal – completely voluntary: [paypal.me/MarcoStrickmann](https://paypal.me/MarcoStrickmann). The link is also under ⚙️ → Credits. The next round is on you. 🍻
+
+[![PayPal](https://img.shields.io/badge/PayPal-Donate-0070BA?logo=paypal&logoColor=white)](https://paypal.me/MarcoStrickmann)
 
 Ideas → [Discussions](https://github.com/misterm2310/kegelclub-card/discussions) · Bugs → [Issues](https://github.com/misterm2310/kegelclub-card/issues) (please no real club data).
 

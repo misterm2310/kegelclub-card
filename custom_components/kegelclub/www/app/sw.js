@@ -1,7 +1,7 @@
 // 📱 Kegelclub – Offline-Speicher für die App. Hier liegt NUR Programm, keine Zahlen.
 // (Die Zahlen merkt sich die Seite selbst im Handy – und löscht sie beim Abmelden.)
 const CACHE = "kegelclub-app-__KC_VERSION__";
-const FILES = ["./", "manifest.webmanifest", "icon-192.png", "icon-512.png", "icons.json", "/kegelclub/files/kegelclub-card.js?v=__KC_VERSION__", "/kegelclub/files/kegelclub-en.json?v=__KC_VERSION__"];
+const FILES = ["./", "manifest.webmanifest", "icon-192.png", "icon-512.png", "icons.json", "/kegelclub/files/kegelclub-card.js?v=__KC_VERSION__", "/kegelclub/files/kegelclub-en.json?v=__KC_VERSION__", "/kegelclub/files/mister-m.webp?v=__KC_VERSION__"];
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => Promise.allSettled(FILES.map((f) => c.add(f)))).then(() => self.skipWaiting()));
