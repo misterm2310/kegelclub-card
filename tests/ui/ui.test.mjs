@@ -103,7 +103,7 @@ check("Münze: Bernd zahlt seine Strafen (0,70 €)", last?.type === "pay" && la
 check("Münze wird grün", await sr(`return h.querySelector('.bill [data-a="coin"][data-id="m2"]').classList.contains('ok');`));
 await shot("3-abrechnung.png");
 // 📤 Drucken & Teilen
-check("Bildschirm-an-Knopf beim Kegelabend", await sr(`return !!h.querySelector('.hero [data-a="awake"]');`));
+check("Bildschirm-an-Knopf oben zwischen Auge und Schloss", await sr(`const b = [...h.querySelectorAll('.head .iconbtn')].map((x) => x.dataset.a).join(','); return b.includes('hide,awake,lock') && !h.querySelector('.hero [data-a="awake"]');`));
 await tap('.bill ~ .btnrow [data-a="share"], [data-a="share"]');
 check("Drucken & Teilen: Seite mit Vorschau", await sr(`return h.querySelectorAll('.kcprev .kstab tr').length >= 6 && !!h.querySelector('[data-a="shpdf"]') && !!h.querySelector('[data-a="shprint"]');`));
 await tap('[data-a="shmode"]');

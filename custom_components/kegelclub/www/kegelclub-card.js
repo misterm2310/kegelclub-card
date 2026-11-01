@@ -6,7 +6,7 @@
 // - Jede Änderung (Pumpe, Einzahlung, wer da ist …) wird als kleine „Änderung“ verschickt.
 // - Klappt das Verschicken nicht (kein Netz auf der Kegelbahn), landet die Änderung im Postausgang und wird
 //   später nachgeschickt. Bis dahin rechnet die Karte selbst so, als wäre sie schon angekommen.
-const KC_VERSION = "0.1.0-beta.8";
+const KC_VERSION = "0.1.0-beta.9";
 
 const MONTHS = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
 const QKEY = "kegelclub_queue";
@@ -49,6 +49,7 @@ const KC_GUIDE = [
 ];
 // 🆕 Was ist neu – das Neueste oben (wie bei der Einkaufsliste)
 const KC_NEWS = [
+  ["0.1.0-beta.9", "💡 Der Knopf <b>Bildschirm anlassen</b> sitzt jetzt oben zwischen 👁️ und 🔒 – nur beim laufenden Kegelabend · 🔤 Namen in der Statistik haben wieder die normale Größe"],
   ["0.1.0-beta.8", "🚪 Neuer Zustand <b>gegangen</b> (Status-Knopf: kegelt → schaut zu → gegangen …): Grundbetrag und bisherige Strafen bleiben, spätere Neuner der anderen zahlt er nicht mehr · 💡 <b>Bildschirm anlassen</b> oben beim Kegelabend · 🏠 <b>Über den Club</b> in ⚙️ → Club (Name, Gründung, Bahn, Termin, Notizen – am Jahrestag gibt es einen Glückwunsch) · ✉️ <b>E-Mail</b> je Mitglied, „Mail an alle“ und „Per Mail schicken“ beim Teilen · 🖨️ Clubname oben auf Ausdruck und PDF, „Kasse jetzt“ steht nicht mehr drauf · 📜 Zu lange Namen in der Statistik laufen als Lauftext durch"],
   ["0.1.0-beta.7", "🙏 <b>Credits wie bei der Einkaufsliste:</b> Mister-M-Logo, Version, Knöpfe für GitHub, 💡 Idee oder Wunsch, 🐞 Fehler melden und Spenden mit PayPal – in ⚙️ → Credits und unten in der Anleitung."],
   ["0.1.0-beta.6", "📤 <b>Drucken & Teilen</b> wie bei der Einkaufsliste: beim Abend auf „Teilen“ → Abrechnung drucken, als echte <b>PDF</b> teilen/speichern (iPhone: Teilen-Menü → Drucken), <b>QR-Code</b> fürs Handy oder als Text · 📸 <b>Fotos</b> für Mitglieder (Kamera oder Bild), ohne Foto bleibt alles wie vorher · 👥 <b>Mitglieder & Strafen</b> sind jetzt unter ⚙️ (Reiter weg) · 💶 Knopf wieder „Grundbetrag kassiert (5)“ · 🔒 Wer schon eine Strafe hat, dessen Grundbetrag bleibt bezahlt · 🤝 Bei Fehlenden kann man Grundbetrag und „nicht abgemeldet“ in der Abrechnung antippen, wenn jemand für sie zahlt · 📊 Statistik mit vollem Namen und liegenden Balken"],
@@ -1131,12 +1132,12 @@ ol.steps li { margin:3px 0; }
 .pp.gone { opacity:.75; }
 .clubbday { margin:0 2px 10px; padding:8px 12px; border-radius:12px; background:color-mix(in srgb, #fb8c00 14%, transparent); font-weight:500; text-align:center; }
 .edit textarea { width:100%; box-sizing:border-box; font:inherit; border-radius:10px; padding:8px; border:1px solid var(--divider-color); background:var(--card-background-color); color:var(--primary-text-color); resize:vertical; }
-.hero .awake { position:absolute; top:8px; right:8px; color:var(--secondary-text-color); }
-.hero .awake.on { color:#f9a825; }
+.iconbtn.awake.on { color:#f9a825; }
 /* 📜 Lauftext für zu lange Namen */
 .tk { display:block; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; min-width:0; }
 .tile span > .tk { display:inline-block; max-width:100%; vertical-align:bottom; }
 .tk.run { text-overflow:clip; -webkit-mask-image:linear-gradient(90deg, #000, #000 92%, transparent); mask-image:linear-gradient(90deg, #000, #000 92%, transparent); }
+.tk .tki, .tk .tkg { font-size:inherit !important; color:inherit; }
 .tk .tki { display:inline-block !important; white-space:nowrap; animation:kctk var(--d, 8s) linear infinite; }
 .tk .tkg { display:inline-block; width:40px; }
 @keyframes kctk { 0%, 12% { transform:translateX(0); } 100% { transform:translateX(-50%); } }
@@ -1383,7 +1384,9 @@ class KegelclubCard extends HTMLElement {
     const appLock = this._app && !!window.__kcAppLock?.on?.();
     const isLocked = d?.pin && !pinOpen();
     const inSet = this._view === "set";
+    const awakeHere = !!(d && !page && !["set", "kasse", "stats", "edit"].includes(this._view) && evFind(d));
     const tools = this._lockAll ? "" : `${inSet ? "" : `<button class="iconbtn ${this._hidden ? "on" : ""}" data-a="hide" title="Beträge ${this._hidden ? "zeigen" : "verstecken"}">${ic(this._hidden ? "eye-off-outline" : "eye-outline")}${this._lb(this._hidden ? "Zeigen" : "Verstecken")}</button>`}
+      ${awakeHere ? `<button class="iconbtn awake ${this._awakeOn ? "on" : ""}" data-a="awake" title="${this._awakeOn ? "Bildschirm bleibt an – antippen zum Ausschalten" : "Bildschirm anlassen (antippen)"}" aria-label="Bildschirm anlassen">${ic(this._awakeOn ? "lightbulb-on" : "lightbulb-outline")}${this._lb(this._awakeOn ? "Bleibt an" : "Bildschirm")}</button>` : ""}
       <button class="iconbtn" data-a="lock" title="${appLock ? "App jetzt sperren" : isLocked ? "Gesperrt – PIN nötig für ⚙️ und Mitglieder" : "Jetzt sperren"}">${ic(isLocked && !appLock ? "lock-outline" : "lock-open-variant-outline")}${this._lb(isLocked && !appLock ? "Gesperrt" : "Sperren")}</button>
       ${showBack ? `<button class="iconbtn" data-a="back" title="${deeper ? "Zurück" : "Schließen"}">${ic(deeper ? "arrow-left" : "close")}${this._lb(deeper ? "Zurück" : "Schließen")}</button>` : ""}`;
     let body;
@@ -1541,7 +1544,7 @@ class KegelclubCard extends HTMLElement {
     const finesSum = r2(all.reduce((s, m) => s + b.people[m].fines, 0));
     const feeSum = r2(ids.reduce((s, m) => s + b.people[m].fee, 0));
     const feeOpen = ids.filter((m) => b.people[m].fee > 0 && this._paidAt(d, ev.id, m, "base") < b.people[m].fee - 0.004);
-    let h = `<div class="hero" style="--hc:#fb8c00"><button class="iconbtn awake ${this._awakeOn ? "on" : ""}" data-a="awake" title="${this._awakeOn ? "Bildschirm bleibt an – antippen zum Ausschalten" : "Bildschirm anlassen (antippen)"}" aria-label="Bildschirm anlassen">${ic(this._awakeOn ? "lightbulb-on" : "lightbulb-outline")}</button><div class="lbl">Kegelabend · ${esc(fmtDate(ev.date))}${ev.waiting ? " · ⏳ wartet" : ""}</div><div class="big" style="font-size:1.9em">${this._m(finesSum)}</div>
+    let h = `<div class="hero" style="--hc:#fb8c00"><div class="lbl">Kegelabend · ${esc(fmtDate(ev.date))}${ev.waiting ? " · ⏳ wartet" : ""}</div><div class="big" style="font-size:1.9em">${this._m(finesSum)}</div>
       <div class="lbl">Strafen heute${feeSum ? ` · Grundbeträge ${money(feeSum)}` : ""}${b.lane ? ` · Kegelbahn ${money(b.lane)}${b.rules.lane_mode === "kasse" ? " beim Abschließen aus der Kasse" : " aufgeteilt"}` : ""}</div></div>`;
     h += `<div class="evbar">${b.rules.lane_mode === "off" ? "" : `<label class="hrs">${ic("timer-outline")}<input data-a="evhours" inputmode="decimal" value="${numDe(ev.hours || 0)}" aria-label="Stunden Kegelbahn"> Std.</label>`}
       <button class="btn small" data-a="guest">${ic("account-plus-outline")}Gast</button>
