@@ -32,6 +32,27 @@ def async_register(hass: HomeAssistant) -> None:
     websocket_api.async_register_command(hass, ws_errors_clear)
     websocket_api.async_register_command(hass, ws_factory_reset)
     websocket_api.async_register_command(hass, ws_books)
+    websocket_api.async_register_command(hass, ws_pdf_store)
+
+
+@websocket_api.websocket_command(
+    {
+        vol.Required("type"): "kegelclub/pdf/store",
+        vol.Required("data"): vol.All(str, vol.Length(max=7_000_000)),
+        vol.Optional("name"): vol.All(str, vol.Length(max=120)),
+    }
+)
+@callback
+def ws_pdf_store(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]) -> None:
+    """📄 Die Karte hat eine PDF gebaut: kurz bereithalten, Link zurück (für die HA-App)."""
+    from .pdf_share import store_pdf  # noqa: PLC0415
+
+    try:
+        result = store_pdf(hass, msg["data"], msg.get("name"))
+    except ValueError as err:
+        connection.send_error(msg["id"], "invalid", str(err))
+        return
+    connection.send_result(msg["id"], result)
 
 
 @websocket_api.websocket_command({vol.Required("type"): "kegelclub/books"})

@@ -251,3 +251,25 @@ async def test_pay_at_table_and_hand_fine(hass, setup):
     assert {p["id"]: p["debt"] for p in m.summary()["people"]}["d"] == 7.5
     ok(m, {"type": "abend_close", "abend": "e1", "value": True})
     assert m.summary()["kasse"] == round(22.5 + 2.3 - 20, 2)
+
+
+async def test_photo_and_pdf_share(hass, setup):
+    """📸 Foto am Mitglied (nur echte, kleine Bilder) und 📄 PDF kurz bereitstellen für die HA-App."""
+    from custom_components.kegelclub.pdf_share import get_pdf, store_pdf
+
+    m = mgr(hass)
+    club(m)
+    pic = "data:image/jpeg;base64," + base64.b64encode(b"\xff\xd8\xff" + b"x" * 300).decode()
+    ok(m, {"type": "member_save", "item": {"id": "a", "name": "Anna", "photo": pic}})
+    assert m.find("member", "a")["photo"] == pic
+    res = m.apply([{"type": "member_save", "item": {"id": "a", "name": "Anna", "photo": "javascript:alert(1)"}}], "Test")
+    assert not res[0]["ok"] and m.find("member", "a")["photo"] == pic
+    ok(m, {"type": "member_save", "item": {"id": "a", "name": "Anna", "photo": ""}})
+    assert "photo" not in m.find("member", "a")
+    # 📄 PDF: nur echte PDFs, Link mit Zufallsschlüssel
+    r = store_pdf(hass, base64.b64encode(b"%PDF-1.4 test").decode(), "Kegelabend 2026-11-07.pdf")
+    token = r["url"].split("/")[4]
+    assert r["url"].startswith("/api/kegelclub/pdf/") and r["url"].endswith("/Kegelabend-2026-11-07.pdf")
+    assert get_pdf(hass, token)["data"].startswith(b"%PDF-")
+    with pytest.raises(ValueError):
+        store_pdf(hass, base64.b64encode(b"keine pdf").decode())

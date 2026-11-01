@@ -760,6 +760,14 @@ class KegelclubManager:
                 new["guest"] = bool(item["guest"])
             if "note" in item:
                 new["note"] = str(item["note"] or "")[:200]
+            if "photo" in item:  # 📸 kleines Foto als data-URL (Karte schneidet es auf 128 px zu)
+                ph = str(item["photo"] or "")
+                if ph and (not re.match(r"^data:image/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$", ph) or len(ph) > 120_000):
+                    raise HomeAssistantError("Foto ist zu groß oder kein Bild")
+                if ph:
+                    new["photo"] = ph
+                else:
+                    new.pop("photo", None)
         else:
             if "amount" in item:
                 amount = parse_money(item["amount"])

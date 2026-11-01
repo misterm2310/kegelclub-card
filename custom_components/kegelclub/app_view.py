@@ -62,3 +62,6 @@ def async_register_app(hass: HomeAssistant) -> None:
     hass.data[DOMAIN]["app_registered"] = True
     hass.http.register_view(AppView())
     hass.http.register_view(AppRedirectView())
+    from .pdf_share import PdfView  # noqa: PLC0415 – 📄 PDF für die HA-App
+
+    hass.http.register_view(PdfView())

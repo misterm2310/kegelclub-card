@@ -21,6 +21,7 @@
 - 🙌 **Waive fines** for trips, Christmas parties & co.
 - 🏦 **Club cash** with “who owes what”, payments, expenses and CSV.
 - 📊 **Statistics** (one year or all years): overview with previous-year comparison and records, kings, cash history · people with their own detail page · evening-by-evening table · fines by type and a "who got what" matrix.
+- 📤 **Print & share**: print an evening's bill, share a real PDF (iPhone: Share → Print), QR code for phones or plain text. 📸 Member photos.
 - 📥 **Move from the “Alle Neune” app** – with all old evenings, fines and the complete cash.
 - 📱 **Offline app**, 🔒 **PIN lock**, 💾 **backup**, 📜 **history**.
 - 🌍 **German or English** (automatic, like Home Assistant) and 💱 **selectable currency**.
@@ -50,7 +51,7 @@ Copy `custom_components/kegelclub` to `/config/custom_components/kegelclub` and 
 <details><summary>First start, bowling evening, cash – <i>expand</i></summary>
 
 1. **First start**: the card asks how you want to start – **empty**, with **sample fines** or with the **file from “Alle Neune”**.
-2. Add **members** (tab “Members”) and set base fee and lane under ⚙️ → **Rules & amounts**.
+2. Add **members** (⚙️ → **Members & fines**, photos too) and set base fee and lane under ⚙️ → **Rules & amounts**.
 3. **Start bowling evening**. The small button under each person switches: bowling → watching → excused → no-show.
 4. **Book a fine**: tap the person first, then the fine.
 5. **Close evening** → the bill goes to the **cash** under “who owes what”. Paid? Tap the green check.

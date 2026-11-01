@@ -22,6 +22,7 @@
 - 🙌 **Strafen erlassen** für Ausflug, Weihnachtsfeier & Co.
 - 🏦 **Kegelkasse** mit „Wer schuldet was“, Einzahlungen, Ausgaben und CSV.
 - 📊 **Statistik** (ein Jahr oder alle Jahre): Überblick mit Vergleich zum Vorjahr und Rekorden, Könige, Kasse-Verlauf · Personen mit eigener Detailseite · Tabelle Abend für Abend · Strafen nach Art und „Wer hat was?“-Tabelle.
+- 📤 **Drucken & Teilen**: Abrechnung eines Abends drucken, als echte PDF teilen (iPhone: Teilen → Drucken), als QR-Code fürs Handy oder als Text. 📸 Fotos für Mitglieder.
 - 📥 **Umzug aus der App „Alle Neune“** – mit allen alten Abenden, Strafen und der kompletten Kasse.
 - 📱 **Offline-App** für die Kegelbahn, 🔒 **PIN-Sperre**, 💾 **Sicherung**, 📜 **Verlauf**.
 - 🌍 **Deutsch oder Englisch** (automatisch wie Home Assistant) und 💱 **Währung wählbar**.
@@ -53,7 +54,7 @@ Den Ordner `custom_components/kegelclub` nach `/config/custom_components/kegelcl
 <details><summary>Erster Start, Kegelabend, Kasse – <i>aufklappen</i></summary>
 
 1. **Erster Start**: Die Karte fragt, wie ihr starten wollt – **leer**, mit **Beispiel-Strafen** oder mit der **Datei aus „Alle Neune“**.
-2. **Mitglieder** anlegen (Reiter „Mitglieder“) und unter ⚙️ → **Regeln & Beträge** Grundbetrag und Kegelbahn einstellen.
+2. **Mitglieder** anlegen (⚙️ → **Mitglieder & Strafen**, dort auch Fotos) und unter ⚙️ → **Regeln & Beträge** Grundbetrag und Kegelbahn einstellen.
 3. **Kegelabend starten**. Der kleine Knopf unter jeder Person schaltet weiter: kegelt → schaut zu → abgemeldet → nicht abgemeldet.
 4. **„Grundbetrag kassiert“** antippen, wenn am Anfang alle bezahlt haben.
 5. **Strafe buchen**: erst die Person, dann die Strafe antippen. Das rote **−** oben links nimmt eine zurück, **„Eigene“** = Betrag und Grund selbst eintippen.

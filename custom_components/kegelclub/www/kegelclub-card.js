@@ -6,7 +6,7 @@
 // - Jede Änderung (Pumpe, Einzahlung, wer da ist …) wird als kleine „Änderung“ verschickt.
 // - Klappt das Verschicken nicht (kein Netz auf der Kegelbahn), landet die Änderung im Postausgang und wird
 //   später nachgeschickt. Bis dahin rechnet die Karte selbst so, als wäre sie schon angekommen.
-const KC_VERSION = "0.1.0-beta.5";
+const KC_VERSION = "0.1.0-beta.6";
 
 const MONTHS = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
 const QKEY = "kegelclub_queue";
@@ -28,11 +28,11 @@ const MEMBER_COLORS = ["#1e88e5", "#e91e63", "#8e24aa", "#fb8c00", "#00897b", "#
 
 // 📖 Anleitung – einfach erklärt, Kapitel zum Aufklappen
 const KC_GUIDE = [
-  { icon: "rocket-launch-outline", title: "Erste Schritte", text: `Beim allerersten Öffnen fragt die Karte, wie du starten willst: <b>leer</b>, mit <b>Beispiel-Strafen</b> oder mit der <b>Datei aus „Alle Neune“</b>.<br>Danach unter <b>„Mitglieder“</b> eure Leute anlegen und unter ⚙️ → <b>„Regeln & Beträge“</b> Grundbetrag und Kegelbahn einstellen. Fertig – gut Holz! 🎳` },
-  { icon: "bowling", title: "Ein Kegelabend", text: `Reiter <b>„Abend“</b> → <b>„Kegelabend starten“</b>. Alle Mitglieder stehen als Kacheln da – in der Reihenfolge wie unter „Mitglieder“.<br><b>1.</b> Wer ist da? <b>Kleiner Knopf unten an der Kachel</b> schaltet weiter: kegelt → schaut zu → abgemeldet → nicht abgemeldet. Wer fehlt, bleibt als <b>blasse Kachel</b> stehen. Für Fehlende geht nur eine Strafe per Hand (<b>„Eigene“</b>).<br><b>2.</b> <b>„Grundbetrag kassiert“</b> antippen, sobald alle bezahlt haben (einzeln geht es in der Abrechnung).<br><b>3.</b> Strafe buchen: <b>Person antippen</b> (blau umrandet), dann die <b>Strafe antippen</b>. Jeder Tipp = +1. Vertippt? Das rote <b>−</b> oben links auf der Kachel nimmt eine zurück. Etwas Besonderes? <b>„Eigene“</b> = Betrag und Grund selbst eintippen.<br><b>4.</b> Zum Schluss in der <b>Abrechnung</b> (rechts stehen nur die Strafen) auf die <b>Münze</b> tippen, wenn bezahlt wurde – sie wird grün ✓.<br><b>5.</b> <b>„Abend abschließen“</b>. Hat noch jemand offen, sagt die Karte vorher Bescheid. Mit Knopf zum <b>Teilen</b> (z. B. in die WhatsApp-Gruppe).` },
+  { icon: "rocket-launch-outline", title: "Erste Schritte", text: `Beim allerersten Öffnen fragt die Karte, wie du starten willst: <b>leer</b>, mit <b>Beispiel-Strafen</b> oder mit der <b>Datei aus „Alle Neune“</b>.<br>Danach unter ⚙️ → <b>„Mitglieder & Strafen“</b> eure Leute anlegen und unter ⚙️ → <b>„Regeln & Beträge“</b> Grundbetrag und Kegelbahn einstellen. Fertig – gut Holz! 🎳` },
+  { icon: "bowling", title: "Ein Kegelabend", text: `Reiter <b>„Abend“</b> → <b>„Kegelabend starten“</b>. Alle Mitglieder stehen als Kacheln da – in der Reihenfolge wie unter ⚙️ → „Mitglieder & Strafen“.<br><b>1.</b> Wer ist da? <b>Kleiner Knopf unten an der Kachel</b> schaltet weiter: kegelt → schaut zu → abgemeldet → nicht abgemeldet. Wer fehlt, bleibt als <b>blasse Kachel</b> stehen. Für Fehlende geht nur eine Strafe per Hand (<b>„Eigene“</b>).<br><b>2.</b> <b>„Grundbetrag kassiert“</b> antippen, sobald alle bezahlt haben (einzeln geht es in der Abrechnung).<br><b>3.</b> Strafe buchen: <b>Person antippen</b> (blau umrandet), dann die <b>Strafe antippen</b>. Jeder Tipp = +1. Vertippt? Das rote <b>−</b> oben links auf der Kachel nimmt eine zurück. Etwas Besonderes? <b>„Eigene“</b> = Betrag und Grund selbst eintippen.<br><b>4.</b> Zum Schluss in der <b>Abrechnung</b> (rechts stehen nur die Strafen) auf die <b>Münze</b> tippen, wenn bezahlt wurde – sie wird grün ✓.<br><b>5.</b> <b>„Abend abschließen“</b>. Hat noch jemand offen, sagt die Karte vorher Bescheid. Mit Knopf zum <b>Teilen</b> (z. B. in die WhatsApp-Gruppe).` },
   { icon: "account-plus-outline", title: "Gäste", text: `Im laufenden Abend <b>„＋ Gast“</b> antippen: bekannten Gast wählen oder neuen Namen eintippen. Für Gäste gelten die gleichen Regeln wie für Mitglieder. Ein Gast, der nicht da ist, zahlt nichts – er gehört ja nicht zum Abend.` },
   { icon: "cash-multiple", title: "Was kostet was?", text: `Unter ⚙️ → <b>„Regeln & Beträge“</b>:<br>• <b>Grundbetrag</b> pro Person und Abend (z. B. 7,50 €).<br>• <b>Zuschauer zahlen</b> den Grundbetrag (Schalter).<br>• <b>Fehlende Mitglieder zahlen</b> den Grundbetrag (Schalter) – egal ob abgemeldet oder nicht.<br>• <b>Nicht abgemeldet</b>: Extra-Betrag obendrauf (z. B. 5,00 €).<br>• <b>Kegelbahn</b>: pro Stunde, aus der <b>Kasse</b> (wird beim <b>Abschließen</b> als Zeile „Kegelbahn“ in die Buchungen geschrieben), auf die Anwesenden <b>aufgeteilt</b> oder <b>gar nicht</b>.<br>Ändern gilt ab sofort und für den laufenden Abend. Abgeschlossene Abende bleiben, wie sie waren.` },
-  { icon: "gavel", title: "Sündenregister (Strafen)", text: `Reiter <b>„Mitglieder“</b> → Bereich <b>Strafen</b> → <b>＋ Neu</b>. Jede Strafe hat Name, Symbol, Betrag und <b>„Wer zahlt?“</b>:<br>• <b>Er selbst</b> – z. B. Pumpe, Klingeln.<br>• <b>Alle anderen, die mitkegeln</b> – z. B. <b>Alle Neune</b>: Wer die Neun wirft, zahlt nichts, alle anderen Mitkegler zahlen. Zuschauer und Fehlende bleiben verschont.<br>Am Griff ⠿ ziehen = Reihenfolge der Knöpfe am Abend.` },
+  { icon: "gavel", title: "Sündenregister (Strafen)", text: `⚙️ → <b>„Mitglieder & Strafen“</b> → Bereich <b>Strafen</b> → <b>＋ Neu</b>. Jede Strafe hat Name, Symbol, Betrag und <b>„Wer zahlt?“</b>:<br>• <b>Er selbst</b> – z. B. Pumpe, Klingeln.<br>• <b>Alle anderen, die mitkegeln</b> – z. B. <b>Alle Neune</b>: Wer die Neun wirft, zahlt nichts, alle anderen Mitkegler zahlen. Zuschauer und Fehlende bleiben verschont.<br>Am Griff ⠿ ziehen = Reihenfolge der Knöpfe am Abend.` },
   { icon: "hand-okay", title: "Strafen erlassen", text: `Ausflug, Weihnachtsfeier, Geburtstag? Im Abend (oder später in der Liste der Abende) den Schalter <b>„Strafen erlassen“</b> an: Gezählt wird trotzdem (für die Statistik), bezahlt wird nur der Grundbetrag.` },
   { icon: "bank-outline", title: "Kegelkasse", text: `Reiter <b>„Kasse“</b>: oben der <b>Kassenstand</b>, darunter <b>„Wer schuldet was“</b>. Hat jemand bezahlt: <b>grünen Haken ✓</b> antippen – dann ist alles beglichen (Rückgängig geht 8 Sekunden lang). Teilbetrag? Auf die Person tippen.<br><b>＋ Einzahlung</b> und <b>− Ausgabe</b> (z. B. Kegelfahrt, Essen) für alles andere. Die Kegelbahn bucht sich je nach Einstellung selbst.<br><b>„Soll“</b> = Kasse + was noch offen ist.` },
   { icon: "chart-bar", title: "Statistik & Ehrungen", text: `Reiter <b>„Statistik“</b>: Jahr mit ‹ › wählen. Oben die <b>Könige</b> (wer hat die meisten Pumpen, Neunen …), dann <b>Strafen pro Person</b> (Säulen), <b>Strafen nach Art</b> (Kuchen), <b>Kasse übers Jahr</b> (Linie) und <b>Anwesenheit</b>.` },
@@ -40,7 +40,7 @@ const KC_GUIDE = [
   { icon: "database-import-outline", title: "Aus „Alle Neune“ umziehen", text: `In der App „Alle Neune“ die Daten <b>exportieren</b> (Datenbank-Datei). Dann hier ⚙️ → <b>„Import & Sicherung“</b> → Datei wählen. Erst kommt eine <b>Vorschau</b> (wie viele Abende, Personen, Buchungen, Kassenstand), erst nach „Übernehmen“ wird etwas geändert.<br>Übernommen werden Mitglieder, Ehemalige, Gäste, Strafen mit Preisen, alle Abende mit Strafen (für die Statistik) und die <b>komplette Kasse</b>. Alte Abende zählen nicht als „offen“ – die waren in der App ja schon abgerechnet. Spiele werden nicht übernommen.` },
   { icon: "content-save-outline", title: "Sichern", text: `⚙️ → „Import & Sicherung“: <b>„Sicherung speichern“</b> lädt alles als Datei herunter (.json). Mit derselben Datei holst du später alles zurück. Die Kasse gibt es zusätzlich als <b>CSV</b> für Excel.` },
   { icon: "cellphone-lock", title: "Offline-App für die Kegelbahn", text: `Auf der Kegelbahn ist das WLAN oft schlechter als die Pumpe vom Kassenwart. Darum gibt es eine eigene kleine App: Adresse in ⚙️ → <b>„Offline-App“</b>. Im Handy-Browser öffnen → anmelden → „Zum Startbildschirm“.<br>Ohne Netz läuft alles weiter. Was du einträgst, wartet im <b>Postausgang</b> (oben „⏳ wartet“) und wird von selbst nachgeschickt. Nichts zählt doppelt – auch wenn zwei Handys gleichzeitig Strafen buchen.` },
-  { icon: "shield-key-outline", title: "PIN-Sperre und Seitenleiste", text: `In ⚙️ unter <b>„Schutz“</b> legst du eine PIN (4–8 Ziffern) fest. Dann fragen ⚙️ und „Mitglieder“ danach. Strafen buchen geht weiter ohne PIN. Wahlweise sperrt die PIN die <b>ganze Karte</b>.<br><b>PIN vergessen?</b> Ein Admin geht auf <b>Einstellungen → Geräte & Dienste → Kegelclub → Konfigurieren</b> und hakt <b>„PIN zurücksetzen“</b> an. Dort gibt es auch <b>„In der Seitenleiste anzeigen“</b>.` },
+  { icon: "shield-key-outline", title: "PIN-Sperre und Seitenleiste", text: `In ⚙️ unter <b>„Schutz“</b> legst du eine PIN (4–8 Ziffern) fest. Dann fragt ⚙️ danach (auch für Mitglieder & Strafen). Strafen buchen geht weiter ohne PIN. Wahlweise sperrt die PIN die <b>ganze Karte</b>.<br><b>PIN vergessen?</b> Ein Admin geht auf <b>Einstellungen → Geräte & Dienste → Kegelclub → Konfigurieren</b> und hakt <b>„PIN zurücksetzen“</b> an. Dort gibt es auch <b>„In der Seitenleiste anzeigen“</b>.` },
   { icon: "home-group", title: "Mehrere Clubs", text: `<b>Einstellungen → Geräte &amp; Dienste → Kegelclub → Eintrag hinzufügen</b> und einen Namen geben. Jeder Club hat eigene Mitglieder, Strafen, Kasse, PIN und Sensoren. Im Karten-Editor wählst du bei „Welcher Club?“.` },
   { icon: "home-assistant", title: "Sensoren und Aktionen", text: `Sensoren: <b>Kegelkasse</b>, <b>Offen</b> (mit allen Schuldnern), <b>Letzter Abend</b> und <b>Kegelabend läuft</b> (an/aus).<br>Aktionen für Automationen: <code>kegelclub.strafe_buchen</code>, <code>kegelclub.abend_starten</code>, <code>kegelclub.abend_abschliessen</code>, <code>kegelclub.einzahlung</code>, <code>kegelclub.ausgabe</code>, <code>kegelclub.daten_abrufen</code>. Beispiele stehen im README.` },
   { icon: "lock-outline", title: "Datenschutz", text: `Alles bleibt in <b>deinem</b> Home Assistant. Keine Cloud, kein Tracking, nichts geht ins Internet. In der Offline-App liegt zusätzlich eine Kopie im Handy, bis du dich abmeldest.` },
@@ -48,6 +48,7 @@ const KC_GUIDE = [
 ];
 // 🆕 Was ist neu – das Neueste oben (wie bei der Einkaufsliste)
 const KC_NEWS = [
+  ["0.1.0-beta.6", "📤 <b>Drucken & Teilen</b> wie bei der Einkaufsliste: beim Abend auf „Teilen“ → Abrechnung drucken, als echte <b>PDF</b> teilen/speichern (iPhone: Teilen-Menü → Drucken), <b>QR-Code</b> fürs Handy oder als Text · 📸 <b>Fotos</b> für Mitglieder (Kamera oder Bild), ohne Foto bleibt alles wie vorher · 👥 <b>Mitglieder & Strafen</b> sind jetzt unter ⚙️ (Reiter weg) · 💶 Knopf wieder „Grundbetrag kassiert (5)“ · 🔒 Wer schon eine Strafe hat, dessen Grundbetrag bleibt bezahlt · 🤝 Bei Fehlenden kann man Grundbetrag und „nicht abgemeldet“ in der Abrechnung antippen, wenn jemand für sie zahlt · 📊 Statistik mit vollem Namen und liegenden Balken"],
   ["0.1.0-beta.5", "📊 Statistik viel ausführlicher: oben 4 Reiter <b>Überblick · Personen · Abende · Strafen</b> · 📅 Knopf „Alle Jahre“ (alles seit Beginn) · 📋 Zahlen mit Vergleich zum Vorjahr (▲ mehr, ▼ weniger) · 🏆 Rekorde (teuerster Abend, meiste Strafe, längste Serie …) · 👤 Person antippen = eigene Seite mit Strafen-Arten und Abend für Abend · 📅 Tabelle je Abend (antippen = Abend öffnen) · 🧮 Strafen-Tabelle „Wer hat was?“"],
   ["0.1.0-beta.4", "💶 Fix: Wer nach „Grundbetrag kassiert“ auf abgemeldet gestellt wird, bekommt den Grundbetrag automatisch wieder aus der Kasse (steht dann unter „Wer schuldet was“) · 👥 Der Knopf zeigt, <b>von wem</b> er kassiert · 🧾 In der Abrechnung stehen Fehlende wieder mit drin – blass, mit offenem Grundbetrag (+ Extra bei nicht abgemeldet)"],
   ["0.1.0-beta.3", "🙈 Keine extra Zeile „Fehlen heute“ mehr: Wer fehlt, bleibt als <b>blasse Kachel</b> stehen · ✍️ Für Fehlende geht nur <b>„Eigene“</b> (Strafe per Hand) – sie erscheinen dann auch in der Abrechnung"],
@@ -260,6 +261,270 @@ function kcIconizeTree(root) {
   }
 }
 const numDe = (v) => (KC_MONEY.dec === "," ? String(v).replace(".", ",") : String(v)); // ✍️ Zahl fürs Eingabefeld, passend zur Währung
+// ---------------------------------------------------------------- 📱 QR-Code (selbst gezeichnet, ohne Bibliothek – aus der Einkaufsliste)
+const kcQrMatrix = (text) => {
+  const bytes = Array.from(new TextEncoder().encode(String(text)));
+  // Korrektur-Bytes je Block und Anzahl Blöcke (Stufe M), Version 1–40 (aus der QR-Norm)
+  const ECC = [0, 10, 16, 26, 18, 24, 16, 18, 22, 22, 26, 30, 22, 22, 24, 24, 28, 28, 26, 26, 26, 26, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28];
+  const BLK = [0, 1, 1, 1, 2, 2, 4, 4, 4, 5, 5, 5, 8, 9, 9, 10, 10, 11, 13, 14, 16, 17, 17, 18, 20, 21, 23, 25, 26, 28, 29, 31, 33, 35, 37, 38, 40, 43, 45, 47, 49];
+  const rawModules = (v) => {
+    let r = (16 * v + 128) * v + 64;
+    if (v >= 2) { const n = Math.floor(v / 7) + 2; r -= (25 * n - 10) * n - 55; if (v >= 7) r -= 36; }
+    return r;
+  };
+  let ver = 0;
+  for (let v = 1; v <= 40; v++) {
+    const cap = Math.floor(rawModules(v) / 8) - ECC[v] * BLK[v];
+    const need = 4 + (v < 10 ? 8 : 16) + bytes.length * 8;
+    if (need <= cap * 8) { ver = v; break; }
+  }
+  if (!ver) return null;
+  const size = ver * 4 + 17;
+  const dataCw = Math.floor(rawModules(ver) / 8) - ECC[ver] * BLK[ver];
+  // 1) Bits: Modus „Bytes“, Länge, Daten, Abschluss
+  const bits = [];
+  const put = (val, len) => { for (let i = len - 1; i >= 0; i--) bits.push((val >>> i) & 1); };
+  put(4, 4); put(bytes.length, ver < 10 ? 8 : 16); bytes.forEach((b) => put(b, 8));
+  put(0, Math.min(4, dataCw * 8 - bits.length));
+  while (bits.length % 8) bits.push(0);
+  for (let pad = 0xec; bits.length < dataCw * 8; pad ^= 0xec ^ 0x11) put(pad, 8);
+  const data = [];
+  for (let i = 0; i < bits.length; i += 8) data.push(parseInt(bits.slice(i, i + 8).join(""), 2));
+  // 2) Reed-Solomon
+  const exp = [], log = [];
+  for (let i = 0, x = 1; i < 256; i++) { exp[i] = x; log[x] = i; x <<= 1; if (x & 256) x ^= 0x11d; }
+  const mul = (a, b) => (a && b ? exp[(log[a] + log[b]) % 255] : 0);
+  const rs = (blk, n) => {
+    let gen = [1];
+    for (let i = 0; i < n; i++) { const nx = new Array(gen.length + 1).fill(0); gen.forEach((c, j) => { nx[j] ^= c; nx[j + 1] ^= mul(c, exp[i]); }); gen = nx; }
+    const rem = new Array(n).fill(0);
+    blk.forEach((b) => { const f = b ^ rem.shift(); rem.push(0); for (let j = 0; j < n; j++) rem[j] ^= mul(gen[j + 1], f); });
+    return rem;
+  };
+  const nb = BLK[ver], short = nb - (dataCw % nb), base = Math.floor(dataCw / nb), blocks = [];
+  for (let i = 0, k = 0; i < nb; i++) {
+    const len = base + (i < short ? 0 : 1);
+    const d = data.slice(k, k + len); k += len;
+    blocks.push({ d, e: rs(d, ECC[ver]) });
+  }
+  const all = [];
+  for (let i = 0; i <= base; i++) blocks.forEach((b, j) => { if (i < b.d.length && !(i === base && j < short)) all.push(b.d[i]); });
+  for (let i = 0; i < ECC[ver]; i++) blocks.forEach((b) => all.push(b.e[i]));
+  // 3) Matrix aufbauen
+  const mod = Array.from({ length: size }, () => new Array(size).fill(0));
+  const fn = Array.from({ length: size }, () => new Array(size).fill(false));
+  const set = (x, y, d) => { if (x >= 0 && y >= 0 && x < size && y < size) { mod[y][x] = d ? 1 : 0; fn[y][x] = true; } };
+  for (let i = 0; i < size; i++) { set(6, i, i % 2 === 0); set(i, 6, i % 2 === 0); }
+  const finder = (cx, cy) => { for (let dy = -4; dy <= 4; dy++) for (let dx = -4; dx <= 4; dx++) { const d = Math.max(Math.abs(dx), Math.abs(dy)); set(cx + dx, cy + dy, d !== 2 && d !== 4); } };
+  finder(3, 3); finder(size - 4, 3); finder(3, size - 4);
+  const na = ver === 1 ? 0 : Math.floor(ver / 7) + 2;
+  const step = ver === 1 ? 0 : ver === 32 ? 26 : Math.ceil((ver * 4 + 4) / (na * 2 - 2)) * 2;
+  const al = [6]; for (let p = size - 7; al.length < na; p -= step) al.splice(1, 0, p);
+  al.forEach((ax, i) => al.forEach((ay, j) => {
+    if ((i === 0 && j === 0) || (i === 0 && j === na - 1) || (i === na - 1 && j === 0)) return;
+    for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) set(ax + dx, ay + dy, Math.max(Math.abs(dx), Math.abs(dy)) !== 1);
+  }));
+  const fmtBits = (mask) => { // Formatinformation (Stufe M = 00)
+    let rem = mask; for (let i = 0; i < 10; i++) rem = (rem << 1) ^ ((rem >>> 9) * 0x537);
+    return ((mask << 10) | rem) ^ 0x5412;
+  };
+  const drawFormat = (mask) => {
+    const b = fmtBits(mask), g = (i) => ((b >>> i) & 1) !== 0;
+    for (let i = 0; i <= 5; i++) set(8, i, g(i));
+    set(8, 7, g(6)); set(8, 8, g(7)); set(7, 8, g(8));
+    for (let i = 9; i < 15; i++) set(14 - i, 8, g(i));
+    for (let i = 0; i < 8; i++) set(size - 1 - i, 8, g(i));
+    for (let i = 8; i < 15; i++) set(8, size - 15 + i, g(i));
+    set(8, size - 8, true);
+  };
+  drawFormat(0);
+  if (ver >= 7) {
+    let rem = ver; for (let i = 0; i < 12; i++) rem = (rem << 1) ^ ((rem >>> 11) * 0x1f25);
+    const b = (ver << 12) | rem;
+    for (let i = 0; i < 18; i++) { const a = size - 11 + (i % 3), c = Math.floor(i / 3), d = ((b >>> i) & 1) !== 0; set(a, c, d); set(c, a, d); }
+  }
+  // 4) Daten im Zickzack einsetzen
+  let bi = 0;
+  for (let right = size - 1; right >= 1; right -= 2) {
+    if (right === 6) right = 5;
+    for (let v = 0; v < size; v++) for (let j = 0; j < 2; j++) {
+      const x = right - j, up = ((right + 1) & 2) === 0, y = up ? size - 1 - v : v;
+      if (!fn[y][x] && bi < all.length * 8) { mod[y][x] = (all[bi >>> 3] >>> (7 - (bi & 7))) & 1; bi++; }
+    }
+  }
+  // 5) beste Maske suchen
+  const MASKS = [(x, y) => (x + y) % 2 === 0, (x, y) => y % 2 === 0, (x, y) => x % 3 === 0, (x, y) => (x + y) % 3 === 0,
+    (x, y) => (Math.floor(x / 3) + Math.floor(y / 2)) % 2 === 0, (x, y) => ((x * y) % 2) + ((x * y) % 3) === 0,
+    (x, y) => (((x * y) % 2) + ((x * y) % 3)) % 2 === 0, (x, y) => (((x + y) % 2) + ((x * y) % 3)) % 2 === 0];
+  const penalty = (m) => {
+    let p = 0;
+    const lines = [];
+    for (let i = 0; i < size; i++) { lines.push(m[i]); lines.push(m.map((r) => r[i])); }
+    lines.forEach((ln) => {
+      let run = 1;
+      for (let i = 1; i <= size; i++) {
+        if (i < size && ln[i] === ln[i - 1]) run++; else { if (run >= 5) p += run - 2; run = 1; }
+      }
+      const s = ln.join("");
+      for (const pat of ["10111010000", "00001011101"]) { let k = -1; while ((k = s.indexOf(pat, k + 1)) >= 0) p += 40; }
+    });
+    for (let y = 0; y < size - 1; y++) for (let x = 0; x < size - 1; x++) if (m[y][x] === m[y][x + 1] && m[y][x] === m[y + 1][x] && m[y][x] === m[y + 1][x + 1]) p += 3;
+    let dark = 0; m.forEach((r) => r.forEach((c) => { dark += c; }));
+    p += Math.floor(Math.abs(dark * 20 - size * size * 10) / (size * size)) * 10;
+    return p;
+  };
+  let best = null, bestP = Infinity, bestMask = 0;
+  for (let k = 0; k < 8; k++) {
+    const m = mod.map((r, y) => r.map((c, x) => (fn[y][x] ? c : c ^ (MASKS[k](x, y) ? 1 : 0))));
+    const p = penalty(m);
+    if (p < bestP) { bestP = p; best = m; bestMask = k; }
+  }
+  best.forEach((r, y) => r.forEach((c, x) => { mod[y][x] = c; }));
+  drawFormat(bestMask);
+  return mod;
+};
+const kcQrSvg = (text) => {
+  const m = kcQrMatrix(text);
+  if (!m) return "";
+  const n = m.length, q = 4;
+  let d = "";
+  m.forEach((row, y) => { let x = 0; while (x < n) { if (row[x]) { let e = x; while (e < n && row[e]) e++; d += `M${x + q} ${y + q}h${e - x}v1h-${e - x}z`; x = e; } else x++; } });
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${n + 2 * q} ${n + 2 * q}" shape-rendering="crispEdges"><rect width="100%" height="100%" fill="#fff"/><path d="${d}" fill="#000"/></svg>`;
+};
+// ---------------------------------------------------------------- 📄 Kleiner PDF-Baukasten (aus der Einkaufsliste): A4, Helvetica, ohne fremde Bibliothek
+// Warum? iPhone, iPad und die HA-App können aus dem Browser nicht drucken – eine echte PDF-Datei schon (Teilen → Drucken per AirPrint).
+const KC_PDF_W = { r: [278,278,355,556,556,889,667,191,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,278,278,584,584,584,556,1015,667,667,722,722,667,611,778,722,278,500,667,556,833,722,778,667,778,722,667,611,722,667,944,667,667,611,278,278,278,469,556,333,556,556,500,556,556,278,556,556,222,222,500,222,833,556,556,556,556,333,500,278,556,500,722,500,500,500,334,260,334,584,761,556,0,222,556,333,1000,556,556,333,1000,667,333,1000,0,611,0,0,222,222,333,333,350,556,1000,333,1000,500,333,944,0,500,667,278,333,556,556,556,556,260,556,333,737,370,556,584,333,737,333,400,584,333,333,333,556,537,278,333,333,365,556,834,834,834,611,667,667,667,667,667,667,1000,722,667,667,667,667,278,278,278,278,722,722,778,778,778,778,778,584,778,722,722,722,722,667,667,611,556,556,556,556,556,556,889,500,556,556,556,556,278,278,278,278,556,556,556,556,556,556,556,584,611,556,556,556,556,500,556,500], b: [278,333,474,556,556,889,722,238,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,333,333,584,584,584,611,975,722,722,722,722,667,611,778,722,278,556,722,611,833,722,778,667,778,722,667,611,722,667,944,667,667,611,333,278,333,584,556,333,556,611,556,611,556,333,611,611,278,278,556,278,889,611,611,611,611,389,556,333,611,556,778,556,556,500,389,280,389,584,761,556,0,278,556,500,1000,556,556,333,1000,667,333,1000,0,611,0,0,278,278,500,500,350,556,1000,333,1000,556,333,944,0,500,667,278,333,556,556,556,556,280,556,333,737,370,556,584,333,737,333,400,584,333,333,333,611,556,278,333,333,365,556,834,834,834,611,722,722,722,722,722,722,1000,722,667,667,667,667,278,278,278,278,722,722,778,778,778,778,778,584,778,722,722,722,722,667,667,611,556,556,556,556,556,556,889,556,556,556,556,556,278,278,278,278,611,611,611,611,611,611,611,584,611,611,611,611,611,556,611,556] }; // Zeichenbreiten (1/1000) für die Zeichen 32–255 (WinAnsi)
+const KC_CP1252 = { 0x20ac: 0x80, 0x201a: 0x82, 0x0192: 0x83, 0x201e: 0x84, 0x2026: 0x85, 0x2020: 0x86, 0x2021: 0x87, 0x02c6: 0x88, 0x2030: 0x89, 0x0160: 0x8a, 0x2039: 0x8b, 0x0152: 0x8c, 0x017d: 0x8e, 0x2018: 0x91, 0x2019: 0x92, 0x201c: 0x93, 0x201d: 0x94, 0x2022: 0x95, 0x2013: 0x96, 0x2014: 0x97, 0x02dc: 0x98, 0x2122: 0x99, 0x0161: 0x9a, 0x203a: 0x9b, 0x0153: 0x9c, 0x017e: 0x9e, 0x0178: 0x9f };
+function kcPdfChars(text) { // Text → WinAnsi; Emojis und Unbekanntes fallen weg (die Standard-Schrift kennt sie nicht)
+  let out = "";
+  for (const ch of String(text ?? "").normalize("NFC")) {
+    const c = ch.codePointAt(0);
+    if ((c >= 32 && c < 127) || (c >= 160 && c <= 255)) out += ch;
+    else if (KC_CP1252[c]) out += String.fromCharCode(KC_CP1252[c]);
+    else if (c === 0xff0b) out += "+";
+    else if (c === 9 || c === 10 || c === 13) out += " ";
+  }
+  return out.replace(/\s+/g, " ").trim();
+}
+function kcPdfWidth(t, bold, size) {
+  const w = bold ? KC_PDF_W.b : KC_PDF_W.r;
+  let n = 0;
+  for (let k = 0; k < t.length; k++) n += w[t.charCodeAt(k) - 32] || 556;
+  return (n * size) / 1000;
+}
+function kcPdfWrap(t, bold, size, max) { // Wörter auf Zeilen verteilen; zu lange Wörter werden hart getrennt
+  const lines = [];
+  let cur = "";
+  for (let word of t.split(" ")) {
+    while (kcPdfWidth(word, bold, size) > max && word.length > 1) {
+      let k = word.length - 1;
+      while (k > 1 && kcPdfWidth(word.slice(0, k), bold, size) > max) k--;
+      if (cur) { lines.push(cur); cur = ""; }
+      lines.push(word.slice(0, k));
+      word = word.slice(k);
+    }
+    const next = cur ? `${cur} ${word}` : word;
+    if (cur && kcPdfWidth(next, bold, size) > max) { lines.push(cur); cur = word; } else cur = next;
+  }
+  if (cur) lines.push(cur);
+  return lines.length ? lines : [""];
+}
+function kcPdfRgb(hex, fallback = [0.33, 0.43, 0.48]) {
+  const m = /^#?([0-9a-f]{6})$/i.exec(String(hex || "").trim());
+  if (!m) return fallback;
+  const n = parseInt(m[1], 16);
+  return [(n >> 16) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255];
+}
+
+// 📄 Die Einkaufsliste als PDF (Uint8Array). m = Daten aus _printModel; t = Übersetzer für feste Wörter
+
+// 📄 Die Abrechnung eines Kegelabends als PDF (Uint8Array). m = Daten aus _billModel
+function kcBillPdf(m) {
+  const PW = 595.28, PH = 841.89, M = 36, BOTTOM = M + 22;
+  const f = (n) => (Math.round(n * 100) / 100).toString();
+  const str = (x) => `(${x.replace(/[\\()]/g, (c) => `\\${c}`).replace(/[\x80-\xff]/g, (c) => `\\${c.charCodeAt(0).toString(8).padStart(3, "0")}`)})`;
+  const pages = [];
+  let ops = null;
+  const newPage = () => { ops = []; pages.push(ops); };
+  const col = (rgb) => rgb.map(f).join(" ");
+  const text = (x, y, s, size, bold = false, rgb = [0.13, 0.13, 0.13]) => { if (s) ops.push(`BT /${bold ? "F2" : "F1"} ${f(size)} Tf ${col(rgb)} rg ${f(x)} ${f(y)} Td ${str(s)} Tj ET`); };
+  const right = (x, y, s, size, bold, rgb) => text(x - kcPdfWidth(s, bold, size), y, s, size, bold, rgb);
+  const fill = (x, y, w, h, rgb) => ops.push(`${col(rgb)} rg ${f(x)} ${f(y)} ${f(w)} ${f(h)} re f`);
+  const line = (x1, y1, x2, y2, rgb = [0.8, 0.8, 0.8], lw = 0.6) => ops.push(`${f(lw)} w ${col(rgb)} RG ${f(x1)} ${f(y1)} m ${f(x2)} ${f(y2)} l S`);
+  const gray = [0.42, 0.42, 0.42], red = [0.83, 0.18, 0.18], green = [0.18, 0.55, 0.2];
+  const accent = kcPdfRgb("#fb8c00");
+  newPage();
+  // 🧾 Kopf
+  let y = PH - M;
+  text(M, y - 20, kcPdfChars(m.title), 20, true);
+  right(PW - M, y - 22, kcPdfChars(m.bigVal), 22, true, accent);
+  y -= 38;
+  for (const [s0, size, rgb] of [[m.sub, 10.5, [0.2, 0.2, 0.2]], [m.by, 9, gray]]) {
+    if (!s0) continue;
+    for (const l of kcPdfWrap(kcPdfChars(s0), false, size, PW - 2 * M - 120)) { text(M, y, l, size, false, rgb); y -= size + 3.5; }
+  }
+  y -= 2;
+  fill(M, y, PW - 2 * M, 3, accent);
+  y -= 18;
+  // 📋 Spalten: Name · Status · Grundbetrag · Strafen (Details) · Betrag
+  const X = { name: M, st: M + 150, base: M + 230, det: M + 300, amt: PW - M };
+  const head = () => {
+    for (const [k, t] of [["name", "Name"], ["st", "Status"], ["base", "Grundbetrag"], ["det", "Strafen"]]) text(X[k], y, kcPdfChars(t), 8.5, true, gray);
+    right(X.amt, y, kcPdfChars("Betrag"), 8.5, true, gray);
+    y -= 6; line(M, y, PW - M, y, [0.6, 0.6, 0.6], 0.8); y -= 13;
+  };
+  head();
+  for (const r of m.rows) {
+    const nameL = kcPdfWrap(kcPdfChars(r.name), true, 10.5, 145);
+    const detL = r.detail ? kcPdfWrap(kcPdfChars(r.detail), false, 8.5, X.amt - X.det - 62) : [];
+    const h = Math.max(nameL.length * 13, detL.length * 11, 13) + 6;
+    if (y - h < BOTTOM) { newPage(); y = PH - M - 10; head(); }
+    const rgb = r.here ? [0.13, 0.13, 0.13] : gray;
+    nameL.forEach((l, k) => text(X.name, y - k * 13, l, 10.5, true, rgb));
+    text(X.st, y, kcPdfChars(r.status), 9, false, gray);
+    if (r.base) text(X.base, y, kcPdfChars(`${r.base} ${r.baseOk ? "bezahlt" : "offen"}`), 9, false, r.baseOk ? green : red);
+    detL.forEach((l, k) => text(X.det, y - k * 11, l, 8.5, false, [0.25, 0.25, 0.25]));
+    right(X.amt, y, kcPdfChars(r.amount), 10.5, true, r.paid ? green : r.open ? red : rgb);
+    if (r.paidTxt) right(X.amt, y - 11, kcPdfChars(r.paidTxt), 7.5, false, r.paid ? green : red);
+    y -= h;
+    line(M, y + 8, PW - M, y + 8);
+    y -= 4;
+  }
+  // ∑ Summen
+  y -= 8;
+  if (y - 16 * m.sums.length < BOTTOM) { newPage(); y = PH - M - 10; }
+  for (const [label, val] of m.sums) { text(M, y, kcPdfChars(label), 10.5, false); right(PW - M, y, kcPdfChars(val), 10.5, true); y -= 16; }
+  // 🔢 Fußzeile auf jeder Seite
+  pages.forEach((pg, k) => {
+    ops = pg;
+    const ft = kcPdfChars(`Erstellt mit Kegelclub${pages.length > 1 ? ` · ${k + 1}/${pages.length}` : ""}`);
+    text(PW / 2 - kcPdfWidth(ft, false, 8) / 2, M - 4, ft, 8, false, [0.55, 0.55, 0.55]);
+  });
+  // 🧱 Datei zusammensetzen
+  const objs = [];
+  const add = (o) => { objs.push(o); return objs.length; };
+  const cat = add(""), pagesId = add("");
+  const f1 = add("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>");
+  const f2 = add("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>");
+  const kids = [];
+  for (const pg of pages) {
+    const body = pg.join("\n");
+    const cs = add(`<< /Length ${body.length} >>\nstream\n${body}\nendstream`);
+    kids.push(add(`<< /Type /Page /Parent ${pagesId} 0 R /MediaBox [0 0 ${f(PW)} ${f(PH)}] /Resources << /Font << /F1 ${f1} 0 R /F2 ${f2} 0 R >> >> /Contents ${cs} 0 R >>`));
+  }
+  objs[cat - 1] = `<< /Type /Catalog /Pages ${pagesId} 0 R >>`;
+  objs[pagesId - 1] = `<< /Type /Pages /Kids [${kids.map((k) => `${k} 0 R`).join(" ")}] /Count ${kids.length} >>`;
+  const info = add(`<< /Title ${str(kcPdfChars(m.title))} /Producer (Kegelclub) >>`);
+  let out = "%PDF-1.4\n%\xe2\xe3\xcf\xd3\n";
+  const offs = [];
+  objs.forEach((o, k) => { offs.push(out.length); out += `${k + 1} 0 obj\n${o}\nendobj\n`; });
+  const xref = out.length;
+  out += `xref\n0 ${objs.length + 1}\n0000000000 65535 f \n${offs.map((o) => `${String(o).padStart(10, "0")} 00000 n \n`).join("")}`;
+  out += `trailer\n<< /Size ${objs.length + 1} /Root ${cat} 0 R /Info ${info} 0 R >>\nstartxref\n${xref}\n%%EOF\n`;
+  const bytes = new Uint8Array(out.length);
+  for (let k = 0; k < out.length; k++) bytes[k] = out.charCodeAt(k) & 255;
+  return bytes;
+}
 
 // ---------------------------------------------------------------- 🧮 Rechnen (genau wie in manager.py)
 const r2 = (v) => Math.round((Number(v) || 0) * 100) / 100;
@@ -834,6 +1099,28 @@ table.matrix th ha-icon { --mdc-icon-size:18px; color:#fb8c00; }
 table.matrix td:not(:first-child) { background:rgba(142, 36, 170, var(--a)); }
 .tile b > span, .tile b .m { font-size:inherit !important; color:inherit !important; display:inline !important; }
 table.matrix th small { display:block; font-size:9.5px; font-weight:400; color:var(--secondary-text-color); max-width:62px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin:2px auto 0; }
+/* 📸 Mitglieder-Fotos (beta.6) */
+.pp .av.ph { padding:0; overflow:hidden; box-shadow:0 0 0 2px var(--ac, #607d8b); }
+.pp .av.ph img { width:100%; height:100%; object-fit:cover; display:block; }
+img.phav { border-radius:50%; object-fit:cover; flex:none; vertical-align:middle; margin-right:8px; }
+.item > img.phav { margin-right:2px; }
+.hbar img.phav { margin-right:2px; }
+table.sttab img.phav { margin-right:7px; }
+.hero { position:relative; }
+img.phhero { position:absolute; right:14px; top:50%; transform:translateY(-50%); width:72px; height:72px; border-radius:50%; object-fit:cover; box-shadow:0 0 0 3px var(--hc); }
+.phrow { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.phprev { width:56px; height:56px; border-radius:50%; overflow:hidden; display:flex; align-items:center; justify-content:center; background:color-mix(in srgb, var(--primary-text-color) 10%, transparent); flex:none; }
+.phprev img { width:100%; height:100%; object-fit:cover; }
+.phprev ha-icon { --mdc-icon-size:30px; opacity:.5; }
+.phrow label.btn { cursor:pointer; }
+.hbar.click { cursor:pointer; }
+/* 📤 Drucken & Teilen (beta.6) */
+.prchoice { display:flex; flex-wrap:wrap; gap:8px; margin:2px 0 10px; }
+.prqr { display:flex; flex-direction:column; align-items:center; gap:8px; margin:6px 0 10px; }
+.prqrbox { display:flex; flex-direction:column; align-items:center; gap:4px; }
+.prqrc { width:min(280px, 80vw); background:#fff; padding:6px; border-radius:12px; }
+.prqrc svg { width:100%; height:auto; display:block; }
+.kcprev { overflow-x:auto; border:1px solid var(--divider-color); border-radius:12px; }
 `;
 
 const initials = (n) => { const p = String(n || "?").trim().split(/\s+/); return ((p[0]?.[0] || "?") + (p.length > 1 ? p[p.length - 1][0] : (p[0]?.[1] || ""))).toUpperCase(); };
@@ -974,6 +1261,8 @@ class KegelclubCard extends HTMLElement {
     return `<span class="${cls} veil ${on ? "peek" : ""}" data-a="peek" data-v="${esc(key)}" title="Antippen = 4 Sekunden zeigen">${money(v)}</span>`;
   }
   _gh(icon, color, title, right = "") { return `<div class="ghead"><span class="gdot" style="--gc:${color}">${ic(icon)}</span><span>${title}</span><span class="n">${right}</span></div>`; }
+  // 📸 Mitglieder-Foto (nur wenn eins da ist – sonst bleibt alles wie vorher)
+  _avatar(d, mid, size = 28) { const ph = d.members.find((m) => m.id === mid)?.photo; return ph ? `<img class="phav" src="${esc(ph)}" alt="" style="width:${size}px;height:${size}px">` : ""; }
   _lb(t) { return this._labels ? `<span class="lbl">${esc(t)}</span>` : ""; }
   _greet() {
     const h = new Date().getHours();
@@ -1006,12 +1295,13 @@ class KegelclubCard extends HTMLElement {
     if (locked && this._pad?.step !== "unlock") this._pad = { purpose: "unlock", step: "unlock", buf: "", back: "abend" };
     if (!locked && this._pad?.step === "unlock") this._pad = null;
     if (this._view === "ev" && d && !d.abende.some((e) => e.id === this._evId)) this._view = "abend";
+    if (this._view === "share" && d && !d.abende.some((e) => e.id === this._shareId)) this._view = "abend";
     const page = !d ? null : this._pad ? this._padPage(d) : this._view === "guide" ? { icon: "book-open-variant", color: "#3949ab", title: "Anleitung", html: this._guideView() }
-      : this._view === "ev" ? this._evPage(d) : this._view === "set" && this._sheet ? this._sheetPage(d) : null;
+      : this._view === "ev" ? this._evPage(d) : this._view === "share" ? this._sharePage(d) : this._view === "set" && this._sheet ? this._sheetPage(d) : null;
     this._padShown = !!(d && this._pad);
     if (this._view !== "set") this._setOpen = null;
     const deeper = !!(this._pad ? this._pad.back === "sheet" : this._view === "set" && this._sheet);
-    const showBack = !!(d && !this._lockAll && (this._view === "set" || this._view === "guide" || this._view === "ev" || this._pad));
+    const showBack = !!(d && !this._lockAll && (this._view === "set" || this._view === "guide" || this._view === "ev" || this._view === "share" || this._pad));
     const appLock = this._app && !!window.__kcAppLock?.on?.();
     const isLocked = d?.pin && !pinOpen();
     const inSet = this._view === "set";
@@ -1023,7 +1313,7 @@ class KegelclubCard extends HTMLElement {
       body = this._err ? `<div class="empty">⚠️ ${esc(this._err)}<br>Ist die Integration „Kegelclub“ eingerichtet?</div>` : `<div class="empty">⏳ Lade …</div>`;
     } else {
       const v = d.settings.view || {};
-      const tabs = [["abend", "bowling", "Abend"], ...(v.kasse === false ? [] : [["kasse", "bank-outline", "Kasse"]]), ...(v.statistik === false ? [] : [["stats", "chart-bar", "Statistik"]]), ["edit", "account-group-outline", "Mitglieder"]];
+      const tabs = [["abend", "bowling", "Abend"], ...(v.kasse === false ? [] : [["kasse", "bank-outline", "Kasse"]]), ...(v.statistik === false ? [] : [["stats", "chart-bar", "Statistik"]])];
       const s = d.summary;
       const badge = s.running ? `<span class="badge" data-a="tab" data-v="abend" title="Kegelabend läuft">🎳 läuft</span>` : s.debtors ? `<span class="badge" data-a="tab" data-v="kasse" title="so viele haben noch offen">${s.debtors}</span>` : "";
       const title = d.book && !d.book.primary ? esc(d.book.title) : esc(this._config?.title && this._config.title !== "Kegelclub" ? this._config.title : "");
@@ -1045,13 +1335,14 @@ class KegelclubCard extends HTMLElement {
     KC_CARDS.add(this);
     try { window.dispatchEvent(new CustomEvent("kegelclub-nav")); } catch (_) { /* egal */ }
   }
-  kegelclubIsRoot() { return !this._pad && !this._open && !["set", "guide", "ev"].includes(this._view); }
+  kegelclubIsRoot() { return !this._pad && !this._open && !["set", "guide", "ev", "share"].includes(this._view); }
   kegelclubBack() {
     if (this.kegelclubIsRoot()) return false;
     if (this._pad?.step === "unlock") { this._pad = null; this._view = "abend"; this._sheet = null; }
     else if (this._pad) { const back = this._pad.back; this._pad = null; if (back !== "sheet") { this._view = "abend"; this._sheet = null; } }
     else if (this._open) this._open = null;
     else if (this._view === "set" && this._sheet) this._sheet = null;
+    else if (this._view === "share") { this._view = this._shareBack || "abend"; this._shareMode = null; }
     else { this._view = this._view === "ev" ? this._evBack || "abend" : "abend"; this._evBack = null; this._sheet = null; }
     this._force = true; this._render();
     return true;
@@ -1074,8 +1365,8 @@ class KegelclubCard extends HTMLElement {
       <form class="edit" data-a="evstart"><div class="f"><label>Datum<input name="date" type="date" value="${todayIso()}"></label>
       ${st.lane_mode === "off" ? "" : `<label>Kegelbahn (Stunden)<input name="hours" inputmode="decimal" value="${numDe(st.lane_hours ?? 3)}"></label>`}</div>
       <div class="btnrow end"><button class="btn main" type="submit">${ic("play")}Kegelabend starten</button></div></form>`;
-    if (!d.strafen.some((s) => s.active !== false)) h += `<div class="tip">💡 Noch keine Strafen. Unter <b>„Mitglieder“</b> → Strafen anlegen.</div>`;
-    if (!d.members.some((m) => !m.guest && m.active !== false)) h += `<div class="tip">💡 Noch keine Mitglieder. Unter <b>„Mitglieder“</b> anlegen.</div>`;
+    if (!d.strafen.some((s) => s.active !== false)) h += `<div class="tip">💡 Noch keine Strafen. Unter ⚙️ → <b>„Mitglieder & Strafen“</b> anlegen.</div>`;
+    if (!d.members.some((m) => !m.guest && m.active !== false)) h += `<div class="tip">💡 Noch keine Mitglieder. Unter ⚙️ → <b>„Mitglieder & Strafen“</b> anlegen.</div>`;
     h += this._pastList(d);
     return h;
   }
@@ -1102,12 +1393,19 @@ class KegelclubCard extends HTMLElement {
   _paidAt(d, evId, mid, tag) { return r2(d.kasse.filter((k) => k.abend === evId && k.member === mid && k.tag === tag && k.kind !== "out").reduce((s, k) => s + (Number(k.amount) || 0), 0)); }
   // 👥 Reihenfolge wie unter „Mitglieder“ (erst Mitglieder, dann Gäste)
   _order(d, ids) { const pos = new Map(d.members.map((m, i) => [m.id, i])), g = (x) => (d.members[pos.get(x)]?.guest ? 1 : 0); return ids.slice().sort((x, y) => g(x) - g(y) || (pos.get(x) ?? 1e6) - (pos.get(y) ?? 1e6)); }
+  // 🔒 Hat die Person an diesem Abend schon eine Strafe (gezählt, von anderen oder per Hand)?
+  _hasFines(ev, mid) {
+    if (Object.values(ev.counts?.[mid] || {}).some((n) => Number(n) > 0)) return true;
+    if ((ev.extra || []).some((x) => x.member === mid)) return true;
+    const pr = ev.prices || {};
+    return Object.entries(ev.counts || {}).some(([oid, per]) => oid !== mid && ev.status?.[mid] === "play" && Object.entries(per || {}).some(([sid, n]) => Number(n) > 0 && (pr[sid]?.[1] || "self") === "others"));
+  }
   // 🧾 Wer hat am Ende des Abends noch etwas offen?
   _openAt(d, ev, b) {
     const out = [];
     for (const [mid, p] of Object.entries(b.people)) {
       if (!["play", "watch"].includes(p.status)) continue;
-      const due = r2(Math.max(0, p.fee - this._paidAt(d, ev.id, mid, "base")) + Math.max(0, p.fines + p.lane - this._paidAt(d, ev.id, mid, "fines")));
+      const due = r2(Math.max(0, p.fee - this._paidAt(d, ev.id, mid, "base")) + Math.max(0, p.fines + p.lane + p.extra - this._paidAt(d, ev.id, mid, "fines")));
       if (due > 0.004) out.push([mid, due]);
     }
     return this._order(d, out.map((x) => x[0])).map((mid) => out.find((x) => x[0] === mid));
@@ -1126,7 +1424,7 @@ class KegelclubCard extends HTMLElement {
       <div class="lbl">Strafen heute${feeSum ? ` · Grundbeträge ${money(feeSum)}` : ""}${b.lane ? ` · Kegelbahn ${money(b.lane)}${b.rules.lane_mode === "kasse" ? " beim Abschließen aus der Kasse" : " aufgeteilt"}` : ""}</div></div>`;
     h += `<div class="evbar">${b.rules.lane_mode === "off" ? "" : `<label class="hrs">${ic("timer-outline")}<input data-a="evhours" inputmode="decimal" value="${numDe(ev.hours || 0)}" aria-label="Stunden Kegelbahn"> Std.</label>`}
       <button class="btn small" data-a="guest">${ic("account-plus-outline")}Gast</button>
-      ${feeSum ? feeOpen.length ? `<button class="btn small main" data-a="basepay" title="Kassiert jetzt von allen, die da sind">${ic("hand-coin-outline")}<span>Grundbetrag kassiert: <span data-noicon>${esc(feeOpen.map((m) => String(members[m]?.name || "?").split(" ")[0]).join(", "))}</span></span></button>` : `<span class="tag ok">${ic("check")}Grundbetrag kassiert</span>` : ""}
+      ${feeSum ? feeOpen.length ? `<button class="btn small main" data-a="basepay" title="Kassiert jetzt von allen, die da sind">${ic("hand-coin-outline")}Grundbetrag kassiert (${feeOpen.length})</button>` : `<span class="tag ok">${ic("check")}Grundbetrag kassiert</span>` : ""}
       <label class="switch" style="border:0;padding:0 4px"><span>${ic("hand-okay")}Strafen erlassen</span><input type="checkbox" class="swchk" data-a="nofines" ${ev.no_fines ? "checked" : ""}></label></div>`;
     if (this._guestPick) {
       const known = d.members.filter((m) => m.guest && m.active !== false && !(m.id in ev.status));
@@ -1138,7 +1436,7 @@ class KegelclubCard extends HTMLElement {
     h += this._gh("account-group-outline", "#1e88e5", "Wer war's?", sel ? `<span data-noicon>${esc(members[sel]?.name || "")}</span>` : "Person antippen");
     h += `<div class="ppl">${all.map((mid) => {
       const m = members[mid] || {}, p = b.people[mid], st = STATUS[p.status] || STATUS.play;
-      return `<div class="pp ${sel === mid ? "sel" : ""} ${here(mid) ? "" : "off"}" data-a="pick" data-id="${esc(mid)}" role="button">${m.guest ? `<span class="gst">Gast</span>` : ""}<span class="av" style="--ac:${mcol(d, mid)}">${esc(initials(m.name))}</span><span class="nm" data-noicon>${esc(m.name || "?")}</span><span class="sum">${this._m(p.fines)}</span>
+      return `<div class="pp ${sel === mid ? "sel" : ""} ${here(mid) ? "" : "off"}" data-a="pick" data-id="${esc(mid)}" role="button">${m.guest ? `<span class="gst">Gast</span>` : ""}<span class="av ${m.photo ? "ph" : ""}" style="--ac:${mcol(d, mid)}">${m.photo ? `<img src="${esc(m.photo)}" alt="">` : esc(initials(m.name))}</span><span class="nm" data-noicon>${esc(m.name || "?")}</span><span class="sum">${this._m(p.fines)}</span>
         <button class="stbtn" style="--sc:${st.color}" data-a="status" data-id="${esc(mid)}" title="Antippen = weiter: kegelt → schaut zu → abgemeldet → nicht abgemeldet">${ic(st.icon)}${st.label}</button></div>`;
     }).join("")}</div>`;
     const fines = d.strafen.filter((s) => s.active !== false);
@@ -1149,7 +1447,7 @@ class KegelclubCard extends HTMLElement {
     }).join("")}<button class="fine hand" data-a="handopen" ${sel ? "" : "disabled"} title="Strafe per Hand">${ic("pencil-plus-outline")}<b>Eigene</b><small>Betrag + Grund</small></button></div>`;
     if (sel && this._hand) h += `<form class="edit" data-a="hand"><div class="f"><label class="wide">Wofür? (z. B. Bier umgekippt)<input name="name" autocomplete="off"></label><label>Betrag (${KC_MONEY.sym})<input name="amount" inputmode="decimal" autocomplete="off"></label></div>
       <div class="btnrow end"><button type="button" class="btn" data-a="handopen">${ic("close")}Abbrechen</button><button class="btn main" type="submit">${ic("check")}Für ${esc(members[sel]?.name || "")} buchen</button></div></form>`;
-    if (!fines.length) h += `<div class="empty">Noch keine Strafen – unter „Mitglieder“ anlegen.</div>`;
+    if (!fines.length) h += `<div class="empty">Noch keine Strafen – unter ⚙️ → „Mitglieder & Strafen“ anlegen.</div>`;
     h += this._billHtml(d, ev, b, true);
     h += `<div class="btnrow"><button class="btn main" data-a="evclose" data-id="${esc(ev.id)}">${ic("flag-checkered")}Abend abschließen</button><button class="btn" data-a="share" data-id="${esc(ev.id)}">${ic("share-variant-outline")}Teilen</button></div>`;
     return h;
@@ -1172,13 +1470,15 @@ class KegelclubCard extends HTMLElement {
         return `<span class="chipx" data-noicon>${esc(label)} ×${n}${canDel ? `<button data-a="minus" data-id="${esc(mid)}" data-v="${esc(sid)}" title="eins weniger" aria-label="eins weniger">−</button>` : ""}</span>`;
       }).concat((ev.extra || []).filter((x) => x.member === mid).map((x) => `<span class="chipx"><span data-noicon>✍️ ${esc(x.name)}</span>&nbsp;${money(x.amount)}${live ? `<button data-a="handdel" data-id="${esc(x.id)}" title="wieder raus" aria-label="wieder raus">−</button>` : ""}</span>`)).join("");
       if (ev.imported) return `<div class="item" style="--cc:${st.color}"><div class="n"><b data-noicon>${esc(members[mid]?.name || "?")}</b>${chips ? `<div class="chips" style="margin-top:3px">${chips}</div>` : ""}</div><div class="amt">${this._m(p.total)}</div></div>`;
-      const due = r2(p.fines + p.lane), paidF = this._paidAt(d, ev.id, mid, "fines"), paidB = this._paidAt(d, ev.id, mid, "base");
+      const due = r2(p.fines + p.lane + p.extra), paidF = this._paidAt(d, ev.id, mid, "fines"), paidB = this._paidAt(d, ev.id, mid, "base");
       const baseOk = !p.fee || paidB >= p.fee - 0.004, finesOk = due <= 0.004 || paidF >= due - 0.004;
-      const tags = isAway(mid) ? [`<span class="tag">${st.label}</span>`, p.fee ? `<span class="tag no">Grundbetrag ${money(p.fee)} offen</span>` : "", p.extra ? `<span class="tag no">+ ${money(p.extra)} nicht abgemeldet</span>` : ""].join("") : [`<span class="tag">${st.label}</span>`,
-        p.fee ? `<button class="tag ${baseOk ? "ok" : "no"}" data-a="basetoggle" data-id="${esc(mid)}" title="Antippen = Grundbetrag bezahlt / nicht bezahlt">Grundbetrag ${money(p.fee)} ${baseOk ? "✓" : "offen"}</button>` : "",
+      const baseLock = baseOk && paidB > 0 && this._hasFines(ev, mid); // 🔒 wer schon eine Strafe hat, saß am Tisch – Grundbetrag bleibt bezahlt
+      const baseTag = p.fee ? baseLock ? `<span class="tag ok" title="Gesperrt: ${esc(this._name(d, mid))} hat schon Strafen">Grundbetrag ${money(p.fee)} ✓ 🔒</span>` : `<button class="tag ${baseOk ? "ok" : "no"}" data-a="basetoggle" data-id="${esc(mid)}" title="Antippen = Grundbetrag bezahlt / nicht bezahlt">Grundbetrag ${money(p.fee)} ${baseOk ? "✓" : "offen"}</button>` : "";
+      const tags = isAway(mid) ? [`<span class="tag">${st.label}</span>`, baseTag, p.extra ? `<button class="tag ${finesOk ? "ok" : "no"}" data-a="coin" data-id="${esc(mid)}" title="Antippen = bezahlt / nicht bezahlt">+ ${money(p.extra)} nicht abgemeldet ${finesOk ? "✓" : ""}</button>` : ""].join("") : [`<span class="tag">${st.label}</span>`,
+        baseTag,
         p.lane ? `<span class="tag">inkl. Bahn ${money(p.lane)}</span>` : "", ev.no_fines && Object.keys(p.items).length ? `<span class="tag">Strafen erlassen</span>` : ""].join("");
       const coin = due > 0.004 || paidF > 0 ? `<button class="iconbtn coin ${finesOk ? "ok" : ""}" data-a="coin" data-id="${esc(mid)}" title="${finesOk ? "Bezahlt ✓ – antippen = zurücknehmen" : "Antippen = Strafen bezahlt"}" aria-label="bezahlt">${ic(finesOk ? "check-circle" : "hand-coin-outline")}</button>` : `<span class="iconbtn coin"></span>`;
-      return `<div class="item ${isAway(mid) ? "off" : ""}" style="--cc:${st.color}"><div class="n"><b data-noicon>${esc(members[mid]?.name || "?")}</b><div class="meta">${tags}</div>${chips ? `<div class="chips" style="margin-top:3px">${chips}</div>` : ""}</div><div class="amt">${this._m(due, finesOk ? "" : "neg")}</div>${coin}</div>`;
+      return `<div class="item ${isAway(mid) ? "off" : ""}" style="--cc:${st.color}">${this._avatar(d, mid, 34)}<div class="n"><b data-noicon>${esc(members[mid]?.name || "?")}</b><div class="meta">${tags}</div>${chips ? `<div class="chips" style="margin-top:3px">${chips}</div>` : ""}</div><div class="amt">${this._m(due, finesOk ? "" : "neg")}</div>${coin}</div>`;
     }).join("")}</div>`;
     return h;
   }
@@ -1197,6 +1497,118 @@ class KegelclubCard extends HTMLElement {
       <button class="btn" data-a="share" data-id="${esc(ev.id)}">${ic("share-variant-outline")}Teilen</button>
       <button class="btn" data-a="evdel" data-id="${esc(ev.id)}">${ic("delete-outline")}Löschen</button></div>`;
     return { icon: "bowling", color: "#fb8c00", title: `Kegelabend ${fmtDate(ev.date)}`, html };
+  }
+  // 📤 Drucken & Teilen: Abrechnung als Blatt, echte PDF, QR-Code oder Text
+  _billModel(d, ev) {
+    const [members, strafen] = maps(d);
+    const b = billEvening(ev, members, strafen, d.settings);
+    const ids = this._order(d, Object.keys(b.people));
+    const here = (mid) => ["play", "watch"].includes(b.people[mid].status);
+    const rows = ids.map((mid) => {
+      const p = b.people[mid], st = STATUS[p.status] || STATUS.play;
+      const det = Object.entries(p.items).filter(([, n]) => n > 0).map(([key, n]) => { const [sid, from] = key.split(">"); return `${strafen[sid]?.name || "?"}${from ? ` von ${members[from]?.name || "?"}` : ""} ×${n}`; })
+        .concat((ev.extra || []).filter((x) => x.member === mid).map((x) => `${x.name} ${money(x.amount)}`));
+      if (ev.imported) return { name: members[mid]?.name || "?", status: st.label, here: here(mid), detail: det.join(", "), amount: money(p.total), paid: true, paidTxt: "" };
+      const due = r2(p.fines + p.lane + p.extra), paidF = this._paidAt(d, ev.id, mid, "fines"), paidB = this._paidAt(d, ev.id, mid, "base");
+      const finesOk = due <= 0.004 || paidF >= due - 0.004;
+      if (p.extra) det.unshift(`nicht abgemeldet ${money(p.extra)}`);
+      if (p.lane) det.push(`Bahn ${money(p.lane)}`);
+      if (ev.no_fines && Object.keys(p.items).length) det.push("Strafen erlassen");
+      return { name: members[mid]?.name || "?", status: st.label, here: here(mid), base: p.fee ? money(p.fee) : "", baseOk: !p.fee || paidB >= p.fee - 0.004, detail: det.join(", "), amount: money(due), paid: due > 0.004 && finesOk, open: due > 0.004 && !finesOk, paidTxt: due > 0.004 ? (finesOk ? "bezahlt" : "offen") : "" };
+    });
+    const finesSum = r2(ids.reduce((x, m) => x + (b.people[m].fines || 0) + (b.people[m].extra || 0), 0));
+    const feeSum = r2(ids.reduce((x, m) => x + (b.people[m].fee || 0), 0));
+    const sums = [["Strafen zusammen", money(finesSum)]];
+    if (feeSum) sums.push(["Grundbeträge", money(feeSum)]);
+    if (b.lane) sums.push([`Kegelbahn (${numDe(ev.hours || 0)} Std.)`, money(b.lane)]);
+    sums.push(["Kasse jetzt", money(d.summary.kasse)]);
+    const club = d.book && !d.book.primary ? d.book.title : "";
+    const first = String(this._hass?.user?.name || "").trim().split(/\s+/)[0];
+    const now = new Date();
+    return {
+      title: `Kegelabend ${fmtDate(ev.date, { day: "2-digit", month: "2-digit", year: "numeric" })}`, bigVal: money(finesSum),
+      sub: [club, fmtDate(ev.date, { weekday: "long", day: "numeric", month: "long", year: "numeric" }), `${ids.filter(here).length} da`, ev.note, ev.closed ? "abgeschlossen" : "läuft noch"].filter(Boolean).join(" · "),
+      by: `Erstellt${first ? ` von ${first}` : ""} am ${now.toLocaleDateString("de-DE")} um ${now.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })} Uhr`,
+      rows, sums,
+    };
+  }
+  _billSheet(m) {
+    return `<div class="kcsheet"><div class="ksh"><div><div class="kst">${esc(m.title)}</div><div class="kss">${esc(m.sub)}</div><div class="kss">${esc(m.by)}</div></div><div class="ksn">${esc(m.bigVal)}</div></div><div class="ksbar"></div>
+      <table class="kstab"><tr><th>Name</th><th>Status</th><th>Grundbetrag</th><th>Strafen</th><th>Betrag</th></tr>${m.rows.map((r) => `<tr class="${r.here ? "" : "ksaway"}"><td><b>${esc(r.name)}</b></td><td>${esc(r.status)}</td><td class="${r.base ? (r.baseOk ? "ok" : "no") : ""}">${r.base ? `${esc(r.base)} ${r.baseOk ? "✓" : "offen"}` : ""}</td><td class="det">${esc(r.detail)}</td><td class="amt ${r.paid ? "ok" : r.open ? "no" : ""}"><b>${esc(r.amount)}</b>${r.paidTxt ? `<small>${esc(r.paidTxt)}</small>` : ""}</td></tr>`).join("")}</table>
+      <table class="kssum">${m.sums.map(([l, v]) => `<tr><td>${esc(l)}</td><td>${esc(v)}</td></tr>`).join("")}</table><div class="ksf">Erstellt mit Kegelclub</div></div>`;
+  }
+  _billCss(scope) {
+    return `${scope} .kcsheet{font:13px/1.35 Roboto,Helvetica,Arial,sans-serif;color:#222;background:#fff;padding:14px;border-radius:10px}
+${scope} .ksh{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}${scope} .kst{font-size:20px;font-weight:700}${scope} .kss{font-size:11.5px;color:#666;margin-top:2px}
+${scope} .ksn{font-size:24px;font-weight:700;color:#fb8c00;white-space:nowrap}${scope} .ksbar{height:3px;background:#fb8c00;margin:8px 0 10px;border-radius:2px}
+${scope} .kstab{width:100%;border-collapse:collapse}${scope} .kstab th{text-align:left;font-size:10.5px;color:#777;font-weight:600;border-bottom:1.5px solid #999;padding:4px 4px}
+${scope} .kstab td{border-bottom:1px solid #ddd;padding:5px 4px;vertical-align:top;font-size:12px}${scope} .kstab td.det{font-size:11px;color:#444}
+${scope} .kstab td.amt{text-align:right;white-space:nowrap}${scope} .kstab th:last-child{text-align:right}${scope} .kstab td.amt small{display:block;font-size:9.5px}
+${scope} .kstab .ok{color:#2e7d32}${scope} .kstab .no{color:#c62828}${scope} .kstab tr.ksaway td{color:#888}
+${scope} .kssum{margin:10px 0 0 auto;border-collapse:collapse}${scope} .kssum td{padding:2px 4px;font-size:12.5px}${scope} .kssum td:last-child{text-align:right;font-weight:700;padding-left:18px}
+${scope} .ksf{text-align:center;font-size:10px;color:#999;margin-top:12px}`;
+  }
+  _sharePage(d) {
+    const ev = d.abende.find((e) => e.id === this._shareId);
+    const m = this._billModel(d, ev), mode = this._shareMode;
+    const apple = /iPhone|iPad|iPod/i.test(navigator.userAgent || "") || (/Macintosh/i.test(navigator.userAgent || "") && (navigator.maxTouchPoints || 0) > 1) || (this._inHaApp() && /Mac|iPhone|iPad/i.test(navigator.userAgent || ""));
+    let html = `<div class="prchoice">${apple ? "" : `<button class="btn" data-a="shprint">${ic("printer-outline")}Drucken</button>`}<button class="btn ${apple ? "main" : ""}" data-a="shpdf">${ic("file-pdf-box")}${apple ? "PDF drucken / teilen" : "PDF teilen / speichern"}</button><button class="btn ${mode === "qr" ? "main" : ""}" data-a="shmode" data-v="${mode === "qr" ? "" : "qr"}">${ic("qrcode")}QR-Code fürs Handy</button>${navigator.share ? `<button class="btn" data-a="shtext">${ic("message-text-outline")}Als Text teilen</button>` : ""}<button class="btn" data-a="shcopy">${ic("content-copy")}Text kopieren</button></div>`;
+    if (mode === "qr") {
+      const parts = this._qrParts(this._shareText(d, ev)), many = parts.length > 1;
+      html += `<div class="prqr">${parts.map((t, k) => `<div class="prqrbox">${many ? `<b>Teil ${k + 1} von ${parts.length}</b>` : ""}<div class="prqrc">${kcQrSvg(t)}</div></div>`).join("")}
+        <p class="small">Mit der Handy-Kamera abfotografieren – die Abrechnung erscheint als Text. Ohne App, ohne Anmelden.${many ? " Sie ist lang, darum gibt es mehrere Codes: einen nach dem anderen." : ""}</p></div>`;
+    }
+    html += `<p class="small">${apple ? "Auf iPhone und iPad geht Drucken über die PDF: Teilen-Menü → Drucken." : "Vorschau:"}</p><style>${this._billCss(".kcprev")}</style><div class="kcprev">${this._billSheet(m)}</div>`;
+    return { icon: "share-variant-outline", color: "#546e7a", title: "Drucken & Teilen", html };
+  }
+  _qrParts(full, max = 900) { // 📱 ein Code fasst gut lesbar ~900 Bytes – mehr = mehrere Codes „(1/2)“
+    const enc = (t) => new TextEncoder().encode(t).length;
+    if (enc(full) <= max) return [full];
+    const [head, ...lines] = full.split("\n"), chunks = [];
+    let cur = [];
+    for (const l of lines) { if (cur.length && enc([`${head} (9/9)`, ...cur, l].join("\n")) > max) { chunks.push(cur); cur = []; } cur.push(l.slice(0, 300)); }
+    if (cur.length) chunks.push(cur);
+    return chunks.map((c, k) => [`${head} (${k + 1}/${chunks.length})`, ...c].join("\n"));
+  }
+  _inHaApp() { return !!this._hass?.auth?.external && !this._app; }
+  _printBill(ev) {
+    if (!ev) return;
+    const m = this._billModel(this._data, ev);
+    const fr = document.createElement("iframe");
+    fr.style.cssText = "position:fixed;left:-10000px;top:0;width:182mm;height:263mm;border:0;visibility:hidden;";
+    fr.srcdoc = `<!doctype html><html><head><meta charset="utf-8"><title>${esc(m.title)}</title><style>@page{size:A4;margin:14mm}body{margin:0}${this._billCss("body")} body .kcsheet{padding:0}</style></head><body>${this._billSheet(m)}</body></html>`;
+    fr.onload = () => {
+      try { fr.contentWindow.focus(); fr.contentWindow.print(); } catch (_) { this._toast("Drucken geht hier nicht – nimm „PDF“."); }
+      setTimeout(() => fr.remove(), 60000);
+    };
+    document.body.append(fr);
+  }
+  async _pdfShare(ev) { // 📄 iPhone/iPad = Teilen-Menü (dort Drucken per AirPrint), HA-App = kurz von Home Assistant bereitgestellt, sonst Herunterladen
+    if (!ev) return;
+    const m = this._billModel(this._data, ev);
+    const bytes = kcBillPdf(m);
+    const name = `Kegelabend-${ev.date}.pdf`;
+    const file = typeof File === "function" ? new File([bytes], name, { type: "application/pdf" }) : null;
+    const touch = (navigator.maxTouchPoints || 0) > 0 || /iPhone|iPad|Android/i.test(navigator.userAgent || "");
+    if (this._inHaApp()) {
+      try {
+        let bin = "";
+        for (let k = 0; k < bytes.length; k += 0x8000) bin += String.fromCharCode(...bytes.subarray(k, k + 0x8000));
+        const r = await this._hass.callWS({ type: "kegelclub/pdf/store", data: btoa(bin), name });
+        window.open(this._hass?.hassUrl ? this._hass.hassUrl(r.url) : new URL(r.url, location.origin).href, "_blank");
+        this._toast("📄 PDF geöffnet – dort über Teilen drucken oder sichern");
+      } catch (err) { this._toast("⚠️ " + (err?.message || "PDF ging nicht")); }
+      return;
+    }
+    if (touch && file && navigator.canShare?.({ files: [file] })) {
+      try { await navigator.share({ files: [file], title: m.title }); return; } catch (err) { if (err?.name === "AbortError") return; }
+    }
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([bytes], { type: "application/pdf" }));
+    a.download = name;
+    document.body.append(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+    this._toast("📄 PDF gespeichert – öffnen und drucken");
   }
   _shareText(d, ev) {
     const [members, strafen] = maps(d);
@@ -1258,7 +1670,7 @@ class KegelclubCard extends HTMLElement {
   _statsView(d) {
     const y = this._year, st = yearStats(d, y), tab = this._statTab || "over";
     const [members, strafen] = maps(d);
-    const fn = (mid) => esc(String(members[mid]?.name || "?").split(" ")[0]);
+    const fn = (mid) => esc(String(members[mid]?.name || "?")); // 👤 immer voller Name (es gibt mehrere Sandras)
     const ys = statYears(d);
     let h = `<div class="yearnav"><button class="iconbtn" data-a="year" data-v="-1" title="Jahr davor" ${!y ? "disabled" : ""}>${ic("chevron-left")}</button><span>${y || "Alle Jahre"}</span><button class="iconbtn" data-a="year" data-v="1" title="Jahr danach" ${!y ? "disabled" : ""}>${ic("chevron-right")}</button><button class="btn small ${y ? "" : "main"}" data-a="yearall">${ic("calendar-multiple")}${y ? "Alle Jahre" : "Ein Jahr"}</button></div>`;
     h += `<div class="seg stseg">${[["over", "view-dashboard-outline", "Überblick"], ["people", "account-group-outline", "Personen"], ["evs", "calendar-text-outline", "Abende"], ["fines", "gavel", "Strafen"]].map(([k, i, t]) => `<button data-a="stattab" data-v="${k}" class="${tab === k ? "on" : ""}">${ic(i)}${t}</button>`).join("")}</div>`;
@@ -1303,20 +1715,19 @@ class KegelclubCard extends HTMLElement {
     const sel = this._statP && (this._statP in st.perPerson || this._statP in st.attend) ? this._statP : null;
     if (sel) return this._statPerson(d, st, sel, members, strafen);
     let h = "";
-    const pp = this._order(d, Object.keys(st.perPerson).filter((m) => st.perPerson[m] > 0)).sort((a, b) => st.perPerson[b] - st.perPerson[a]).slice(0, 12);
+    const pp = this._order(d, Object.keys(st.perPerson).filter((m) => st.perPerson[m] > 0)).sort((a, b) => st.perPerson[b] - st.perPerson[a]).slice(0, 20);
     if (pp.length) {
       const max = Math.max(...pp.map((m) => st.perPerson[m]), 1);
-      h += this._gh("chart-bar", "#1e88e5", `Strafen pro Person (${KC_MONEY.sym})`, "Säule antippen") + `<div class="stbar">${pp.map((mid) => `<div class="c click" data-a="statp" data-id="${esc(mid)}"><span>${numDe(r2(st.perPerson[mid]))}</span><i style="height:${Math.max(3, (st.perPerson[mid] / max) * 120).toFixed(0)}px;--bc:${mcol(d, mid)}"></i></div>`).join("")}</div>
-        <div class="stlbl">${pp.map((mid) => `<span data-noicon>${fn(mid)}</span>`).join("")}</div>`;
+      h += this._gh("chart-bar", "#1e88e5", `Strafen pro Person (${KC_MONEY.sym})`, "antippen = Details") + pp.map((mid) => `<div class="hbar click" data-a="statp" data-id="${esc(mid)}"><span>${this._avatar(d, mid, 20)}<span data-noicon>${fn(mid)}</span></span><i style="width:${Math.max(3, (st.perPerson[mid] / max) * 100).toFixed(0)}%;--bc:${mcol(d, mid)}"></i><b>${r2(st.perPerson[mid]).toFixed(2).replace(".", ",")}</b></div>`).join("");
     }
     const ids = this._order(d, [...new Set([...Object.keys(st.attend), ...Object.keys(st.perPerson)])]);
-    h += this._gh("account-check-outline", "#00897b", "Alle Personen", "antippen = Details") + `<table class="sttab"><tr><th></th><th>da</th><th>Strafen</th><th>Ø</th></tr>${ids.map((mid) => { const a = st.attend[mid] || 0; return `<tr class="click" data-a="statp" data-id="${esc(mid)}"><td data-noicon><i class="dot" style="background:${mcol(d, mid)}"></i>${esc(members[mid]?.name || "?")}</td><td>${a} / ${st.evs.length}</td><td>${this._m(r2(st.perPerson[mid] || 0))}</td><td>${a ? this._m(r2((st.perPerson[mid] || 0) / a)) : "–"}</td></tr>`; }).join("")}</table>`;
+    h += this._gh("account-check-outline", "#00897b", "Alle Personen", "antippen = Details") + `<table class="sttab"><tr><th></th><th>da</th><th>Strafen</th><th>Ø</th></tr>${ids.map((mid) => { const a = st.attend[mid] || 0; return `<tr class="click" data-a="statp" data-id="${esc(mid)}"><td data-noicon>${this._avatar(d, mid, 22) || `<i class="dot" style="background:${mcol(d, mid)}"></i>`}${esc(members[mid]?.name || "?")}</td><td>${a} / ${st.evs.length}</td><td>${this._m(r2(st.perPerson[mid] || 0))}</td><td>${a ? this._m(r2((st.perPerson[mid] || 0) / a)) : "–"}</td></tr>`; }).join("")}</table>`;
     return h;
   }
   _statPerson(d, st, mid, members, strafen) {
     const m = members[mid] || {}, a = st.attend[mid] || 0, sum = r2(st.perPerson[mid] || 0);
     let h = `<div class="btnrow"><button class="btn small" data-a="statp" data-id="">${ic("arrow-left")}Alle Personen</button></div>`;
-    h += `<div class="hero" style="--hc:${mcol(d, mid)}"><div class="lbl" data-noicon>${esc(m.name || "?")}${m.guest ? " · Gast" : ""}</div><div class="big" style="font-size:1.9em">${this._m(sum)}</div><div class="small">Strafen ${this._year || "gesamt"}</div></div>`;
+    h += `<div class="hero" style="--hc:${mcol(d, mid)}">${m.photo ? `<img class="phhero" src="${esc(m.photo)}" alt="">` : ""}<div class="lbl" data-noicon>${esc(m.name || "?")}${m.guest ? " · Gast" : ""}</div><div class="big" style="font-size:1.9em">${this._m(sum)}</div><div class="small">Strafen ${this._year || "gesamt"}</div></div>`;
     const best = st.best[mid];
     h += `<div class="tiles kpis"><div class="tile"><span>${ic("calendar-check-outline")}Dabei</span><b>${a} / ${st.evs.length}</b></div><div class="tile"><span>${ic("division")}Ø pro Abend</span><b>${a ? this._m(r2(sum / a)) : "–"}</b></div><div class="tile"><span>${ic("fire")}Längste Serie</span><b>${st.streak[mid] || 0} Abende</b></div>${best && best.amt > 0 ? `<div class="tile"><span>${ic("arrow-up-bold-outline")}Teuerster Abend</span><b>${this._m(best.amt)}</b><span class="rs">${esc(fmtDate(best.ev.date))}</span></div>` : ""}</div>`;
     // Strafen nach Art
@@ -1361,7 +1772,7 @@ class KegelclubCard extends HTMLElement {
   // ---------------------------------------------------------------- 👥 Mitglieder & Strafen
   _editView(d) {
     const row = (kind, it, meta, sortable) => this._open?.kind === kind && this._open.id === it.id ? this._form(d, kind, it)
-      : `<div class="item click ${it.active === false ? "done" : ""}" data-a="open" data-k="${kind}" data-id="${esc(it.id)}" ${sortable ? `data-row="${esc(it.id)}"` : ""} ${kind === "member" ? `style="--cc:${mcol(d, it.id)}"` : ""}>${sortable ? `<span class="grip" data-grip="${kind}" title="Ziehen zum Verschieben">${ic("drag")}</span>` : ""}${kind === "strafe" ? `<ha-icon icon="${esc(it.icon || "mdi:bowling")}" style="color:#fb8c00"></ha-icon>` : ""}<div class="n"><b data-noicon>${esc(it.name)}</b>${meta.length ? `<div class="meta">${meta.map((x) => `<span class="tag">${x}</span>`).join("")}</div>` : ""}</div>${kind === "strafe" ? `<div class="amt">${money(it.amount)}</div>` : ""}<span class="iconbtn">${ic("pencil-outline")}</span></div>`;
+      : `<div class="item click ${it.active === false ? "done" : ""}" data-a="open" data-k="${kind}" data-id="${esc(it.id)}" ${sortable ? `data-row="${esc(it.id)}"` : ""} ${kind === "member" ? `style="--cc:${mcol(d, it.id)}"` : ""}>${sortable ? `<span class="grip" data-grip="${kind}" title="Ziehen zum Verschieben">${ic("drag")}</span>` : ""}${kind === "strafe" ? `<ha-icon icon="${esc(it.icon || "mdi:bowling")}" style="color:#fb8c00"></ha-icon>` : this._avatar(d, it.id, 32)}<div class="n"><b data-noicon>${esc(it.name)}</b>${meta.length ? `<div class="meta">${meta.map((x) => `<span class="tag">${x}</span>`).join("")}</div>` : ""}</div>${kind === "strafe" ? `<div class="amt">${money(it.amount)}</div>` : ""}<span class="iconbtn">${ic("pencil-outline")}</span></div>`;
     const head = (kind, icon, color, title, extra = "") => this._gh(icon, color, title, `${extra}<button class="btn small" data-a="new" data-k="${kind}">${ic("plus")}Neu</button>`) + (this._open?.kind === kind && this._open.id === "new" ? this._form(d, kind, {}) : "");
     const act = d.members.filter((m) => !m.guest && m.active !== false), guests = d.members.filter((m) => m.guest && m.active !== false), left = d.members.filter((m) => m.active === false);
     let h = head("member", "account-group-outline", "#1e88e5", "Mitglieder", "");
@@ -1379,6 +1790,8 @@ class KegelclubCard extends HTMLElement {
     const isNew = !it.id;
     const f = [`<label class="wide">Name<input name="name" value="${esc(it.name || "")}" required autocomplete="off"></label>`];
     if (kind === "member") {
+      const ph = it.photo || "";
+      f.push(`<div class="wide phrow"><span class="phprev">${ph ? `<img src="${esc(ph)}" alt="">` : ic("account-outline")}</span><label class="btn small">${ic("camera-outline")}Foto<input type="file" data-a="photofile" accept="image/*" hidden></label><button type="button" class="btn small" data-a="photodel" ${ph ? "" : "hidden"}>${ic("delete-outline")}Foto weg</button><input type="hidden" name="photo" value="${esc(ph)}"></div>`);
       f.push(`<label class="wide">Notiz<input name="note" value="${esc(it.note || "")}" placeholder="z. B. Kassenwart"></label>`);
       f.push(`<label class="wide" style="flex-direction:row;align-items:center;gap:8px"><input type="checkbox" class="swchk" name="guest" ${it.guest ? "checked" : ""}> Gast (kein Mitglied)</label>`);
     } else {
@@ -1507,7 +1920,7 @@ class KegelclubCard extends HTMLElement {
     else if (p.step === "new2") { if (v === p.neu) setPin(v); else { this._toast("Die zwei PINs sind nicht gleich – bitte nochmal"); p.step = "new"; } }
   }
   _pinSetHtml(d) {
-    return `<p class="small">${d.pin ? "🔒 PIN ist <b>an</b>. ⚙️ und „Mitglieder“ fragen nach der PIN." : "Mit einer PIN (4–8 Ziffern) sperrst du ⚙️ und „Mitglieder“, z. B. auf dem Tablet am Kegeltisch. Strafen buchen und die Kasse ansehen gehen weiter ohne PIN."}</p>
+    return `<p class="small">${d.pin ? "🔒 PIN ist <b>an</b>. ⚙️ fragt nach der PIN." : "Mit einer PIN (4–8 Ziffern) sperrst du ⚙️ (auch Mitglieder & Strafen), z. B. auf dem Tablet am Kegeltisch. Strafen buchen und die Kasse ansehen gehen weiter ohne PIN."}</p>
       <div class="btnrow">${d.pin ? `<button class="btn main" data-a="padstart" data-v="set">${ic("lock-reset")}PIN ändern</button><button class="btn" data-a="padstart" data-v="off">${ic("lock-open-variant-outline")}PIN ausschalten</button>` : `<button class="btn main" data-a="padstart" data-v="set">${ic("lock-outline")}PIN einschalten</button>`}</div>
       ${d.pin ? `<label class="switch"><span>${ic("lock-outline")}<span class="vt"><b>Ganze Karte sperren</b><small>Aus = nur ⚙️ und Mitglieder. An = ohne PIN sieht man gar nichts.</small></span></span><input type="checkbox" class="swchk" data-a="set" data-v="lock_all" ${d.settings.lock_all ? "checked" : ""}></label>` : ""}
       <p class="small">Die PIN liegt nur als Prüfsumme in Home Assistant. Vergessen? Admin → <b>Geräte & Dienste → Kegelclub → Konfigurieren → „PIN zurücksetzen“</b>. 5× falsch = 1 Minute Pause.</p>`;
@@ -1525,6 +1938,7 @@ class KegelclubCard extends HTMLElement {
     const st = d.settings, admin = this._hass?.user?.is_admin !== false;
     const lane = { kasse: "aus der Kasse", split: "aufgeteilt", off: "nicht erfasst" }[st.lane_mode] || "";
     return {
+      club: { icon: "account-group-outline", color: "#1e88e5", title: "Mitglieder & Strafen", info: `${d.members.filter((m) => m.active !== false && !m.guest).length} Mitglieder · ${d.strafen.filter((s) => s.active !== false).length} Strafen`, html: () => this._editView(d) },
       rules: { icon: "cash-multiple", color: "#43a047", title: "Regeln & Beträge", info: `${money(st.base_fee)} pro Person · Bahn ${lane}`, html: () => `
         <p class="small">Gilt ab sofort und auch für den laufenden Abend. Abgeschlossene Abende bleiben, wie sie waren.</p>
         ${this._num("base_fee", "cash", "Grundbetrag pro Person und Abend", st.base_fee, KC_MONEY.sym)}
@@ -1571,7 +1985,7 @@ class KegelclubCard extends HTMLElement {
   }
   _setView(d) {
     const sh = this._sheets(d);
-    const cats = [["💶", "Regeln", ["rules"]], ["💾", "Daten", ["imp", "log", "factory"]], ["🩺", "Gesundheit", ["check", "errors", "stats"]], ["👁️", "Ansicht", ["view", "labels", "calm", ...(this._app ? ["theme"] : [])]], ["📱", "App & Info", ["app", "pin", "privacy", "news", "credits"]]];
+    const cats = [["👥", "Club", ["club"]], ["💶", "Regeln", ["rules"]], ["💾", "Daten", ["imp", "log", "factory"]], ["🩺", "Gesundheit", ["check", "errors", "stats"]], ["👁️", "Ansicht", ["view", "labels", "calm", ...(this._app ? ["theme"] : [])]], ["📱", "App & Info", ["app", "pin", "privacy", "news", "credits"]]];
     return `<div class="sethead">${ic("cog-outline")}<span>Einstellungen</span></div>` + cats.map(([emo, title, keys]) => {
       const open = this._setOpen === title;
       const rows = open ? keys.map((k) => `<button class="lrow" data-a="sheet" data-v="${k}"><span class="ic" style="--ic:${sh[k].color}">${ic(sh[k].icon)}</span><span class="grow"><b>${sh[k].title}</b><small>${esc(sh[k].info)}</small></span>${ic("chevron-right")}</button>`).join("") : "";
@@ -1621,8 +2035,8 @@ class KegelclubCard extends HTMLElement {
     const out = [], day = 86400000;
     const ev = evFind(d);
     if (ev && Date.now() - (ev.started || Date.parse(ev.date) || Date.now()) > day) out.push({ t: `Der Kegelabend vom ${fmtDate(ev.date)} läuft noch`, fix: "Vergessen abzuschließen? Im Reiter „Abend“ → „Abend abschließen“." });
-    for (const s of d.strafen.filter((x) => x.active !== false && !x.amount)) out.push({ t: `Strafe „${s.name}“ kostet ${money(0)}`, fix: "Unter „Mitglieder“ → Strafen den Betrag eintragen oder sie ausschalten." });
-    if (!d.members.some((m) => !m.guest && m.active !== false)) out.push({ t: "Es gibt noch keine Mitglieder", fix: "Reiter „Mitglieder“ → ＋ Neu." });
+    for (const s of d.strafen.filter((x) => x.active !== false && !x.amount)) out.push({ t: `Strafe „${s.name}“ kostet ${money(0)}`, fix: "Unter ⚙️ → „Mitglieder & Strafen“ den Betrag eintragen oder sie ausschalten." });
+    if (!d.members.some((m) => !m.guest && m.active !== false)) out.push({ t: "Es gibt noch keine Mitglieder", fix: "⚙️ → „Mitglieder & Strafen“ → ＋ Neu." });
     if (d.summary.kasse < 0) out.push({ t: `Die Kasse steht im Minus (${money(d.summary.kasse)})`, fix: "Stimmt der Kassenstand am Anfang? ⚙️ → Regeln & Beträge." });
     const old = d.summary.people.filter((p) => p.debt > 0 && !d.members.find((m) => m.id === p.id && m.active !== false));
     for (const p of old) out.push({ t: `${p.name} ist ausgeblendet, hat aber noch ${money(p.debt)} offen`, fix: "Reiter „Kasse“ → bei der Person den Haken ✓ antippen, wenn bezahlt." });
@@ -1709,6 +2123,7 @@ class KegelclubCard extends HTMLElement {
     else if (a === "back") {
       if (this._pad) { const back = this._pad.back; this._pad = null; if (back !== "sheet") { this._view = "abend"; this._sheet = null; } }
       else if (this._view === "set" && this._sheet) { this._sheet = null; this._imp = null; }
+      else if (this._view === "share") { this._view = this._shareBack || "abend"; this._shareMode = null; }
       else { this._view = this._view === "ev" ? this._evBack || "abend" : "abend"; this._evBack = null; this._sheet = null; }
       this._open = null; redraw();
     }
@@ -1727,8 +2142,8 @@ class KegelclubCard extends HTMLElement {
     // 🧭 Einrichten
     else if (a === "wiz") {
       const v = el.dataset.v;
-      if (v === "template") { this._send({ type: "template" }); this._send({ type: "setup_done" }); this._view = "edit"; this._toast("📋 Beispiel-Strafen geladen – jetzt Mitglieder anlegen"); }
-      else if (v === "empty") { this._send({ type: "setup_done" }); this._view = "edit"; }
+      if (v === "template") { this._send({ type: "template" }); this._send({ type: "setup_done" }); this._view = "set"; this._sheet = "club"; this._toast("📋 Beispiel-Strafen geladen – jetzt Mitglieder anlegen"); }
+      else if (v === "empty") { this._send({ type: "setup_done" }); this._view = "set"; this._sheet = "club"; }
       else { this._view = "set"; this._sheet = "imp"; }
       redraw();
     }
@@ -1765,8 +2180,9 @@ class KegelclubCard extends HTMLElement {
     else if ((a === "basetoggle" || a === "coin") && ev) {
       const tag = a === "coin" ? "fines" : "base";
       const p = billEvening(ev, ...maps(d), d.settings).people[id]; if (!p) return;
-      const due = tag === "base" ? p.fee : r2(p.fines + p.lane), paid = this._paidAt(d, ev.id, id, tag);
+      const due = tag === "base" ? p.fee : r2(p.fines + p.lane + p.extra), paid = this._paidAt(d, ev.id, id, tag);
       if (paid >= due - 0.004 && paid > 0) {
+        if (tag === "base" && this._hasFines(ev, id)) { this._toast("🔒 Hat schon Strafen – Grundbetrag bleibt bezahlt"); return; }
         const mine = d.kasse.filter((k) => k.abend === ev.id && k.member === id && k.tag === tag);
         mine.forEach((k) => this._send({ type: "kasse_delete", id: k.id }));
         this._undoFor(`↩️ Zahlung von ${this._name(d, id)} zurückgenommen`, mine.map((k) => ({ type: "restore", kind: "kasse", item: { ...k, waiting: undefined } })));
@@ -1804,10 +2220,18 @@ class KegelclubCard extends HTMLElement {
     else if (a === "evdate") { if (/^\d{4}-\d{2}-\d{2}$/.test(el.value)) this._send({ type: "abend_date", abend: this._evId, date: el.value }); }
     else if (a === "evnote") this._send({ type: "abend_note", abend: this._evId, note: el.value });
     else if (a === "allpast") { this._allPast = true; redraw(); }
-    else if (a === "share") {
-      const x = d.abende.find((y) => y.id === id); if (!x) return;
+    else if (a === "share") { // 📤 Drucken & Teilen (wie bei der Einkaufsliste)
+      if (!d.abende.some((y) => y.id === id)) return;
+      if (this._view !== "share") this._shareBack = this._view === "ev" ? "ev" : this._view;
+      this._shareId = id; this._shareMode = null; this._view = "share"; redraw();
+    }
+    else if (a === "shmode") { this._shareMode = el.dataset.v || null; redraw(); }
+    else if (a === "shprint") this._printBill(d.abende.find((y) => y.id === this._shareId));
+    else if (a === "shpdf") this._pdfShare(d.abende.find((y) => y.id === this._shareId));
+    else if (a === "shtext" || a === "shcopy") {
+      const x = d.abende.find((y) => y.id === this._shareId); if (!x) return;
       const text = this._shareText(d, x);
-      if (navigator.share) navigator.share({ text }).catch(() => {});
+      if (a === "shtext" && navigator.share) navigator.share({ text }).catch(() => {});
       else (navigator.clipboard?.writeText(text) || Promise.reject()).then(() => this._toast("📋 Kopiert – jetzt z. B. in WhatsApp einfügen"), () => prompt(kcT("Zum Kopieren:"), text));
     }
     // 🏦 Kasse
@@ -1852,6 +2276,23 @@ class KegelclubCard extends HTMLElement {
       this._hass.callWS({ type: "kegelclub/factory_reset", ...this._bk() }).then(() => { this._toast("💣 Alles zurückgesetzt"); this._sheet = null; this._view = "abend"; redraw(); }, (err) => this._toast("⚠️ " + (err?.message || "Das hat nicht geklappt")));
     }
     // 📥 Import & Sicherung
+    else if (a === "photofile") { // 📸 Foto: quadratisch mittig zuschneiden, klein als JPEG speichern
+      const file = el.files?.[0], form = el.closest("form"); if (!file || !form) return;
+      const img = new Image(), url = URL.createObjectURL(file);
+      img.onload = () => {
+        const S = 128, c = document.createElement("canvas"), m = Math.min(img.naturalWidth, img.naturalHeight);
+        c.width = c.height = S;
+        c.getContext("2d").drawImage(img, (img.naturalWidth - m) / 2, (img.naturalHeight - m) / 2, m, m, 0, 0, S, S);
+        const du = c.toDataURL("image/jpeg", 0.78);
+        URL.revokeObjectURL(url);
+        form.querySelector('input[name="photo"]').value = du;
+        form.querySelector(".phprev").innerHTML = `<img src="${du}" alt="">`;
+        form.querySelector('[data-a="photodel"]').hidden = false;
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); this._toast("Das Bild kann ich nicht lesen"); };
+      img.src = url;
+    }
+    else if (a === "photodel") { const form = el.closest("form"); if (!form) return; form.querySelector('input[name="photo"]').value = ""; form.querySelector(".phprev").innerHTML = ic("account-outline"); el.hidden = true; }
     else if (a === "impfile") {
       const file = el.files?.[0]; if (!file) return;
       if (file.size > 8 * 1024 * 1024) { this._toast("Die Datei ist zu groß (höchstens 8 MB)"); return; }
@@ -1938,7 +2379,7 @@ class KegelclubCard extends HTMLElement {
       const kind = f.dataset.k, item = { name: (data.name || "").trim() };
       if (!item.name) { this._toast("Name fehlt"); return; }
       item.id = f.dataset.id || uid();
-      if (kind === "member") { item.note = data.note || ""; item.guest = !!f.querySelector('input[name="guest"]')?.checked; }
+      if (kind === "member") { item.note = data.note || ""; item.photo = String(data.photo || "").startsWith("data:image/") ? data.photo : ""; item.guest = !!f.querySelector('input[name="guest"]')?.checked; }
       else {
         const amount = parseMoney(data.amount || 0);
         if (Number.isNaN(amount)) { this._toast("Betrag stimmt nicht"); return; }
