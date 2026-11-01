@@ -6,7 +6,7 @@
 // - Jede Änderung (Pumpe, Einzahlung, wer da ist …) wird als kleine „Änderung“ verschickt.
 // - Klappt das Verschicken nicht (kein Netz auf der Kegelbahn), landet die Änderung im Postausgang und wird
 //   später nachgeschickt. Bis dahin rechnet die Karte selbst so, als wäre sie schon angekommen.
-const KC_VERSION = "0.1.0-beta.10";
+const KC_VERSION = "0.1.0-beta.11";
 
 const MONTHS = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
 const QKEY = "kegelclub_queue";
@@ -49,6 +49,7 @@ const KC_GUIDE = [
 ];
 // 🆕 Was ist neu – das Neueste oben (wie bei der Einkaufsliste)
 const KC_NEWS = [
+  ["0.1.0-beta.11", "💡 Der Knopf <b>Bildschirm immer an</b> sieht jetzt aus wie bei der Einkaufsliste (blau, wenn an) · 🌑 Geht das Handy-Display aus, ist auch „Bildschirm an“ wieder aus"],
   ["0.1.0-beta.10", "📴🔒 <b>PIN geht jetzt auch ohne Netz:</b> Ist die Verbindung auf der Kegelbahn weg, prüft die Karte die PIN selbst – ⚙️ und die ganze Karte lassen sich also auch offline entsperren. Einmal die PIN <b>mit Netz</b> eintippen, dann kennt das Gerät den Schlüssel. PIN ändern oder ausschalten geht weiter nur mit Netz."],
   ["0.1.0-beta.9", "💡 Der Knopf <b>Bildschirm anlassen</b> sitzt jetzt oben zwischen 👁️ und 🔒 – nur beim laufenden Kegelabend · 🔤 Namen in der Statistik haben wieder die normale Größe"],
   ["0.1.0-beta.8", "🚪 Neuer Zustand <b>gegangen</b> (Status-Knopf: kegelt → schaut zu → gegangen …): Grundbetrag und bisherige Strafen bleiben, spätere Neuner der anderen zahlt er nicht mehr · 💡 <b>Bildschirm anlassen</b> oben beim Kegelabend · 🏠 <b>Über den Club</b> in ⚙️ → Club (Name, Gründung, Bahn, Termin, Notizen – am Jahrestag gibt es einen Glückwunsch) · ✉️ <b>E-Mail</b> je Mitglied, „Mail an alle“ und „Per Mail schicken“ beim Teilen · 🖨️ Clubname oben auf Ausdruck und PDF, „Kasse jetzt“ steht nicht mehr drauf · 📜 Zu lange Namen in der Statistik laufen als Lauftext durch"],
@@ -1189,7 +1190,7 @@ ol.steps li { margin:3px 0; }
 .pp.gone { opacity:.75; }
 .clubbday { margin:0 2px 10px; padding:8px 12px; border-radius:12px; background:color-mix(in srgb, #fb8c00 14%, transparent); font-weight:500; text-align:center; }
 .edit textarea { width:100%; box-sizing:border-box; font:inherit; border-radius:10px; padding:8px; border:1px solid var(--divider-color); background:var(--card-background-color); color:var(--primary-text-color); resize:vertical; }
-.iconbtn.awake.on { color:#f9a825; }
+.iconbtn.awake.on { color:var(--primary-color,#03a9f4); }
 /* 📜 Lauftext für zu lange Namen */
 .tk { display:block; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; min-width:0; }
 .tile span > .tk { display:inline-block; max-width:100%; vertical-align:bottom; }
@@ -1443,7 +1444,7 @@ class KegelclubCard extends HTMLElement {
     const inSet = this._view === "set";
     const awakeHere = !!(d && !page && !["set", "kasse", "stats", "edit"].includes(this._view) && evFind(d));
     const tools = this._lockAll ? "" : `${inSet ? "" : `<button class="iconbtn ${this._hidden ? "on" : ""}" data-a="hide" title="Beträge ${this._hidden ? "zeigen" : "verstecken"}">${ic(this._hidden ? "eye-off-outline" : "eye-outline")}${this._lb(this._hidden ? "Zeigen" : "Verstecken")}</button>`}
-      ${awakeHere ? `<button class="iconbtn awake ${this._awakeOn ? "on" : ""}" data-a="awake" title="${this._awakeOn ? "Bildschirm bleibt an – antippen zum Ausschalten" : "Bildschirm anlassen (antippen)"}" aria-label="Bildschirm anlassen">${ic(this._awakeOn ? "lightbulb-on" : "lightbulb-outline")}${this._lb(this._awakeOn ? "Bleibt an" : "Bildschirm")}</button>` : ""}
+      ${awakeHere ? `<button class="iconbtn awake ${this._awakeOn ? "on" : ""}" data-a="awake" title="${this._awakeOn ? "Bildschirm immer an – antippen zum Ausschalten" : "Bildschirm immer an (antippen)"}" aria-label="Bildschirm immer an">${ic(this._awakeOn ? "lightbulb-on" : "lightbulb-outline")}${this._lb("Bildschirm")}</button>` : ""}
       <button class="iconbtn" data-a="lock" title="${appLock ? "App jetzt sperren" : isLocked ? "Gesperrt – PIN nötig für ⚙️ und Mitglieder" : "Jetzt sperren"}">${ic(isLocked && !appLock ? "lock-outline" : "lock-open-variant-outline")}${this._lb(isLocked && !appLock ? "Gesperrt" : "Sperren")}</button>
       ${showBack ? `<button class="iconbtn" data-a="back" title="${deeper ? "Zurück" : "Schließen"}">${ic(deeper ? "arrow-left" : "close")}${this._lb(deeper ? "Zurück" : "Schließen")}</button>` : ""}`;
     let body;
@@ -1571,7 +1572,7 @@ class KegelclubCard extends HTMLElement {
   }
   // 💡 Bildschirm anlassen (wie bei der Einkaufsliste)
   _awakeHint() { return this._inHaApp() ? "💡 Bildschirm bleibt nur an mit: HA-App → Einstellungen → Companion App → „Keep screen On“ einschalten" : "💡 Der Bildschirm kann hier nicht angehalten werden – bitte in den Handy-Einstellungen die Bildschirmzeit erhöhen"; }
-  _awakeStop() { this._awakeOn = false; try { this._awakeH?.stop(); } catch (_) { /* egal */ } this._awakeH = null; }
+  _awakeStop() { this._awakeOn = false; if (this._awakeVis) document.removeEventListener("visibilitychange", this._awakeVis); this._awakeVis = null; try { this._awakeH?.stop(); } catch (_) { /* egal */ } this._awakeH = null; }
   // 🚪 „gegangen 21:40“ – sonst nur der Zustand
   _stLabel(ev, mid, st) { const l = STATUS[st]?.label || ""; const t = st === "gone" && ev.gone_ts?.[mid]; return t ? `${l} ${new Date(t).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}` : l; }
   // 🔒 Hat die Person an diesem Abend schon eine Strafe (gezählt, von anderen oder per Hand)?
@@ -2437,6 +2438,10 @@ ${scope} .ksf{text-align:center;font-size:10px;color:#999;margin-top:12px}`;
     else if (a === "awake") {
       if (this._awakeOn) { this._awakeStop(); this._toast("💡 Bildschirm wieder normal"); redraw(); return; }
       this._awakeOn = true; redraw();
+      if (!this._awakeVis) { // 🌑 Display aus (oder andere App) = „Bildschirm an“ ganz aus, Glühbirne wieder aus
+        this._awakeVis = () => { if (document.visibilityState === "hidden" && this._awakeOn) { this._awakeStop(); redraw(); } };
+        document.addEventListener("visibilitychange", this._awakeVis);
+      }
       kcKeepAwake(null, this._inHaApp()).then((w) => {
         if (!this._awakeOn || this._awakeH) { w.stop(); return; }
         if (!w.mode) { this._awakeOn = false; redraw(); this._toast(this._awakeHint()); w.stop(); return; }
