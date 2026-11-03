@@ -6,6 +6,8 @@
 
 **Schluss mit Zettelwirtschaft auf der Kegelbahn.** Strafen per Fingertipp, die Abrechnung rechnet sich selbst, und die Kegelkasse weiß immer, wer noch was schuldet. Im Dashboard, in der Seitenleiste und als eigene Handy-App, die auch ohne Netz geht.
 
+Ein Klick öffnet es direkt in deinem Home Assistant: [![In HACS öffnen](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=misterm2310&repository=kegelclub-card&category=integration) [![Integration hinzufügen](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=kegelclub)
+
 ![Vorschau – Kegelclub (nur ausgedachte Namen und Zahlen)](docs/screenshot.png)
 
 > 🔒 **Eure Daten bleiben bei euch.** Alles liegt nur in deinem Home Assistant. Keine Cloud, kein fremder Server. In diesem Repo stehen nur ausgedachte Beispieldaten.

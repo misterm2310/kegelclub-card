@@ -6,6 +6,8 @@
 
 **No more paper lists at the bowling alley.** Book fines with one tap, the bill calculates itself, and the club cash always knows who still owes what. In the dashboard, in the sidebar and as a phone app that also works offline.
 
+One click opens it right in your Home Assistant: [![Open in HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=misterm2310&repository=kegelclub-card&category=integration) [![Add integration](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=kegelclub)
+
 ![Preview – made-up names and numbers only](docs/screenshot.png)
 
 > 🔒 **Your data stays with you.** Everything lives only in your Home Assistant. No cloud. This repo only contains made-up sample data.

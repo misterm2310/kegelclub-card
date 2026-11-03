@@ -106,7 +106,7 @@ def _register_services(hass: HomeAssistant) -> None:
         _check(get_manager(hass, call.data.get("club")).apply([op], await _user_name(hass, call)))
 
     async def close(call: ServiceCall) -> None:
-        _check(get_manager(hass, call.data.get("club")).apply([{"type": "abend_close", "abend": call.data.get("abend"), "value": True}], await _user_name(hass, call)))
+        _check(get_manager(hass, call.data.get("club")).apply([{"type": "abend_close", "abend": call.data.get("abend"), "value": True, "book": True}], await _user_name(hass, call)))
 
     async def pay(call: ServiceCall) -> None:
         m = get_manager(hass, call.data.get("club"))

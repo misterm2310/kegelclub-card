@@ -281,7 +281,7 @@ class KegelclubManager:
         last = None
         for ev in d["abende"]:
             b = bill_evening(ev, members, strafen, d["settings"])
-            if ev.get("closed"):  # 🎳 Kegelbahn geht erst beim Abschließen aus der Kasse
+            if ev.get("closed") and ev.get("booked") is not False:  # 🎳 Kegelbahn geht erst mit „In Kasse buchen“ aus der Kasse (alte Abende ohne Merker = gebucht)
                 lane_kasse += b["lane_kasse"]
             if ev.get("imported"):  # 📥 alte Abende aus der App: schon in der Kasse gebucht, keine offenen Beträge
                 continue
@@ -308,8 +308,10 @@ class KegelclubManager:
             people.append({"id": mid, "name": m.get("name"), "guest": bool(m.get("guest")), "charged": r2(charged.get(mid, 0.0)), "paid": r2(paid.get(mid, 0.0)), "debt": debt})
         kasse = float(d["settings"].get("start_balance") or 0) + k_in - k_out - lane_kasse
         ev = self.open_evening()
+        unbooked = next((e for e in d["abende"] if e.get("closed") and e.get("booked") is False), None)
         return {
             "kasse": r2(kasse),
+            "unbooked": unbooked["id"] if unbooked else None,
             "open": r2(open_total),
             "soll": r2(kasse + open_total),
             "lane_total": r2(lane_kasse),
@@ -482,7 +484,9 @@ class KegelclubManager:
         if t == "abend_close":
             return "🏁 Kegelabend abgeschlossen" if op.get("value", True) is not False else "🔓 Kegelabend wieder geöffnet"
         if t == "abend_delete":
-            return "🗑️ Kegelabend gelöscht"
+            return "🗑️ Kegelabend gelöscht (mit seinen Kassenbuchungen)"
+        if t == "abend_book":
+            return "🏦 Kegelabend in die Kasse gebucht"
         if t == "abend_count":
             n = int(op.get("delta") or 1)
             return f"{'💸' if n > 0 else '↩️'} {self._sname(op.get('strafe'))} {'+' if n > 0 else ''}{n} · {self._mname(op.get('member'))}"
@@ -490,7 +494,7 @@ class KegelclubManager:
             st = {"play": "kegelt", "watch": "schaut zu", "gone": "ist gegangen", "excused": "abgemeldet", "absent": "fehlt (nicht abgemeldet)", "out": "nicht dabei"}.get(str(op.get("status")), "?")
             return f"👤 {self._mname(op.get('member'))}: {st}"
         if t == "abend_nofines":
-            return "🙌 Strafen erlassen" if op.get("value", True) is not False else "💸 Strafen zählen wieder"
+            return "🙌 Heute keine Strafen berechnen" if op.get("value", True) is not False else "💸 Strafen werden wieder berechnet"
         if t == "abend_hours":
             return f"⏱️ Kegelbahn {op.get('hours')} Std."
         if t == "abend_extra_add":
@@ -505,6 +509,8 @@ class KegelclubManager:
             return f"🏦 {op.get('name') or ('Ausgabe' if op.get('kind') == 'out' else 'Einnahme')} {sign}{self._eur(abs(parse_money(op.get('amount', 0))))}"
         if t == "kasse_delete":
             return "🗑️ Kassenbuchung gelöscht"
+        if t == "kasse_edit":
+            return f"✏️ Kassenbuchung geändert: {op.get('name') or ''}".strip()
         if t == "settings":
             return "⚙️ Einstellungen geändert"
         if t == "order":
@@ -578,7 +584,11 @@ class KegelclubManager:
             elif kind == "kasse" and item.get("id") and not any(k["id"] == item["id"] for k in d["kasse"]):
                 d["kasse"].append(dict(item))
             elif kind == "abend" and item.get("id") and not any(e["id"] == item["id"] for e in d["abende"]):
-                d["abende"].append(dict(item))
+                ev = {k: v for k, v in item.items() if k != "kasse"}
+                for k in item.get("kasse") or []:  # 🏦 die mitgelöschten Kassenbuchungen kommen mit zurück
+                    if k.get("id") and not any(x["id"] == k["id"] for x in d["kasse"]):
+                        d["kasse"].append(dict(k))
+                d["abende"].append(ev)
                 d["abende"].sort(key=lambda e: (str(e.get("date") or ""), e.get("started") or 0))
         elif t == "order":
             kind = op.get("kind")
@@ -597,6 +607,8 @@ class KegelclubManager:
         elif t == "abend_start":
             if self.open_evening() is not None:
                 raise HomeAssistantError("Es läuft schon ein Kegelabend – erst abschließen")
+            if any(e.get("closed") and e.get("booked") is False for e in d["abende"]):
+                raise HomeAssistantError("Der letzte Kegelabend ist noch nicht in die Kasse gebucht – erst „In Kasse buchen“")
             date = str(op.get("date") or dt_util.now().date().isoformat())[:10]
             if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", date):
                 raise HomeAssistantError("Datum bitte als JJJJ-MM-TT")
@@ -688,8 +700,20 @@ class KegelclubManager:
             ev["closed"] = close
             if close:
                 ev["closed_ts"] = ts
-        elif t == "abend_delete":
-            d["abende"] = [e for e in d["abende"] if e["id"] != op.get("id")]
+                ev["booked"] = bool(ev.get("imported")) or op.get("book") is True  # 🏦 erst „In Kasse buchen“ macht den Abend fertig
+            else:
+                ev.pop("booked", None)
+                ev.pop("booked_ts", None)
+        elif t == "abend_book":  # 🏦 „In Kasse buchen“: jetzt geht die Kegelbahn aus der Kasse, der Abend ist fertig
+            ev = self.evening(op.get("abend"))
+            if not ev.get("closed"):
+                raise HomeAssistantError("Der Kegelabend läuft noch – erst abschließen")
+            ev["booked"] = True
+            ev["booked_ts"] = ts
+        elif t == "abend_delete":  # 🗑️ mit allem, was an dem Abend am Tisch kassiert wurde
+            eid = op.get("id")
+            d["abende"] = [e for e in d["abende"] if e["id"] != eid]
+            d["kasse"] = [k for k in d["kasse"] if k.get("abend") != eid]
         elif t == "pay":
             mid = str(op["member"])
             if not any(m["id"] == mid for m in d["members"]):
@@ -725,6 +749,18 @@ class KegelclubManager:
                 if amount <= 0:
                     raise HomeAssistantError("Betrag muss größer als 0 sein")
                 k["amount"] = amount
+            if "date" in op:  # 📅 Datum nachträglich ändern (Uhrzeit bleibt)
+                date = str(op.get("date") or "")[:10]
+                if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", date):
+                    raise HomeAssistantError("Datum bitte als JJJJ-MM-TT")
+                old = dt_util.as_local(dt_util.utc_from_timestamp((k.get("ts") or ts) / 1000))
+                y, m, dd = (int(x) for x in date.split("-"))
+                k["ts"] = int(old.replace(year=y, month=m, day=dd).timestamp() * 1000)
+            if "member" in op and k.get("kind") != "out":  # 👤 Von wem? (leer = sonstige Einnahme)
+                mid = op.get("member") or None
+                if mid and not any(m["id"] == mid for m in d["members"]):
+                    raise HomeAssistantError("Dieses Mitglied gibt es nicht")
+                k["member"] = mid
         elif t == "kasse_delete":
             d["kasse"] = [k for k in d["kasse"] if k["id"] != op.get("id")]
         elif t == "settings":

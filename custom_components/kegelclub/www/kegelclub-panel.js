@@ -11,13 +11,16 @@ class KegelclubPanel extends HTMLElement {
     const menu = document.createElement("button");
     menu.textContent = "☰";
     menu.setAttribute("aria-label", "Menü");
-    menu.style.cssText = "font-size:24px;background:none;border:none;color:var(--primary-text-color);cursor:pointer;padding:8px 14px 0;";
+    menu.style.cssText = "font-size:24px;background:none;border:none;color:var(--primary-text-color);cursor:pointer;padding:4px 8px;";
     menu.style.display = this._narrow ? "" : "none";
     menu.addEventListener("click", () => this.dispatchEvent(new Event("hass-toggle-menu", { bubbles: true, composed: true })));
     this._menu = menu;
     this._wrap = document.createElement("div");
-    this._wrap.style.cssText = "max-width:760px;margin:0 auto;padding:8px 12px 24px;";
-    this.append(menu, this._wrap);
+    this._wrap.style.cssText = "max-width:900px;margin:0 auto;padding:8px 12px 24px;box-sizing:border-box;"; // 📐 gleich breit wie Einkaufsliste & Fritteuse
+    const bar = document.createElement("div");
+    bar.style.cssText = "display:flex;align-items:center;gap:8px;padding:8px 12px 0;";
+    bar.appendChild(menu);
+    this.append(bar, this._wrap);
   }
   async _load() {
     if (this._card || this._loading || !this._built) return;

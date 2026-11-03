@@ -103,7 +103,7 @@ check("Münze: Bernd zahlt seine Strafen (0,70 €)", last?.type === "pay" && la
 check("Münze wird grün", await sr(`return h.querySelector('.bill [data-a="coin"][data-id="m2"]').classList.contains('ok');`));
 await shot("3-abrechnung.png");
 // 📤 Drucken & Teilen
-check("Bildschirm-an-Knopf oben zwischen Auge und Schloss", await sr(`const b = [...h.querySelectorAll('.head .iconbtn')].map((x) => x.dataset.a).join(','); return b.includes('hide,awake,lock') && !h.querySelector('.hero [data-a="awake"]');`));
+check("Bildschirm-an-Knopf oben vor dem Schloss, kein Auge mehr", await sr(`const b = [...h.querySelectorAll('.head .iconbtn')].map((x) => x.dataset.a).join(','); return b.includes('awake,lock') && !b.includes('hide') && !h.querySelector('.hero [data-a="awake"]');`));
 await tap('.bill ~ .btnrow [data-a="share"], [data-a="share"]');
 check("Drucken & Teilen: Seite mit Vorschau", await sr(`return h.querySelectorAll('.kcprev .kstab tr').length >= 6 && !!h.querySelector('[data-a="shpdf"]') && !!h.querySelector('[data-a="shprint"]');`));
 await tap('[data-a="shmode"]');
@@ -236,6 +236,57 @@ check("App: Anmeldeseite da", await a.evaluate(() => document.querySelector("h1"
 check("App: Icon lädt", await a.evaluate(() => { const i = document.querySelector(".login img"); return i && i.complete && i.naturalWidth === 192; }));
 if (shots) await a.screenshot({ path: path.join(shots, "6-app-anmeldung.png") });
 
+// 🆕 1.0.1-beta.1: Reiter, Texte, Abrechnung ohne −, In Kasse buchen, Buchung ändern, PIN für Kasse, Kegelfigur
+{
+  const redraw = () => p.evaluate(() => { const c = document.querySelector("#c1"); c._force = true; c._render(); });
+  await p.evaluate(() => { const c = document.querySelector("#c1"); c._view = "abend"; c._open = null; c._pad = null; c._sheet = null; });
+  await redraw(); await p.waitForTimeout(100);
+  check("Reiter: Abend · Statistik · Kasse", await sr(`return [...h.querySelectorAll('.tabs .tab')].map((x) => x.dataset.v).join() === "abend,stats,kasse";`), await sr(`return [...h.querySelectorAll('.tabs .tab')].map((x) => x.dataset.v).join();`));
+  check("Oben klar: „Grundbetrag kassiert: … von …“ und Kegelbahn extra", await sr(`const t = h.querySelector('.hero').textContent; return /Grundbetrag kassiert:/.test(t) && /von/.test(t) && /In Kasse buchen/.test(t) && !/beim Abschließen in der Kasse/.test(t);`), await sr(`return h.querySelector('.hero').textContent;`));
+  check("Schalter heißt „Heute keine Strafen berechnen“", await sr(`return /Heute keine Strafen berechnen/.test(h.querySelector('.evbar').textContent);`));
+  check("Abrechnung: kein − an gezählten Strafen", await sr(`return !h.querySelector('.bill [data-a="minus"]') && h.querySelectorAll('.bill .chipx').length > 0;`));
+  p.once("dialog", (x) => x.accept());
+  await tap('[data-a="evclose"]');
+  check("Nach „Abend abschließen“: „In Kasse buchen“ rechts neben „Wieder öffnen“", await sr(`const bk=h.querySelector('[data-a="evbook"]'); return !!bk && bk.previousElementSibling?.dataset.a === "evreopen" && /Kegelabend/.test(h.querySelector('.sechead').textContent);`));
+  await shot("7-in-kasse-buchen.png");
+  await tap('[data-a="back"]');
+  check("Ohne Buchen geht's nicht weiter (kein „Kegelabend starten“)", await sr(`return !h.querySelector('form[data-a="evstart"]') && !!h.querySelector('[data-a="evbook"]');`));
+  await tap('[data-a="evbook"]');
+  last = await p.evaluate(() => fake.applied.at(-1));
+  check("„In Kasse buchen“ schickt abend_book und geht zurück zum Start", last?.type === "abend_book" && await sr(`return !!h.querySelector('form[data-a="evstart"]');`), JSON.stringify(last));
+  await tap('[data-a="tab"][data-v="kasse"]');
+  check("Kasse ohne PIN: Tipp zur PIN", await sr(`return /Mit einer PIN/.test(h.textContent);`));
+  await tap('[data-a="open"][data-k="kedit"]');
+  check("Buchung antippen = Formular zum Ändern (Name, Betrag, Datum)", await sr(`const f = h.querySelector('form[data-a="kedit"]'); return !!f && !!f.querySelector('input[name="amount"]') && !!f.querySelector('input[name="date"]');`));
+  await shot("8-buchung-aendern.png");
+  await p.locator("#c1").locator('form[data-a="kedit"] input[name="name"]').fill("Kranz Jubiläum groß");
+  await p.locator("#c1").locator('form[data-a="kedit"] input[name="amount"]').fill("40");
+  await tap('form[data-a="kedit"] button[type="submit"]');
+  last = await p.evaluate(() => fake.applied.at(-1));
+  check("Buchung geändert: kasse_edit mit Name, Betrag, Datum", last?.type === "kasse_edit" && last.name === "Kranz Jubiläum groß" && last.amount === 40 && /^\d{4}-\d\d-\d\d$/.test(last.date), JSON.stringify(last));
+  // 🔒 mit PIN: Kasse und fertige Abende nur mit PIN
+  await p.evaluate(() => { const c = document.querySelector("#c1"); c._server.pin = true; c._view = "abend"; });
+  await redraw(); await p.waitForTimeout(100);
+  if (!(await sr(`return /Gesperrt/.test(h.querySelector('[data-a="lock"]').title);`))) await tap('[data-a="lock"]'); // vom Offline-Test noch entsperrt → zusperren
+  await tap('[data-a="tab"][data-v="kasse"]');
+  check("Mit PIN: Kasse fragt nach der PIN", await sr(`return !!h.querySelector('.ppad') && /die Kasse/.test(h.textContent);`));
+  await shot("9-kasse-pin.png");
+  await p.evaluate(() => { const c = document.querySelector("#c1"); c._pad = null; c._view = "ev"; c._evId = "ev7"; });
+  await redraw(); await p.waitForTimeout(100);
+  check("Mit PIN: fertiger Abend fragt nach der PIN", await sr(`return !!h.querySelector('.ppad') && /abgeschlossene Kegelabende/.test(h.textContent);`));
+  await p.evaluate(() => { const c = document.querySelector("#c1"); c._server.pin = false; c._pad = null; c._view = "abend"; c._server.settings.mascot = true; });
+  await redraw(); await p.waitForTimeout(100);
+  check("Kegelfigur oben links (Schalter an)", await sr(`return !!h.querySelector('.head .mascotbox svg.mascot');`));
+  await shot("10-kegelfigur.png");
+  const deco = await p.evaluate(() => { const f = customElements.get("kegelclub-card").mascotDeco; return [f(new Date(2026, 11, 24)), f(new Date(2026, 9, 31)), f(new Date(2026, 6, 1)), f(new Date(2026, 0, 1))].join(); });
+  check("Kegelfigur-Kostüme wie beim Sparschwein", deco === "santa,pumpkin,summer,party", deco);
+  await tap('[data-a="tab"][data-v="set"]');
+  await tap('.lgbox >> nth=4');
+  await tap('[data-a="sheet"][data-v="mascot"]');
+  check("⚙️ → Ansicht → Maskottchen: Vorschau mit Launen + Kostümen", await sr(`return h.querySelectorAll('.mascotprev svg').length === 14;`), await sr(`return h.querySelectorAll('.mascotprev svg').length;`));
+  await shot("11-maskottchen-einstellung.png");
+  await tap('[data-a="back"]'); await tap('[data-a="back"]');
+}
 // 🏠 Zweiter Club: Karte mit „buch“ fragt nach genau diesem Club, eigener Postausgang, Editor zeigt alle Clubs
 const rb = await p.evaluate(async () => {
   fake.msgs = [];

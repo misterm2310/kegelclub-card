@@ -52,6 +52,7 @@ DEFAULT_SETTINGS = {
     "lock_all": False,        # 🔒 ganze Karte mit PIN sperren
     "view": {},               # 👁️ Ansicht für alle: Abschnitt → False = ausgeblendet
     "club_info": {},          # 🏠 Über den Club: Name, Gründung, Bahn/Ort, Termin, Notiz
+    "mascot": False,          # 🎳 Maskottchen Kegelfigur oben links (wie Sparschwein/Einkaufswagen)
 }
 
 # 💸 Beispiel-Vorlage (nur wenn man sie beim Einrichten lädt) – alles änderbar
