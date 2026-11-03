@@ -102,6 +102,14 @@ last = await p.evaluate(() => fake.applied.at(-1));
 check("Münze: Bernd zahlt seine Strafen (0,70 €)", last?.type === "pay" && last.tag === "fines" && last.amount === 0.7, JSON.stringify(last));
 check("Münze wird grün", await sr(`return h.querySelector('.bill [data-a="coin"][data-id="m2"]').classList.contains('ok');`));
 await shot("3-abrechnung.png");
+// 🎯 Spielmodus: Knopf oben neben „läuft“ – nur „Wer war's?“ und „Strafen“
+check("Spielmodus-Knopf oben neben „läuft“", await sr(`const b = h.querySelector('.head .badge'); return /läuft/.test(b?.textContent || "") && b.nextElementSibling?.dataset.a === "playmode";`));
+await tap('[data-a="playmode"]');
+await shot("3b-spielmodus.png");
+check("Spielmodus an: nur Personen und Strafen, ohne Status-Knöpfchen", await sr(`return !h.querySelector('.hero') && !h.querySelector('.evbar') && !h.querySelector('.bill') && !h.querySelector('[data-a="evclose"]') && !!h.querySelector('.ppl.play .pp') && getComputedStyle(h.querySelector('.ppl.play .stbtn')).display === "none" && !!h.querySelector('.fines .fine');`));
+check("Spielmodus wird pro Gerät gemerkt", await p.evaluate(() => localStorage.getItem("kegelclub_spielmodus") === "true"));
+await tap('[data-a="playmode"]');
+check("Spielmodus aus: wieder alles da", await sr(`return !!h.querySelector('.hero') && !!h.querySelector('.bill') && !!h.querySelector('[data-a="evclose"]');`));
 // 📤 Drucken & Teilen
 check("Bildschirm-an-Knopf oben vor dem Schloss, kein Auge mehr", await sr(`const b = [...h.querySelectorAll('.head .iconbtn')].map((x) => x.dataset.a).join(','); return b.includes('awake,lock') && !b.includes('hide') && !h.querySelector('.hero [data-a="awake"]');`));
 await tap('.bill ~ .btnrow [data-a="share"], [data-a="share"]');

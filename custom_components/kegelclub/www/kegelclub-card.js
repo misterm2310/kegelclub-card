@@ -6,7 +6,7 @@
 // - Jede Änderung (Pumpe, Einzahlung, wer da ist …) wird als kleine „Änderung“ verschickt.
 // - Klappt das Verschicken nicht (kein Netz auf der Kegelbahn), landet die Änderung im Postausgang und wird
 //   später nachgeschickt. Bis dahin rechnet die Karte selbst so, als wäre sie schon angekommen.
-const KC_VERSION = "1.0.1-beta.1";
+const KC_VERSION = "1.0.1-beta.2";
 
 const MONTHS = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
 const QKEY = "kegelclub_queue";
@@ -51,6 +51,7 @@ const KC_GUIDE = [
 ];
 // 🆕 Was ist neu – das Neueste oben (wie bei der Einkaufsliste)
 const KC_NEWS = [
+  ["1.0.1-beta.2", "🎯 <b>Spielmodus:</b> Läuft ein Kegelabend, steht oben neben „🎳 läuft“ ein Knopf. Antippen = nur noch <b>„Wer war's?“</b> und <b>„Strafen“</b> – ohne Status-Knöpfchen, Abrechnung und Reiter. Wie der Lademodus der Einkaufsliste, jedes Handy merkt es sich. „Alles“ zeigt wieder alles. · ✏️ <b>Bearbeiten klappt unter der Zeile auf</b> (Mitglieder, Strafen, Kasse, Teilbeträge) – die Zeile bleibt stehen, nochmal antippen = zu."],
   ["1.0.1-beta.1", "🏦 <b>In Kasse buchen:</b> Nach „Abend abschließen“ steht unter der Abrechnung rechts neben „Wieder öffnen“ der Knopf <b>„In Kasse buchen“</b> – erst dann geht die Kegelbahn aus der Kasse und es geht zurück zum Start. Ohne Buchen startet kein neuer Abend · 🔒 Mit PIN: <b>Kasse</b> und <b>abgeschlossene Abende</b> (ändern, löschen) nur noch mit PIN · 🗑️ Abend löschen nimmt jetzt auch seine <b>Kassenbuchungen</b> mit (Rückgängig holt alles zurück) · ✏️ <b>Buchungen nachträglich ändern</b>: antippen → Name, Betrag, Datum, von wem · 🔀 Reiter jetzt <b>Abend · Statistik · Kasse</b> · 🙌 „Strafen erlassen“ heißt jetzt <b>„Heute keine Strafen berechnen“</b> · 🧾 Oben im Abend steht klar, was beim Grundbetrag <b>schon kassiert</b> ist – die Kegelbahn steht extra · ➖ In der Abrechnung kein „−“ mehr an den Strafen (oben ändern reicht), nur noch bei „Eigene“ · 👁️ Das Auge zum Verstecken ist weg · 🎳 Neu: <b>Maskottchen Kegelfigur</b> oben links (⚙️ → Ansicht → Maskottchen, Standard aus) – mit Kostüm je nach Jahreszeit"],
   ["1.0.0", "🎉 <b>Erste offizielle Version!</b> Alles aus 12 Betas ist jetzt fest drin – Gut Holz und danke fürs Testen! · 🎳 Kegelabend mit Status (kegelt, schaut zu, gegangen, abgemeldet), Grundbetrag und eigenen Strafen als Zähler · 💰 Kasse, Schulden und Abrechnung, 📊 Statistik, 📤 Drucken &amp; Teilen als PDF · 📥 Import aus der App „Alle Neune“ · 👥 Mitglieder mit Foto und E-Mail, ℹ️ Über den Club · 🔒 PIN (auch ohne Netz), 💡 Bildschirm-an-Knopf"],
   ["0.1.0-beta.12", "📋 <b>Kopieren klappt jetzt auch in der HA-App:</b> Sperrt das Handy die Zwischenablage, kopiert die Karte auf dem Ersatzweg wie bei der Einkaufsliste – statt ein Fenster aufzumachen. Gilt für die Adresse der Offline-App und „Text kopieren“ beim Teilen."],
@@ -977,6 +978,10 @@ input.swchk:checked::after { left:20px; }
 .head { display:flex; align-items:center; gap:4px; margin:0 2px 8px; min-height:36px; }
 .title { display:flex; align-items:center; gap:8px; font-size:1.25em; font-weight:600; flex:1; min-width:0; }
 .title .logo { cursor:pointer; display:inline-flex; }
+.playbtn { display:inline-flex; align-items:center; gap:4px; margin-left:6px; cursor:pointer; border:1.5px solid var(--pc); background:transparent; color:var(--pc); border-radius:999px; padding:1px 9px 1px 6px; font:inherit; font-size:.75em; font-weight:600; }
+.playbtn ha-icon { --mdc-icon-size:16px; }
+.playbtn.on { background:var(--pc); color:var(--text-primary-color,#fff); }
+.ppl.play .stbtn { display:none; } /* 🎯 Spielmodus: ohne Status-Knöpfchen */
 .badge { cursor:pointer; background:var(--pc); color:var(--text-primary-color,#fff); border-radius:999px; padding:1px 9px; font-size:.75em; font-weight:600; }
 .tabs { display:flex; gap:6px; overflow-x:auto; padding:2px 2px 8px; scrollbar-width:none; }
 .tabs::-webkit-scrollbar { display:none; }
@@ -1010,6 +1015,7 @@ input.swchk:checked::after { left:20px; }
 .item { display:flex; align-items:center; gap:8px; padding:5px 4px 5px 6px; border-radius:12px; border-left:4px solid var(--cc, transparent); transition:opacity .25s, background .2s; }
 .item.click:hover { background:color-mix(in srgb, var(--pc) 6%, transparent); }
 .item.click { cursor:pointer; }
+.item.opened, .item:has(+ .edit) { background:color-mix(in srgb, var(--pc) 10%, transparent); } /* ✏️ die Zeile bleibt stehen, darunter klappt das Bearbeiten auf (wie in der Einkaufsliste) */
 .chk { width:26px; height:26px; flex:none; border-radius:50%; border:2px solid var(--pc); background:none; cursor:pointer; color:#fff; padding:0; display:inline-flex; align-items:center; justify-content:center; }
 .chk ha-icon { --mdc-icon-size:17px; }
 .chk.on { background:var(--kc-green); border-color:var(--kc-green); }
@@ -1540,13 +1546,14 @@ class KegelclubCard extends HTMLElement {
       const v = d.settings.view || {};
       const tabs = [["abend", "bowling", "Abend"], ...(v.statistik === false ? [] : [["stats", "chart-bar", "Statistik"]]), ...(v.kasse === false ? [] : [["kasse", d.pin && !pinOpen() ? "lock-outline" : "bank-outline", "Kasse"]])];
       const s = d.summary;
-      const badge = s.running ? `<span class="badge" data-a="tab" data-v="abend" title="Kegelabend läuft">🎳 läuft</span>` : s.debtors ? `<span class="badge" data-a="tab" data-v="kasse" title="so viele haben noch offen">${s.debtors}</span>` : "";
+      const playOn = !!store.get("kegelclub_spielmodus", false);
+      const badge = s.running ? `<span class="badge" data-a="tab" data-v="abend" title="Kegelabend läuft">🎳 läuft</span><button class="playbtn ${playOn ? "on" : ""}" data-a="playmode" title="${playOn ? "Spielmodus aus: wieder alles zeigen" : "Spielmodus: nur „Wer war's?“ und „Strafen“ zeigen"}" aria-pressed="${playOn}">${ic(playOn ? "eye-outline" : "target")}<span>${playOn ? "Alles" : "Spielmodus"}</span></button>` : s.debtors ? `<span class="badge" data-a="tab" data-v="kasse" title="so viele haben noch offen">${s.debtors}</span>` : "";
       const title = d.book && !d.book.primary ? esc(d.book.title) : esc(this._config?.title && this._config.title !== "Kegelclub" ? this._config.title : "");
       body = `<div class="head"><div class="title">${d.settings.mascot ? `<span class="logo mascotbox" data-a="tab" data-v="abend" title="Zurück zum Abend">${kcMascotSvg(kcMascotMood(d), kcMascotDeco())}</span>` : `<span class="logo" data-a="tab" data-v="abend" title="Zurück zum Abend">${ic("bowling")}</span>`}${title ? `<span data-noicon>${title}</span>` : ""}${this._lockAll ? "" : badge}</div>${tools}</div>`;
       body += this._updHtml(d);
       const bday = this._clubBirthday(d);
       if (bday) body += `<div class="clubbday" role="status">🎉 ${esc(bday)}</div>`;
-      if (!page && this._view !== "set") body += `<div class="tabs">${tabs.map(([k, i, l]) => `<button class="tab ${this._view === k ? "active" : ""}" data-a="tab" data-v="${k}">${ic(i)}${l}</button>`).join("")}</div>`;
+      if (!page && this._view !== "set" && !(playOn && s.running && this._view === "abend")) body += `<div class="tabs">${tabs.map(([k, i, l]) => `<button class="tab ${this._view === k ? "active" : ""}" data-a="tab" data-v="${k}">${ic(i)}${l}</button>`).join("")}</div>`;
       if (!locked) pinTouch();
       body += page ? `<div class="sec pagehost"><div class="sechead"><span class="ic" style="--ic:${page.color}">${ic(page.icon)}</span><h3>${page.title}</h3></div><div class="pagebody">${page.html}</div></div>`
         : this._view === "edit" ? this._editView(d) : this._view === "set" ? this._setView(d) : this._view === "kasse" ? this._kasseView(d) : this._view === "stats" ? this._statsView(d) : this._abendView(d);
@@ -1691,8 +1698,11 @@ class KegelclubCard extends HTMLElement {
     const feeSum = r2(ids.reduce((s, m) => s + b.people[m].fee, 0));
     const feeOpen = ids.filter((m) => b.people[m].fee > 0 && this._paidAt(d, ev.id, m, "base") < b.people[m].fee - 0.004);
     const feePaid = r2(ids.reduce((s, m) => s + Math.min(b.people[m].fee, this._paidAt(d, ev.id, m, "base")), 0));
+    const play = !!store.get("kegelclub_spielmodus", false); // 🎯 Spielmodus: nur „Wer war's?“ und „Strafen“
+    let h = "";
+    if (!play) {
     // 🧾 Klar getrennt: was beim Grundbetrag schon kassiert ist – und die Kegelbahn extra (die geht erst mit „In Kasse buchen“ aus der Kasse)
-    let h = `<div class="hero" style="--hc:#fb8c00"><div class="lbl">Kegelabend · ${esc(fmtDate(ev.date))}${ev.waiting ? " · ⏳ wartet" : ""}</div><div class="big" style="font-size:1.9em">${this._m(finesSum)}</div>
+    h = `<div class="hero" style="--hc:#fb8c00"><div class="lbl">Kegelabend · ${esc(fmtDate(ev.date))}${ev.waiting ? " · ⏳ wartet" : ""}</div><div class="big" style="font-size:1.9em">${this._m(finesSum)}</div>
       <div class="lbl">Strafen heute${ev.no_fines ? " (werden heute nicht berechnet)" : ""}</div>
       ${feeSum ? `<div class="lbl">${ic("hand-coin-outline")} Grundbetrag kassiert: <b>${this._m(feePaid)}</b> von ${money(feeSum)}</div>` : ""}
       ${b.lane ? `<div class="lbl">${ic("bowling")} Kegelbahn ${money(b.lane)}${b.rules.lane_mode === "kasse" ? " – wird beim „In Kasse buchen“ bezahlt" : " – auf alle aufgeteilt"}</div>` : ""}</div>`;
@@ -1707,8 +1717,9 @@ class KegelclubCard extends HTMLElement {
         <form class="add pinf" data-a="guestnew"><input name="name" placeholder="Neuer Gast: Name" autocomplete="off"><button class="addbtn" type="submit" title="Gast dazu">${ic("plus")}</button></form>
         <div class="btnrow end"><button class="btn small" data-a="guest">${ic("close")}Fertig</button></div></div>`;
     }
+    }
     h += this._gh("account-group-outline", "#1e88e5", "Wer war's?", sel ? `<span data-noicon>${esc(members[sel]?.name || "")}</span>` : "Person antippen");
-    h += `<div class="ppl">${all.map((mid) => {
+    h += `<div class="ppl ${play ? "play" : ""}">${all.map((mid) => {
       const m = members[mid] || {}, p = b.people[mid], st = STATUS[p.status] || STATUS.play;
       return `<div class="pp ${sel === mid ? "sel" : ""} ${here(mid) ? "" : "off"} ${p.status === "gone" ? "gone" : ""}" data-a="pick" data-id="${esc(mid)}" role="button">${m.guest ? `<span class="gst">Gast</span>` : ""}<span class="av ${m.photo ? "ph" : ""}" style="--ac:${mcol(d, mid)}">${m.photo ? `<img src="${esc(m.photo)}" alt="">` : esc(initials(m.name))}</span><span class="nm" data-noicon>${esc(m.name || "?")}</span><span class="sum">${this._m(p.fines)}</span>
         <button class="stbtn" style="--sc:${st.color}" data-a="status" data-id="${esc(mid)}" title="Antippen = weiter: kegelt → schaut zu → gegangen → abgemeldet → nicht abgemeldet">${ic(st.icon)}${esc(this._stLabel(ev, mid, p.status))}</button></div>`;
@@ -1722,6 +1733,7 @@ class KegelclubCard extends HTMLElement {
     if (sel && this._hand) h += `<form class="edit" data-a="hand"><div class="f"><label class="wide">Wofür? (z. B. Bier umgekippt)<input name="name" autocomplete="off"></label><label>Betrag (${KC_MONEY.sym})<input name="amount" inputmode="decimal" autocomplete="off"></label></div>
       <div class="btnrow end"><button type="button" class="btn" data-a="handopen">${ic("close")}Abbrechen</button><button class="btn main" type="submit">${ic("check")}Für ${esc(members[sel]?.name || "")} buchen</button></div></form>`;
     if (!fines.length) h += `<div class="empty">Noch keine Strafen – unter ⚙️ → „Mitglieder & Strafen“ anlegen.</div>`;
+    if (play) return h + `<p class="small playhint">🎯 Spielmodus – oben auf „Alles“ tippen zeigt wieder Abrechnung, Grundbetrag und „Abend abschließen“.</p>`;
     h += this._billHtml(d, ev, b, true);
     h += `<div class="btnrow"><button class="btn main" data-a="evclose" data-id="${esc(ev.id)}">${ic("flag-checkered")}Abend abschließen</button><button class="btn" data-a="share" data-id="${esc(ev.id)}">${ic("share-variant-outline")}Teilen</button></div>`;
     return h;
@@ -1909,9 +1921,8 @@ ${scope} .ksf{text-align:center;font-size:10px;color:#999;margin-top:12px}`;
     if (!d.pin) h += `<div class="tip">💡 Tipp: Mit einer <b>PIN</b> (⚙️ → Schutz) öffnet sich die Kasse nur noch mit PIN – und fertige Abende lassen sich nur noch mit PIN ändern.</div>`;
     const debtors = s.people.filter((p) => p.debt > 0.004).sort((a, b) => b.debt - a.debt);
     h += this._gh("account-cash-outline", "var(--kc-red)", "Wer schuldet was", debtors.length ? this._m(s.open, "neg") : "");
-    h += debtors.length ? debtors.map((p) => this._open?.kind === "pay" && this._open.id === p.id ? this._payForm(p)
-      : `<div class="item click" style="--cc:${mcol(d, p.id)}" data-a="open" data-k="pay" data-id="${esc(p.id)}" title="Antippen = Teilbetrag"><div class="n"><b data-noicon>${esc(p.name)}</b><div class="meta">${p.guest ? `<span class="tag">Gast</span>` : ""}<span class="tag">bezahlt ${money(p.paid)}</span></div></div><div class="amt">${this._m(p.debt, "neg")}</div>
-        <button class="iconbtn okbtn" data-a="payall" data-id="${esc(p.id)}" title="✓ Hat alles bezahlt" aria-label="bezahlt">${ic("check-bold")}${this._lb("bezahlt")}</button></div>`).join("") : `<div class="empty">Alle haben bezahlt 🎉</div>`;
+    h += debtors.length ? debtors.map((p) => (`<div class="item click" style="--cc:${mcol(d, p.id)}" data-a="open" data-k="pay" data-id="${esc(p.id)}" title="Antippen = Teilbetrag"><div class="n"><b data-noicon>${esc(p.name)}</b><div class="meta">${p.guest ? `<span class="tag">Gast</span>` : ""}<span class="tag">bezahlt ${money(p.paid)}</span></div></div><div class="amt">${this._m(p.debt, "neg")}</div>
+        <button class="iconbtn okbtn" data-a="payall" data-id="${esc(p.id)}" title="✓ Hat alles bezahlt" aria-label="bezahlt">${ic("check-bold")}${this._lb("bezahlt")}</button></div>` + (this._open?.kind === "pay" && this._open.id === p.id ? this._payForm(p) : ""))).join("") : `<div class="empty">Alle haben bezahlt 🎉</div>`;
     const credit = s.people.filter((p) => p.debt < -0.004);
     if (credit.length) h += `<p class="small">Guthaben: ${credit.map((p) => `<span data-noicon>${esc(p.name)}</span> ${money(-p.debt)}`).join(" · ")}</p>`;
     // ＋ Einzahlung / − Ausgabe
@@ -1931,8 +1942,8 @@ ${scope} .ksf{text-align:center;font-size:10px;color:#999;margin-top:12px}`;
     const n = this._allK ? list.length : 25;
     h += this._gh("format-list-bulleted", "#546e7a", "Buchungen", String(list.length));
     const editable = (k) => !k.imported && !k.lane;
-    h += list.slice(0, n).map((k) => this._open?.kind === "kedit" && this._open.id === k.id ? this._keditForm(d, k) : `<div class="item ${editable(k) ? "click" : ""}" style="--cc:${k.kind === "out" ? "var(--kc-red)" : "var(--kc-green)"}" ${editable(k) ? `data-a="open" data-k="kedit" data-id="${esc(k.id)}" title="Antippen = ändern"` : ""}><div class="n"><b data-noicon>${esc(k.name)}</b><div class="meta"><span class="tag">${k.ts ? new Date(k.ts).toLocaleDateString(kcLoc(), { day: "2-digit", month: "2-digit", year: "2-digit" }) : ""}</span>${k.member ? `<span class="tag" data-noicon>${esc(this._name(d, k.member))}</span>` : ""}${k.waiting || this._queue.some((o) => (o.id || o.op_id) === k.id) ? `<span class="tag wait">⏳ wartet</span>` : ""}${k.imported ? `<span class="tag">Alle Neune</span>` : ""}${k.lane ? `<span class="tag">${numDe(k.hours)} Std.</span>` : ""}</div></div>
-      <div class="amt">${this._m(k.kind === "out" ? -k.amount : k.amount, k.kind === "out" ? "neg" : "pos")}</div>${k.imported || k.lane ? "" : `<button class="iconbtn" data-a="kdel" data-id="${esc(k.id)}" title="Löschen">${ic("close")}${this._lb("löschen")}</button>`}</div>`).join("")
+    h += list.slice(0, n).map((k) => (`<div class="item ${editable(k) ? "click" : ""}" style="--cc:${k.kind === "out" ? "var(--kc-red)" : "var(--kc-green)"}" ${editable(k) ? `data-a="open" data-k="kedit" data-id="${esc(k.id)}" title="Antippen = ändern"` : ""}><div class="n"><b data-noicon>${esc(k.name)}</b><div class="meta"><span class="tag">${k.ts ? new Date(k.ts).toLocaleDateString(kcLoc(), { day: "2-digit", month: "2-digit", year: "2-digit" }) : ""}</span>${k.member ? `<span class="tag" data-noicon>${esc(this._name(d, k.member))}</span>` : ""}${k.waiting || this._queue.some((o) => (o.id || o.op_id) === k.id) ? `<span class="tag wait">⏳ wartet</span>` : ""}${k.imported ? `<span class="tag">Alle Neune</span>` : ""}${k.lane ? `<span class="tag">${numDe(k.hours)} Std.</span>` : ""}</div></div>
+      <div class="amt">${this._m(k.kind === "out" ? -k.amount : k.amount, k.kind === "out" ? "neg" : "pos")}</div>${k.imported || k.lane ? "" : `<button class="iconbtn" data-a="kdel" data-id="${esc(k.id)}" title="Löschen">${ic("close")}${this._lb("löschen")}</button>`}</div>` + (this._open?.kind === "kedit" && this._open.id === k.id ? this._keditForm(d, k) : ""))).join("")
       + (list.length > n ? `<div class="btnrow"><button class="btn small" data-a="allk">${ic("chevron-down")}Alle ${list.length} zeigen</button></div>` : "")
       + (list.length ? "" : `<div class="empty">Noch keine Buchungen.</div>`);
     return h;
@@ -2058,8 +2069,7 @@ ${scope} .ksf{text-align:center;font-size:10px;color:#999;margin-top:12px}`;
 
   // ---------------------------------------------------------------- 👥 Mitglieder & Strafen
   _editView(d) {
-    const row = (kind, it, meta, sortable) => this._open?.kind === kind && this._open.id === it.id ? this._form(d, kind, it)
-      : `<div class="item click ${it.active === false ? "done" : ""}" data-a="open" data-k="${kind}" data-id="${esc(it.id)}" ${sortable ? `data-row="${esc(it.id)}"` : ""} ${kind === "member" ? `style="--cc:${mcol(d, it.id)}"` : ""}>${sortable ? `<span class="grip" data-grip="${kind}" title="Ziehen zum Verschieben">${ic("drag")}</span>` : ""}${kind === "strafe" ? `<ha-icon icon="${esc(it.icon || "mdi:bowling")}" style="color:#fb8c00"></ha-icon>` : this._avatar(d, it.id, 32)}<div class="n"><b data-noicon>${esc(it.name)}</b>${meta.length ? `<div class="meta">${meta.map((x) => `<span class="tag">${x}</span>`).join("")}</div>` : ""}</div>${kind === "strafe" ? `<div class="amt">${money(it.amount)}</div>` : ""}<span class="iconbtn">${ic("pencil-outline")}</span></div>`;
+    const row = (kind, it, meta, sortable) => (`<div class="item click ${it.active === false ? "done" : ""}" data-a="open" data-k="${kind}" data-id="${esc(it.id)}" ${sortable ? `data-row="${esc(it.id)}"` : ""} ${kind === "member" ? `style="--cc:${mcol(d, it.id)}"` : ""}>${sortable ? `<span class="grip" data-grip="${kind}" title="Ziehen zum Verschieben">${ic("drag")}</span>` : ""}${kind === "strafe" ? `<ha-icon icon="${esc(it.icon || "mdi:bowling")}" style="color:#fb8c00"></ha-icon>` : this._avatar(d, it.id, 32)}<div class="n"><b data-noicon>${esc(it.name)}</b>${meta.length ? `<div class="meta">${meta.map((x) => `<span class="tag">${x}</span>`).join("")}</div>` : ""}</div>${kind === "strafe" ? `<div class="amt">${money(it.amount)}</div>` : ""}<span class="iconbtn">${ic("pencil-outline")}</span></div>` + (this._open?.kind === kind && this._open.id === it.id ? this._form(d, kind, it) : ""));
     const head = (kind, icon, color, title, extra = "") => this._gh(icon, color, title, `${extra}<button class="btn small" data-a="new" data-k="${kind}">${ic("plus")}Neu</button>`) + (this._open?.kind === kind && this._open.id === "new" ? this._form(d, kind, {}) : "");
     const act = d.members.filter((m) => !m.guest && m.active !== false), guests = d.members.filter((m) => m.guest && m.active !== false), left = d.members.filter((m) => m.active === false);
     const mails = d.members.filter((m) => m.active !== false && !m.guest && m.email).length;
@@ -2433,6 +2443,13 @@ ${scope} .ksf{text-align:center;font-size:10px;color:#999;margin-top:12px}`;
     const a = el.dataset.a, id = el.dataset.id, d = this._data;
     const redraw = () => { this._force = true; this._render(); };
     const ev = d && evFind(d);
+    if (a === "playmode") { // 🎯 Spielmodus an/aus (pro Gerät gemerkt) – wie der Lademodus der Einkaufsliste
+      const on = !store.get("kegelclub_spielmodus", false);
+      store.put("kegelclub_spielmodus", on);
+      this._view = "abend"; this._open = null; this._sheet = null; this._guestPick = false; this._hand = false;
+      this._toast(on ? "🎯 Spielmodus: nur noch Personen und Strafen" : "👀 Wieder alles da");
+      redraw(); return;
+    }
     if (a === "tab") { this._view = el.dataset.v; this._open = null; this._sheet = null; this._guestPick = false; if (this._pad?.step !== "unlock") this._pad = null; redraw(); }
     else if (a === "lock") {
       const appLock = this._app && window.__kcAppLock?.on?.();
@@ -2597,6 +2614,7 @@ ${scope} .ksf{text-align:center;font-size:10px;color:#999;margin-top:12px}`;
     else if (a === "statp") { this._statP = id || null; redraw(); }
     // 👥 Mitglieder & Strafen
     else if ((a === "open" || a === "new") && this._dragEnd && Date.now() - this._dragEnd < 400) { /* gerade gezogen */ }
+    else if (a === "open" && this._open?.kind === el.dataset.k && this._open.id === id) { this._open = null; redraw(); } // ✏️ nochmal antippen = zuklappen
     else if (a === "open" || a === "new") { this._open = { kind: el.dataset.k, id: a === "new" ? "new" : id }; redraw(); }
     else if (a === "cancel") { this._open = null; redraw(); }
     else if (a === "payer") { const f = el.closest("form"); f.querySelector('input[name="payer"]').value = el.dataset.v; el.parentElement.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b === el)); }
