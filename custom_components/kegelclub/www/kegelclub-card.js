@@ -6,7 +6,7 @@
 // - Jede Änderung (Pumpe, Einzahlung, wer da ist …) wird als kleine „Änderung“ verschickt.
 // - Klappt das Verschicken nicht (kein Netz auf der Kegelbahn), landet die Änderung im Postausgang und wird
 //   später nachgeschickt. Bis dahin rechnet die Karte selbst so, als wäre sie schon angekommen.
-const KC_VERSION = "1.0.1-beta.2";
+const KC_VERSION = "1.0.1-beta.3";
 
 const MONTHS = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
 const QKEY = "kegelclub_queue";
@@ -51,6 +51,7 @@ const KC_GUIDE = [
 ];
 // 🆕 Was ist neu – das Neueste oben (wie bei der Einkaufsliste)
 const KC_NEWS = [
+  ["1.0.1-beta.3", "🗂️ <b>Mitglieder & Strafen wie die Kategorien der Einkaufsliste:</b> jede Zeile ein Kasten mit Farbstreifen, „antippen zum Einstellen“ – Einstellen klappt darunter auf."],
   ["1.0.1-beta.2", "🎯 <b>Spielmodus:</b> Läuft ein Kegelabend, steht oben neben „🎳 läuft“ ein Knopf. Antippen = nur noch <b>„Wer war's?“</b> und <b>„Strafen“</b> – ohne Status-Knöpfchen, Abrechnung und Reiter. Wie der Lademodus der Einkaufsliste, jedes Handy merkt es sich. „Alles“ zeigt wieder alles. · ✏️ <b>Bearbeiten klappt unter der Zeile auf</b> (Mitglieder, Strafen, Kasse, Teilbeträge) – die Zeile bleibt stehen, nochmal antippen = zu."],
   ["1.0.1-beta.1", "🏦 <b>In Kasse buchen:</b> Nach „Abend abschließen“ steht unter der Abrechnung rechts neben „Wieder öffnen“ der Knopf <b>„In Kasse buchen“</b> – erst dann geht die Kegelbahn aus der Kasse und es geht zurück zum Start. Ohne Buchen startet kein neuer Abend · 🔒 Mit PIN: <b>Kasse</b> und <b>abgeschlossene Abende</b> (ändern, löschen) nur noch mit PIN · 🗑️ Abend löschen nimmt jetzt auch seine <b>Kassenbuchungen</b> mit (Rückgängig holt alles zurück) · ✏️ <b>Buchungen nachträglich ändern</b>: antippen → Name, Betrag, Datum, von wem · 🔀 Reiter jetzt <b>Abend · Statistik · Kasse</b> · 🙌 „Strafen erlassen“ heißt jetzt <b>„Heute keine Strafen berechnen“</b> · 🧾 Oben im Abend steht klar, was beim Grundbetrag <b>schon kassiert</b> ist – die Kegelbahn steht extra · ➖ In der Abrechnung kein „−“ mehr an den Strafen (oben ändern reicht), nur noch bei „Eigene“ · 👁️ Das Auge zum Verstecken ist weg · 🎳 Neu: <b>Maskottchen Kegelfigur</b> oben links (⚙️ → Ansicht → Maskottchen, Standard aus) – mit Kostüm je nach Jahreszeit"],
   ["1.0.0", "🎉 <b>Erste offizielle Version!</b> Alles aus 12 Betas ist jetzt fest drin – Gut Holz und danke fürs Testen! · 🎳 Kegelabend mit Status (kegelt, schaut zu, gegangen, abgemeldet), Grundbetrag und eigenen Strafen als Zähler · 💰 Kasse, Schulden und Abrechnung, 📊 Statistik, 📤 Drucken &amp; Teilen als PDF · 📥 Import aus der App „Alle Neune“ · 👥 Mitglieder mit Foto und E-Mail, ℹ️ Über den Club · 🔒 PIN (auch ohne Netz), 💡 Bildschirm-an-Knopf"],
@@ -1015,6 +1016,9 @@ input.swchk:checked::after { left:20px; }
 .item { display:flex; align-items:center; gap:8px; padding:5px 4px 5px 6px; border-radius:12px; border-left:4px solid var(--cc, transparent); transition:opacity .25s, background .2s; }
 .item.click:hover { background:color-mix(in srgb, var(--pc) 6%, transparent); }
 .item.click { cursor:pointer; }
+.item.catrow { border:1px solid color-mix(in srgb, var(--primary-text-color, #000) 22%, transparent); border-left:6px solid var(--cc); border-radius:12px; background:var(--card-background-color, var(--ha-card-background, #fff)); margin:0 0 6px; padding:6px 10px 6px 6px; }
+.item.catrow > ha-icon { color:var(--cc); }
+.cathint { color:var(--secondary-text-color); align-self:center; }
 .item.opened, .item:has(+ .edit) { background:color-mix(in srgb, var(--pc) 10%, transparent); } /* ✏️ die Zeile bleibt stehen, darunter klappt das Bearbeiten auf (wie in der Einkaufsliste) */
 .chk { width:26px; height:26px; flex:none; border-radius:50%; border:2px solid var(--pc); background:none; cursor:pointer; color:#fff; padding:0; display:inline-flex; align-items:center; justify-content:center; }
 .chk ha-icon { --mdc-icon-size:17px; }
@@ -2069,7 +2073,8 @@ ${scope} .ksf{text-align:center;font-size:10px;color:#999;margin-top:12px}`;
 
   // ---------------------------------------------------------------- 👥 Mitglieder & Strafen
   _editView(d) {
-    const row = (kind, it, meta, sortable) => (`<div class="item click ${it.active === false ? "done" : ""}" data-a="open" data-k="${kind}" data-id="${esc(it.id)}" ${sortable ? `data-row="${esc(it.id)}"` : ""} ${kind === "member" ? `style="--cc:${mcol(d, it.id)}"` : ""}>${sortable ? `<span class="grip" data-grip="${kind}" title="Ziehen zum Verschieben">${ic("drag")}</span>` : ""}${kind === "strafe" ? `<ha-icon icon="${esc(it.icon || "mdi:bowling")}" style="color:#fb8c00"></ha-icon>` : this._avatar(d, it.id, 32)}<div class="n"><b data-noicon>${esc(it.name)}</b>${meta.length ? `<div class="meta">${meta.map((x) => `<span class="tag">${x}</span>`).join("")}</div>` : ""}</div>${kind === "strafe" ? `<div class="amt">${money(it.amount)}</div>` : ""}<span class="iconbtn">${ic("pencil-outline")}</span></div>` + (this._open?.kind === kind && this._open.id === it.id ? this._form(d, kind, it) : ""));
+    // 🗂️ wie die Kategorien der Einkaufsliste: Kasten mit Farbstreifen, antippen = darunter einstellen
+    const row = (kind, it, meta, sortable) => (`<div class="item click catrow ${it.active === false ? "done" : ""}" data-a="open" data-k="${kind}" data-id="${esc(it.id)}" ${sortable ? `data-row="${esc(it.id)}"` : ""} style="--cc:${kind === "member" ? mcol(d, it.id) : "#fb8c00"}" title="Antippen zum Einstellen">${sortable ? `<span class="grip" data-grip="${kind}" title="Ziehen zum Verschieben">${ic("drag")}</span>` : ""}${kind === "strafe" ? `<ha-icon icon="${esc(it.icon || "mdi:bowling")}" style="color:#fb8c00"></ha-icon>` : this._avatar(d, it.id, 32)}<div class="n"><b data-noicon>${esc(it.name)}</b><div class="meta">${meta.map((x) => `<span class="tag">${x}</span>`).join("")}<small class="cathint">antippen zum Einstellen</small></div></div>${kind === "strafe" ? `<div class="amt">${money(it.amount)}</div>` : ""}</div>` + (this._open?.kind === kind && this._open.id === it.id ? this._form(d, kind, it) : ""));
     const head = (kind, icon, color, title, extra = "") => this._gh(icon, color, title, `${extra}<button class="btn small" data-a="new" data-k="${kind}">${ic("plus")}Neu</button>`) + (this._open?.kind === kind && this._open.id === "new" ? this._form(d, kind, {}) : "");
     const act = d.members.filter((m) => !m.guest && m.active !== false), guests = d.members.filter((m) => m.guest && m.active !== false), left = d.members.filter((m) => m.active === false);
     const mails = d.members.filter((m) => m.active !== false && !m.guest && m.email).length;
