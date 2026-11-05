@@ -224,7 +224,12 @@ await tap('[data-a="back"]');
 await tap('.lgbox >> nth=1');
 await tap('[data-a="sheet"][data-v="rules"]');
 check("Regeln: Grundbetrag 7,5", await sr(`return h.querySelector('input[data-v="base_fee"]')?.value === "7,5";`));
+check("Regeln: Erklärungen erst zu (ⓘ statt Textwand)", await sr(`return h.querySelectorAll('.finfo').length >= 5 && !h.querySelector('[data-fh="base_fee"]').checkVisibility();`));
+await tap('.finfo[data-v="base_fee"]');
+check("Regeln: ⓘ antippen klappt die Erklärung auf", await sr(`const x = h.querySelector('[data-fh="base_fee"]'); return x.checkVisibility() && /ab sofort/.test(x.textContent) && h.querySelector('.finfo[data-v="base_fee"]').getAttribute('aria-expanded') === 'true';`));
 await shot("5-regeln.png");
+await tap('.finfo[data-v="base_fee"]');
+check("Regeln: nochmal antippen klappt sie zu", await sr(`return !h.querySelector('[data-fh="base_fee"]').checkVisibility();`));
 await tap('[data-a="back"]');
 
 // 🌍 Englisch

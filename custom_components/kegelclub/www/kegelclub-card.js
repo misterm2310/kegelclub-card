@@ -6,7 +6,7 @@
 // - Jede Änderung (Pumpe, Einzahlung, wer da ist …) wird als kleine „Änderung“ verschickt.
 // - Klappt das Verschicken nicht (kein Netz auf der Kegelbahn), landet die Änderung im Postausgang und wird
 //   später nachgeschickt. Bis dahin rechnet die Karte selbst so, als wäre sie schon angekommen.
-const KC_VERSION = "1.0.1-beta.3";
+const KC_VERSION = "1.0.1-beta.4";
 
 const MONTHS = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
 const QKEY = "kegelclub_queue";
@@ -51,6 +51,7 @@ const KC_GUIDE = [
 ];
 // 🆕 Was ist neu – das Neueste oben (wie bei der Einkaufsliste)
 const KC_NEWS = [
+  ["1.0.1-beta.4", "ⓘ <b>Erklärungen zum Antippen</b> wie bei der Einkaufsliste: Neben den Feldern in ⚙️ (Regeln &amp; Beträge, Über den Club, Mitglieder, Strafen, Schutz …) steht ein kleines <b>i</b> – antippen klappt die Erklärung auf, statt dass dort eine Textwand steht · 🆕 Hinweis: Ab Home Assistant 2026.11 findest du HACS unter <b>Einstellungen → Marketplace</b>"],
   ["1.0.1-beta.3", "🗂️ <b>Mitglieder & Strafen wie die Kategorien der Einkaufsliste:</b> jede Zeile ein Kasten mit Farbstreifen, „antippen zum Einstellen“ – Einstellen klappt darunter auf."],
   ["1.0.1-beta.2", "🎯 <b>Spielmodus:</b> Läuft ein Kegelabend, steht oben neben „🎳 läuft“ ein Knopf. Antippen = nur noch <b>„Wer war's?“</b> und <b>„Strafen“</b> – ohne Status-Knöpfchen, Abrechnung und Reiter. Wie der Lademodus der Einkaufsliste, jedes Handy merkt es sich. „Alles“ zeigt wieder alles. · ✏️ <b>Bearbeiten klappt unter der Zeile auf</b> (Mitglieder, Strafen, Kasse, Teilbeträge) – die Zeile bleibt stehen, nochmal antippen = zu."],
   ["1.0.1-beta.1", "🏦 <b>In Kasse buchen:</b> Nach „Abend abschließen“ steht unter der Abrechnung rechts neben „Wieder öffnen“ der Knopf <b>„In Kasse buchen“</b> – erst dann geht die Kegelbahn aus der Kasse und es geht zurück zum Start. Ohne Buchen startet kein neuer Abend · 🔒 Mit PIN: <b>Kasse</b> und <b>abgeschlossene Abende</b> (ändern, löschen) nur noch mit PIN · 🗑️ Abend löschen nimmt jetzt auch seine <b>Kassenbuchungen</b> mit (Rückgängig holt alles zurück) · ✏️ <b>Buchungen nachträglich ändern</b>: antippen → Name, Betrag, Datum, von wem · 🔀 Reiter jetzt <b>Abend · Statistik · Kasse</b> · 🙌 „Strafen erlassen“ heißt jetzt <b>„Heute keine Strafen berechnen“</b> · 🧾 Oben im Abend steht klar, was beim Grundbetrag <b>schon kassiert</b> ist – die Kegelbahn steht extra · ➖ In der Abrechnung kein „−“ mehr an den Strafen (oben ändern reicht), nur noch bei „Eigene“ · 👁️ Das Auge zum Verstecken ist weg · 🎳 Neu: <b>Maskottchen Kegelfigur</b> oben links (⚙️ → Ansicht → Maskottchen, Standard aus) – mit Kostüm je nach Jahreszeit"],
@@ -1061,7 +1062,7 @@ form.add input.amount { text-align:right; }
 .edit { border:1px solid var(--divider-color, rgba(127,127,127,.2)); border-radius:12px; padding:10px; margin:6px 2px; }
 .f { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
 .f label { display:flex; flex-direction:column; gap:3px; font-size:.8em; color:var(--secondary-text-color); }
-.f label.wide { grid-column:1 / -1; }
+.f label.wide, .f .fhint { grid-column:1 / -1; }
 .months { display:flex; flex-wrap:wrap; gap:4px; }
 .months button { border:1.5px solid color-mix(in srgb, var(--pc) 45%, transparent); background:none; border-radius:999px; padding:3px 9px; font-size:.85em; cursor:pointer; }
 .months button.on { background:var(--pc); color:#fff; border-color:var(--pc); }
@@ -1286,6 +1287,11 @@ ol.steps li { margin:3px 0; }
 .pp.gone { opacity:.75; }
 .clubbday { margin:0 2px 10px; padding:8px 12px; border-radius:12px; background:color-mix(in srgb, #fb8c00 14%, transparent); font-weight:500; text-align:center; }
 .edit textarea { width:100%; box-sizing:border-box; font:inherit; border-radius:10px; padding:8px; border:1px solid var(--divider-color); background:var(--card-background-color); color:var(--primary-text-color); resize:vertical; }
+.flab { display:inline-flex; align-items:center; gap:6px; }
+.finfo { flex:none; width:20px; height:20px; padding:0; margin-left:6px; border-radius:50%; border:1.5px solid var(--primary-color, #03a9f4); background:none; color:var(--primary-color, #03a9f4); font:700 11px/1 serif; font-style:italic; cursor:pointer; vertical-align:middle; }
+.finfo[aria-expanded="true"] { background:var(--primary-color, #03a9f4); color:#fff; }
+.fhint { margin:4px 2px 8px; padding:8px 10px; border-radius:10px; background:color-mix(in srgb, var(--primary-color, #03a9f4) 10%, transparent); }
+.fhint[hidden] { display:none; }
 .iconbtn.awake.on { color:var(--primary-color,#03a9f4); }
 /* 📜 Lauftext für zu lange Namen */
 .tk { display:block; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; min-width:0; }
@@ -1662,12 +1668,11 @@ class KegelclubCard extends HTMLElement {
   }
   _aboutHtml(d) {
     const ci = d.settings.club_info || {};
-    const fld = (k, label, ph, type = "text") => `<label class="wide">${label}<input data-a="clubinfo" data-v="${k}" type="${type}" value="${esc(ci[k] || "")}" placeholder="${esc(ph)}" autocomplete="off"></label>`;
+    const fld = (k, label, ph, type = "text", help = "") => `<label class="wide"><span class="flab">${label}${help ? this._fi("ci_" + k) : ""}</span><input data-a="clubinfo" data-v="${k}" type="${type}" value="${esc(ci[k] || "")}" placeholder="${esc(ph)}" autocomplete="off"></label>${help ? this._fh("ci_" + k, help) : ""}`;
     const age = this._clubAge(d);
     return `${age ? `<div class="hero" style="--hc:#fb8c00"><div class="lbl" data-noicon>${esc(ci.name || "Euer Club")}</div><div class="big" style="font-size:1.5em">${esc(age.split(" · ")[1])}</div><div class="lbl">${esc(age.split(" · ")[0])}</div></div>` : ""}
-      <div class="edit"><div class="f">${fld("name", "Name des Clubs", "z. B. Die eckigen Kugeln")}${fld("founded", "Gegründet am", "", "date")}${fld("place", "Kegelbahn / Ort", "z. B. Gasthof Zur Linde, Bahn 2")}${fld("schedule", "Wann kegelt ihr?", "z. B. jeden 1. Samstag im Monat")}
-      <label class="wide">Notizen (Geschichte, Regeln, Sprüche …)<textarea data-a="clubinfo" data-v="note" rows="5" placeholder="Alles, was ihr euch merken wollt">${esc(ci.note || "")}</textarea></label></div></div>
-      <p class="small">Der Name steht auch oben auf Ausdruck und PDF. Am Gründungstag gratuliert die Karte. Alles wird gespeichert, sobald du ein Feld verlässt.</p>`;
+      <div class="edit"><div class="f">${fld("name", "Name des Clubs", "z. B. Die eckigen Kugeln", "text", "Steht oben auf Ausdruck und PDF. Alles hier wird gespeichert, sobald du ein Feld verlässt.")}${fld("founded", "Gegründet am", "", "date", "Am Gründungstag gratuliert die Karte, und oben steht, wie alt euer Club ist.")}${fld("place", "Kegelbahn / Ort", "z. B. Gasthof Zur Linde, Bahn 2")}${fld("schedule", "Wann kegelt ihr?", "z. B. jeden 1. Samstag im Monat")}
+      <label class="wide">Notizen (Geschichte, Regeln, Sprüche …)<textarea data-a="clubinfo" data-v="note" rows="5" placeholder="Alles, was ihr euch merken wollt">${esc(ci.note || "")}</textarea></label></div></div>`;
   }
   // 💡 Bildschirm anlassen (wie bei der Einkaufsliste)
   _awakeHint() { return this._inHaApp() ? "💡 Bildschirm bleibt nur an mit: HA-App → Einstellungen → Companion App → „Keep screen On“ einschalten" : "💡 Der Bildschirm kann hier nicht angehalten werden – bitte in den Handy-Einstellungen die Bildschirmzeit erhöhen"; }
@@ -2095,17 +2100,17 @@ ${scope} .ksf{text-align:center;font-size:10px;color:#999;margin-top:12px}`;
     if (kind === "member") {
       const ph = it.photo || "";
       f.push(`<div class="wide phrow"><span class="phprev">${ph ? `<img src="${esc(ph)}" alt="">` : ic("account-outline")}</span><label class="btn small">${ic("camera-outline")}Foto<input type="file" data-a="photofile" accept="image/*" hidden></label><button type="button" class="btn small" data-a="photodel" ${ph ? "" : "hidden"}>${ic("delete-outline")}Foto weg</button><input type="hidden" name="photo" value="${esc(ph)}"></div>`);
-      f.push(`<label class="wide">E-Mail (für Infos)<input name="email" type="email" inputmode="email" autocomplete="off" value="${esc(it.email || "")}" placeholder="name@beispiel.de"></label>`);
+      f.push(`<label class="wide"><span class="flab">E-Mail (für Infos)${this._fi("f_email")}</span><input name="email" type="email" inputmode="email" autocomplete="off" value="${esc(it.email || "")}" placeholder="name@beispiel.de"></label>${this._fh("f_email", "Für „Mail an alle“ und „Per Mail schicken“ beim Teilen. Bleibt nur in deinem Home Assistant.")}`);
       f.push(`<label class="wide">Notiz<input name="note" value="${esc(it.note || "")}" placeholder="z. B. Kassenwart"></label>`);
-      f.push(`<label class="wide" style="flex-direction:row;align-items:center;gap:8px"><input type="checkbox" class="swchk" name="guest" ${it.guest ? "checked" : ""}> Gast (kein Mitglied)</label>`);
+      f.push(`<label class="wide" style="flex-direction:row;align-items:center;gap:8px"><input type="checkbox" class="swchk" name="guest" ${it.guest ? "checked" : ""}> Gast (kein Mitglied)${this._fi("f_guest")}</label>${this._fh("f_guest", "Für Gäste gelten die gleichen Regeln. Nur: Fehlt ein Gast, zahlt er nichts – er gehört dann nicht zum Abend.")}`);
     } else {
       f.push(`<label>Betrag (${KC_MONEY.sym})<input name="amount" inputmode="decimal" value="${it.amount != null ? numDe(it.amount) : ""}"></label>`);
       const payer = it.payer || "self";
-      f.push(`<label class="wide">Wer zahlt?<div class="seg"><button type="button" data-a="payer" data-v="self" class="${payer === "self" ? "on" : ""}">Er selbst</button><button type="button" data-a="payer" data-v="others" class="${payer === "others" ? "on" : ""}">Alle anderen, die mitkegeln</button></div><input type="hidden" name="payer" value="${payer}"></label>`);
+      f.push(`<label class="wide"><span class="flab">Wer zahlt?${this._fi("f_payer")}</span><div class="seg"><button type="button" data-a="payer" data-v="self" class="${payer === "self" ? "on" : ""}">Er selbst</button><button type="button" data-a="payer" data-v="others" class="${payer === "others" ? "on" : ""}">Alle anderen, die mitkegeln</button></div><input type="hidden" name="payer" value="${payer}"></label>${this._fh("f_payer", "<b>Er selbst:</b> Wer die Strafe macht, zahlt.<br><b>Alle anderen:</b> z. B. beim Neuner zahlen alle anderen, die mitkegeln – der Werfer nicht. Wer „gegangen“ ist, zahlt ab dann nicht mehr mit.")}`);
       const cur = icn(it.icon);
       f.push(`<label class="wide">Symbol<div class="iconpick">${KC_ICONS.map((x) => `<button type="button" data-a="icon" data-v="${x}" class="${x === cur ? "on" : ""}" title="${x}">${ic(x)}</button>`).join("")}</div><input type="hidden" name="icon" value="mdi:${cur}"></label>`);
     }
-    if (!isNew) f.push(`<label class="wide" style="flex-direction:row;align-items:center;gap:8px"><input type="checkbox" class="swchk" name="active" ${it.active === false ? "" : "checked"}> ${kind === "member" ? "aktiv (aus = ehemalig, ausgeblendet)" : "aktiv (aus = ausgeblendet)"}</label>`);
+    if (!isNew) f.push(`<label class="wide" style="flex-direction:row;align-items:center;gap:8px"><input type="checkbox" class="swchk" name="active" ${it.active === false ? "" : "checked"}> aktiv${this._fi("f_active")}</label>${this._fh("f_active", kind === "member" ? "Aus = ehemalig: ist ausgeblendet, alte Abende und die Kasse bleiben aber richtig." : "Aus = ausgeblendet: steht am Abend nicht mehr zur Wahl, alte Abende bleiben richtig.")}`);
     return `<form class="edit" data-a="save" data-k="${kind}" data-id="${esc(it.id || "")}"><div class="f">${f.join("")}</div>
       <div class="btnrow end">${isNew ? "" : `<button type="button" class="btn" data-a="del" data-k="${kind}" data-id="${esc(it.id)}">${ic("delete-outline")}Löschen</button>`}
       <button type="button" class="btn" data-a="cancel">${ic("close")}Abbrechen</button><button class="btn main" type="submit">${ic("check")}Speichern</button></div></form>`;
@@ -2178,7 +2183,7 @@ ${scope} .ksf{text-align:center;font-size:10px;color:#999;margin-top:12px}`;
       <p class="elcv"><b>Kegelclub</b> v${KC_VERSION}</p>
       <p>${t("Gemacht von <b>Mister-M</b> – mit Hilfe von Claude 🤖", "Made by <b>Mister-M</b> – with help from Claude 🤖")}</p>
       <p>${t("Ich versuche, Updates und Fehler-Korrekturen zeitnah zu erledigen.", "I try to ship updates and fixes promptly.")}</p>
-      <p class="elcsmall">📅 ${t("Neue offizielle Versionen kommen immer sonntags. An den anderen Tagen gibt es nur Test-Versionen (Beta) – die siehst du in HACS unter „Beta-Versionen anzeigen“.", "New official versions always come out on Sundays. On the other days there are only test versions (beta) – you see them in HACS under “Show beta versions”.")}</p>
+      <p class="elcsmall">📅 ${t("Neue offizielle Versionen kommen immer sonntags. An den anderen Tagen gibt es nur Test-Versionen (Beta) – die siehst du in HACS unter „Beta-Versionen anzeigen“. Ab Home Assistant 2026.11 findest du HACS unter <b>Einstellungen → Marketplace</b>.", "New official versions always come out on Sundays. On the other days there are only test versions (beta) – you see them in HACS under “Show beta versions”. From Home Assistant 2026.11 you find HACS under <b>Settings → Marketplace</b>.")}</p>
       <div class="elcbtns">
         <a class="elcbtn" href="${REPO}" target="_blank" rel="noopener">🐙 GitHub</a>
         <a class="elcbtn" href="${REPO}/discussions" target="_blank" rel="noopener">💡 ${t("Idee oder Wunsch", "Idea or request")}</a>
@@ -2250,10 +2255,9 @@ ${scope} .ksf{text-align:center;font-size:10px;color:#999;margin-top:12px}`;
     else if (p.step === "new2") { if (v === p.neu) setPin(v); else { this._toast("Die zwei PINs sind nicht gleich – bitte nochmal"); p.step = "new"; } }
   }
   _pinSetHtml(d) {
-    return `<p class="small">${d.pin ? "🔒 PIN ist <b>an</b>. ⚙️ fragt nach der PIN." : "Mit einer PIN (4–8 Ziffern) sperrst du ⚙️ (auch Mitglieder & Strafen), z. B. auf dem Tablet am Kegeltisch. Strafen buchen und die Kasse ansehen gehen weiter ohne PIN."}</p>
+    return `<p class="small flab"><span>${d.pin ? "🔒 PIN ist <b>an</b>. ⚙️ fragt nach der PIN." : "🔓 PIN ist <b>aus</b>."}</span>${this._fi("pin")}</p>${this._fh("pin", "Mit einer PIN (4–8 Ziffern) sperrst du ⚙️ (auch Mitglieder & Strafen), z. B. auf dem Tablet am Kegeltisch. Strafen buchen und die Kasse ansehen gehen weiter ohne PIN.<br>Die PIN liegt nur als Prüfsumme in Home Assistant. Vergessen? Admin → <b>Geräte & Dienste → Kegelclub → Konfigurieren → „PIN zurücksetzen“</b>. 5× falsch = 1 Minute Pause. Ohne Netz prüft die Karte die PIN selbst.")}
       <div class="btnrow">${d.pin ? `<button class="btn main" data-a="padstart" data-v="set">${ic("lock-reset")}PIN ändern</button><button class="btn" data-a="padstart" data-v="off">${ic("lock-open-variant-outline")}PIN ausschalten</button>` : `<button class="btn main" data-a="padstart" data-v="set">${ic("lock-outline")}PIN einschalten</button>`}</div>
-      ${d.pin ? `<label class="switch"><span>${ic("lock-outline")}<span class="vt"><b>Ganze Karte sperren</b><small>Aus = nur ⚙️ und Mitglieder. An = ohne PIN sieht man gar nichts.</small></span></span><input type="checkbox" class="swchk" data-a="set" data-v="lock_all" ${d.settings.lock_all ? "checked" : ""}></label>` : ""}
-      <p class="small">Die PIN liegt nur als Prüfsumme in Home Assistant. Vergessen? Admin → <b>Geräte & Dienste → Kegelclub → Konfigurieren → „PIN zurücksetzen“</b>. 5× falsch = 1 Minute Pause. Ohne Netz prüft die Karte die PIN selbst.</p>`;
+      ${d.pin ? `<label class="switch"><span>${ic("lock-outline")}<span class="vt"><b>Ganze Karte sperren</b><small>Aus = nur ⚙️ und Mitglieder. An = ohne PIN sieht man gar nichts.</small></span></span><input type="checkbox" class="swchk" data-a="set" data-v="lock_all" ${d.settings.lock_all ? "checked" : ""}></label>` : ""}`;
   }
   async _pin(type, payload) {
     if (this._hass?.connected === false) { this._toast("📴 PIN ändern oder ausschalten geht nur mit Netz – entsperren klappt auch offline"); return null; }
@@ -2262,8 +2266,10 @@ ${scope} .ksf{text-align:center;font-size:10px;color:#999;margin-top:12px}`;
   }
 
   // ---------------------------------------------------------------- ⚙️ Einstellungen (wie bei der Einkaufsliste)
-  _sw(key, icon, title, sub, on) { return `<label class="switch"><span>${ic(icon)}<span class="vt"><b>${title}</b>${sub ? `<small>${sub}</small>` : ""}</span></span><input type="checkbox" class="swchk" data-a="set" data-v="${key}" ${on ? "checked" : ""}></label>`; }
-  _num(key, icon, title, val, unit) { return `<div class="switch"><span>${ic(icon)}${title}</span><span><input data-a="setnum" data-v="${key}" inputmode="decimal" value="${numDe(val ?? 0)}" style="width:90px;text-align:right"> ${unit}</span></div>`; }
+  _fi(k) { const o = !!this._fiOpen?.has(k); return `<button type="button" class="finfo" data-a="finfo" data-v="${k}" aria-expanded="${o}" title="Was ist das?" aria-label="Erklärung">i</button>`; } // ⓘ wie bei der Einkaufsliste: Erklärung zum Antippen statt Textwand
+  _fh(k, help) { return `<p class="small fhint" data-fh="${k}" ${this._fiOpen?.has(k) ? "" : "hidden"}>${help}</p>`; }
+  _sw(key, icon, title, sub, on, help) { return `<label class="switch"><span>${ic(icon)}<span class="vt"><b>${title}</b>${sub ? `<small>${sub}</small>` : ""}</span>${help ? this._fi(key) : ""}</span><input type="checkbox" class="swchk" data-a="set" data-v="${key}" ${on ? "checked" : ""}></label>${help ? this._fh(key, help) : ""}`; }
+  _num(key, icon, title, val, unit, help) { return `<div class="switch"><span>${ic(icon)}${title}${help ? this._fi(key) : ""}</span><span><input data-a="setnum" data-v="${key}" inputmode="decimal" value="${numDe(val ?? 0)}" style="width:90px;text-align:right"> ${unit}</span></div>${help ? this._fh(key, help) : ""}`; }
   _sheets(d) {
     const st = d.settings, admin = this._hass?.user?.is_admin !== false;
     const lane = { kasse: "aus der Kasse", split: "aufgeteilt", off: "nicht erfasst" }[st.lane_mode] || "";
@@ -2271,16 +2277,14 @@ ${scope} .ksf{text-align:center;font-size:10px;color:#999;margin-top:12px}`;
       about: { icon: "home-heart", color: "#fb8c00", title: "Über den Club", info: this._clubAge(d) || "Name, Gründung, Bahn, Termin", html: () => this._aboutHtml(d) },
       club: { icon: "account-group-outline", color: "#1e88e5", title: "Mitglieder & Strafen", info: `${d.members.filter((m) => m.active !== false && !m.guest).length} Mitglieder · ${d.strafen.filter((s) => s.active !== false).length} Strafen`, html: () => this._editView(d) },
       rules: { icon: "cash-multiple", color: "#43a047", title: "Regeln & Beträge", info: `${money(st.base_fee)} pro Person · Bahn ${lane}`, html: () => `
-        <p class="small">Gilt ab sofort und auch für den laufenden Abend. Abgeschlossene Abende bleiben, wie sie waren.</p>
-        ${this._num("base_fee", "cash", "Grundbetrag pro Person und Abend", st.base_fee, KC_MONEY.sym)}
+        ${this._num("base_fee", "cash", "Grundbetrag pro Person und Abend", st.base_fee, KC_MONEY.sym, "Das zahlt jede Person pro Kegelabend. Änderungen hier gelten ab sofort, auch für den laufenden Abend. Abgeschlossene Abende bleiben, wie sie waren.")}
         ${this._sw("watch_pays", "glass-mug-variant", "Zuschauer zahlen den Grundbetrag", "da, kegelt aber nicht", st.watch_pays !== false)}
         ${this._sw("missing_pays", "account-cancel-outline", "Fehlende Mitglieder zahlen den Grundbetrag", "abgemeldet oder nicht – Gäste nie", st.missing_pays !== false)}
-        ${this._num("unexcused_extra", "account-alert-outline", "Extra, wenn nicht abgemeldet", st.unexcused_extra, KC_MONEY.sym)}
-        <div class="switch"><span>${ic("bowling")}Kegelbahn</span><span class="seg">${[["kasse", "aus der Kasse"], ["split", "aufteilen"], ["off", "aus"]].map(([v, t]) => `<button class="${st.lane_mode === v ? "on" : ""}" data-a="lane" data-v="${v}">${t}</button>`).join("")}</span></div>
-        ${st.lane_mode === "off" ? "" : this._num("lane_rate", "timer-outline", "Kegelbahn pro Stunde", st.lane_rate, KC_MONEY.sym) + this._num("lane_hours", "timer-sand", "Stunden-Vorschlag für neue Abende", st.lane_hours, "Std.")}
-        ${this._num("start_balance", "piggy-bank-outline", "Kassenstand am Anfang", st.start_balance, KC_MONEY.sym)}
-        <div class="switch"><span>${ic("cash-multiple")}Währung</span><select data-a="setcur" style="width:auto;max-width:60%">${Object.entries(KC_CUR).map(([c, n]) => `<option value="${c}" ${(st.currency || "EUR") === c ? "selected" : ""}>${n}</option>`).join("")}</select></div>
-        <p class="small">Die Währung ändert nur Zeichen und Schreibweise – es wird <b>nichts umgerechnet</b>.</p>` },
+        ${this._num("unexcused_extra", "account-alert-outline", "Extra, wenn nicht abgemeldet", st.unexcused_extra, KC_MONEY.sym, "Wer fehlt und sich <b>nicht</b> abgemeldet hat, zahlt das zusätzlich zum Grundbetrag. 0 = gibt es nicht.")}
+        <div class="switch"><span>${ic("bowling")}Kegelbahn${this._fi("lane_mode")}</span><span class="seg">${[["kasse", "aus der Kasse"], ["split", "aufteilen"], ["off", "aus"]].map(([v, t]) => `<button class="${st.lane_mode === v ? "on" : ""}" data-a="lane" data-v="${v}">${t}</button>`).join("")}</span></div>${this._fh("lane_mode", "<b>Aus der Kasse:</b> Die Bahnmiete wird beim „In Kasse buchen“ aus der Clubkasse bezahlt.<br><b>Aufteilen:</b> Alle, die da sind, teilen sich die Miete.<br><b>Aus:</b> Die Bahn wird nicht erfasst.")}
+        ${st.lane_mode === "off" ? "" : this._num("lane_rate", "timer-outline", "Kegelbahn pro Stunde", st.lane_rate, KC_MONEY.sym) + this._num("lane_hours", "timer-sand", "Stunden-Vorschlag für neue Abende", st.lane_hours, "Std.", "So viele Stunden stehen bei einem neuen Abend schon drin. Am Abend selbst kannst du sie noch ändern.")}
+        ${this._num("start_balance", "piggy-bank-outline", "Kassenstand am Anfang", st.start_balance, KC_MONEY.sym, "Das Geld, das schon in der Kasse war, bevor ihr mit der Karte angefangen habt.")}
+        <div class="switch"><span>${ic("cash-multiple")}Währung${this._fi("currency")}</span><select data-a="setcur" style="width:auto;max-width:60%">${Object.entries(KC_CUR).map(([c, n]) => `<option value="${c}" ${(st.currency || "EUR") === c ? "selected" : ""}>${n}</option>`).join("")}</select></div>${this._fh("currency", "Die Währung ändert nur Zeichen und Schreibweise – es wird <b>nichts umgerechnet</b>.")}` },
       imp: { icon: "database-import-outline", color: "#1e88e5", title: "Import & Sicherung", info: admin ? "Alle Neune, Sicherung, CSV" : "nur Admins", html: () => admin ? this._importHtml(d) : `<p class="small">Nur für Admins.</p>` },
       app: { icon: "cellphone-arrow-down", color: "#3949ab", title: "Offline-App", info: "auch ohne Netz auf der Bahn", html: () => `
         <p class="small">Eine eigene kleine App nur für den Kegelclub. Sie öffnet sich auch <b>ohne Netz</b>, zeigt den letzten Stand, lässt dich Strafen buchen und schickt alles nach, sobald wieder Netz da ist.</p>
@@ -2305,11 +2309,9 @@ ${scope} .ksf{text-align:center;font-size:10px;color:#999;margin-top:12px}`;
         <p class="small">Und sie zieht sich passend zur Jahreszeit an:</p>
         <div class="mascotprev">${[["spring", "Frühling"], ["summer", "Sommer"], ["autumn", "Herbst"], ["winter", "Winter"], ["bunny", "Ostern"], ["pumpkin", "Halloween"], ["santa", "Advent"], ["party", "Silvester"]].map(([c, t]) => `<span class="${kcMascotDeco() === c ? "now" : ""}">${kcMascotSvg("happy", c)}<small>${t}</small></span>`).join("")}</div>` },
       labels: { icon: "format-text", color: "#546e7a", title: "Beschriftungen", info: st.labels ? "an – für alle" : "aus", html: () => `
-        ${this._sw("labels", "format-text", "Beschriftungen anzeigen", "", !!st.labels)}
-        <p class="small">Zeigt unter den kleinen Symbol-Knöpfen einen kurzen Text. Auch ohne den Schalter gilt: <b>Länger auf ein Symbol drücken</b> zeigt kurz, was es macht.</p>` },
+        ${this._sw("labels", "format-text", "Beschriftungen anzeigen", "", !!st.labels, "Zeigt unter den kleinen Symbol-Knöpfen einen kurzen Text. Auch ohne den Schalter gilt: <b>Länger auf ein Symbol drücken</b> zeigt kurz, was es macht.")}` },
       calm: { icon: "meditation", color: "#5c6bc0", title: "Ruhiger Modus", info: store.get(CALMKEY, false) ? "an – nur dieses Gerät" : "aus", html: () => `
-        <label class="switch"><span>${ic("meditation")}Ruhiger Modus</span><input type="checkbox" class="swchk" data-a="setcalm" ${store.get(CALMKEY, false) ? "checked" : ""}></label>
-        <p class="small">Nur für <b>dieses Gerät</b>. Gedämpfte Farben, keine Animationen – angenehm für alte Tablets.</p>` },
+        <label class="switch"><span>${ic("meditation")}Ruhiger Modus${this._fi("calm")}</span><input type="checkbox" class="swchk" data-a="setcalm" ${store.get(CALMKEY, false) ? "checked" : ""}></label>${this._fh("calm", "Nur für <b>dieses Gerät</b>. Gedämpfte Farben, keine Animationen – angenehm für alte Tablets.")}` },
       ...(this._app ? { theme: { icon: "theme-light-dark", color: "#37474f", title: "Hell / Dunkel", info: { light: "☀️ Hell", dark: "🌙 Dunkel" }[kcTheme()] || "🌓 Automatisch", html: () => `
         <p class="small">Nur für die Offline-App auf diesem Gerät.</p>
         <div class="btnrow">${[["auto", "🌓 Automatisch"], ["light", "☀️ Hell"], ["dark", "🌙 Dunkel"]].map(([v, l]) => `<button class="btn ${kcTheme() === v ? "main" : ""}" data-a="theme" data-v="${v}">${l}</button>`).join("")}</div>` } } : {}),
@@ -2448,6 +2450,15 @@ ${scope} .ksf{text-align:center;font-size:10px;color:#999;margin-top:12px}`;
     const a = el.dataset.a, id = el.dataset.id, d = this._data;
     const redraw = () => { this._force = true; this._render(); };
     const ev = d && evFind(d);
+    if (a === "finfo") { // ⓘ Erklärung auf-/zuklappen, ohne neu zu zeichnen (Eingaben bleiben)
+      e?.preventDefault?.();
+      const k = el.dataset.v, h = this.shadowRoot.querySelector(`[data-fh="${k}"]`);
+      this._fiOpen = this._fiOpen || new Set();
+      if (this._fiOpen.has(k)) this._fiOpen.delete(k); else this._fiOpen.add(k);
+      if (h) h.hidden = !this._fiOpen.has(k);
+      el.setAttribute("aria-expanded", String(this._fiOpen.has(k)));
+      return;
+    }
     if (a === "playmode") { // 🎯 Spielmodus an/aus (pro Gerät gemerkt) – wie der Lademodus der Einkaufsliste
       const on = !store.get("kegelclub_spielmodus", false);
       store.put("kegelclub_spielmodus", on);

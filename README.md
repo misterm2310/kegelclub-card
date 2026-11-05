@@ -39,6 +39,8 @@ Ein Klick öffnet es direkt in deinem Home Assistant: [![In HACS öffnen](https:
 3. **Einstellungen → Geräte & Dienste → Integration hinzufügen → Kegelclub** → Name des Clubs → Absenden. 🎉
 4. Dashboard → **Bearbeiten → Karte hinzufügen → Kegelclub**.
 
+> 🆕 **Ab Home Assistant 2026.11:** HACS findest du unter **Einstellungen → Marketplace**.
+
 ```yaml
 type: custom:kegelclub-card
 ```
