@@ -6,7 +6,7 @@
 // - Jede Änderung (Pumpe, Einzahlung, wer da ist …) wird als kleine „Änderung“ verschickt.
 // - Klappt das Verschicken nicht (kein Netz auf der Kegelbahn), landet die Änderung im Postausgang und wird
 //   später nachgeschickt. Bis dahin rechnet die Karte selbst so, als wäre sie schon angekommen.
-const KC_VERSION = "1.0.1-beta.4";
+const KC_VERSION = "1.0.1";
 
 const MONTHS = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
 const QKEY = "kegelclub_queue";
@@ -51,6 +51,7 @@ const KC_GUIDE = [
 ];
 // 🆕 Was ist neu – das Neueste oben (wie bei der Einkaufsliste)
 const KC_NEWS = [
+  ["1.0.1", "🎉 <b>Offizielle Version 1.0.1:</b> Alles aus 4 Betas ist jetzt fest drin – Gut Holz! · 🏦 <b>In Kasse buchen</b> nach dem Abschließen, PIN für Kasse und fertige Abende, Buchungen ändern · 🎯 <b>Spielmodus</b> beim Kegelabend (nur „Wer war's?“ und Strafen) · 🗂️ Mitglieder &amp; Strafen wie die Kategorien der Einkaufsliste · ⓘ Erklärungen zum Antippen statt Textwand · 🎳 Kegelfigur"],
   ["1.0.1-beta.4", "ⓘ <b>Erklärungen zum Antippen</b> wie bei der Einkaufsliste: Neben den Feldern in ⚙️ (Regeln &amp; Beträge, Über den Club, Mitglieder, Strafen, Schutz …) steht ein kleines <b>i</b> – antippen klappt die Erklärung auf, statt dass dort eine Textwand steht · 🆕 Hinweis: Ab Home Assistant 2026.11 findest du HACS unter <b>Einstellungen → Marketplace</b>"],
   ["1.0.1-beta.3", "🗂️ <b>Mitglieder & Strafen wie die Kategorien der Einkaufsliste:</b> jede Zeile ein Kasten mit Farbstreifen, „antippen zum Einstellen“ – Einstellen klappt darunter auf."],
   ["1.0.1-beta.2", "🎯 <b>Spielmodus:</b> Läuft ein Kegelabend, steht oben neben „🎳 läuft“ ein Knopf. Antippen = nur noch <b>„Wer war's?“</b> und <b>„Strafen“</b> – ohne Status-Knöpfchen, Abrechnung und Reiter. Wie der Lademodus der Einkaufsliste, jedes Handy merkt es sich. „Alles“ zeigt wieder alles. · ✏️ <b>Bearbeiten klappt unter der Zeile auf</b> (Mitglieder, Strafen, Kasse, Teilbeträge) – die Zeile bleibt stehen, nochmal antippen = zu."],
