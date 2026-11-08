@@ -45,7 +45,7 @@ window.seed = (A) => {
     op({ type: "abend_status", abend: id, member: "g1", status: ago === 35 ? "play" : "out" });
     const counts = { m1: { s1: 3, s4: 2 }, m2: { s1: 7, s2: 1, s5: 1 }, m3: { s3: 1, s1: 2 }, m5: { s4: 4, s1: 1 }, g1: { s1: 2 } };
     for (const [m, per] of Object.entries(counts)) for (const [s, c] of Object.entries(per)) op({ type: "abend_count", abend: id, member: m, strafe: s, delta: c + (ago % 3) });
-    op({ type: "abend_close", abend: id, value: true });
+    op({ type: "abend_close", abend: id, value: true, book: true });
   }
   for (const [m, a] of [["m1", 30], ["m2", 40], ["m3", 20], ["m4", 22.5], ["m5", 30], ["g1", 9.6]]) op({ type: "pay", member: m, amount: a });
   op({ type: "kasse_add", kind: "out", name: "Kranz Jubiläum", amount: 35 });

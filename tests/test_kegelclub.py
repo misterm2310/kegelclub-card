@@ -111,7 +111,10 @@ async def test_evening_flow(hass, setup):
     assert s["running"] == "ev1"
     debt = {p["id"]: p["debt"] for p in s["people"]}
     assert debt["a"] == 7.6 and debt["b"] == 7.7 and debt["g"] == 7.6 and debt["d"] == 7.5
-    ok(m, {"type": "abend_close", "abend": "ev1", "value": True},
+    ok(m, {"type": "abend_close", "abend": "ev1", "value": True})
+    assert m.summary()["unbooked"] == "ev1" and m.summary()["kasse"] == 0  # 🏦 Bahn erst nach „In Kasse buchen“
+    assert not m.apply([{"type": "abend_start", "id": "zu_frueh"}])[0]["ok"]  # ohne Buchen geht's nicht weiter
+    ok(m, {"type": "abend_book", "abend": "ev1"},
        {"type": "pay", "member": "a", "amount": "7,60"},
        {"type": "kasse_add", "kind": "out", "name": "Blumen", "amount": 10})
     s = m.summary()
@@ -249,7 +252,7 @@ async def test_pay_at_table_and_hand_fine(hass, setup):
     ok(m, {"type": "abend_status", "abend": "e1", "member": "d", "status": "excused"})  # 💶 doch nicht da → Grundbetrag zurück
     assert not any(k.get("member") == "d" and k.get("tag") == "base" for k in m.data["kasse"])
     assert {p["id"]: p["debt"] for p in m.summary()["people"]}["d"] == 7.5
-    ok(m, {"type": "abend_close", "abend": "e1", "value": True})
+    ok(m, {"type": "abend_close", "abend": "e1", "value": True}, {"type": "abend_book", "abend": "e1"})
     assert m.summary()["kasse"] == round(22.5 + 2.3 - 20, 2)
 
 
@@ -319,3 +322,40 @@ async def test_pin_offline_key(hass, setup):
     assert m.data["pin_off"]
     m.clear_pin()
     assert m.snapshot()["pin_off"] is None
+
+
+async def test_buchen_loeschen_mit_kasse_und_buchung_aendern(hass, setup):
+    """🏦 In Kasse buchen, 🗑️ Abend löschen nimmt Kassenbuchungen mit (Rückgängig holt sie zurück), ✏️ Buchung ändern."""
+    m = mgr(hass)
+    club(m)
+    ok(m, {"type": "abend_start", "id": "e1", "hours": 2, "date": "2026-11-07"})
+    ok(m, {"type": "pay", "member": "a", "amount": 7.5, "abend": "e1", "tag": "base", "id": "k1"},
+       {"type": "kasse_add", "kind": "in", "name": "Spende", "amount": 5, "id": "k2"})
+    ok(m, {"type": "abend_close", "abend": "e1", "value": True})
+    ev = next(e for e in m.data["abende"] if e["id"] == "e1")
+    assert ev["booked"] is False
+    ok(m, {"type": "abend_book", "abend": "e1"})
+    assert ev["booked"] is True and m.summary()["kasse"] == 7.5 + 5 - 20
+    # wieder öffnen → Merker weg, beim nächsten Abschließen wieder buchen
+    ok(m, {"type": "abend_close", "abend": "e1", "value": False})
+    assert "booked" not in ev
+    ok(m, {"type": "abend_close", "abend": "e1", "value": True, "book": True})  # Aktion für Automationen bucht gleich mit
+    assert ev["booked"] is True
+    # 🗑️ löschen: Kassenbuchung k1 vom Abend geht mit, Spende bleibt
+    item = {**ev, "kasse": [dict(k) for k in m.data["kasse"] if k.get("abend") == "e1"]}
+    ok(m, {"type": "abend_delete", "id": "e1"})
+    assert [k["id"] for k in m.data["kasse"]] == ["k2"]
+    ok(m, {"type": "restore", "kind": "abend", "item": item})
+    assert {k["id"] for k in m.data["kasse"]} == {"k1", "k2"}
+    assert "kasse" not in next(e for e in m.data["abende"] if e["id"] == "e1")
+    # ✏️ Buchung ändern: Name, Betrag, Datum, von wem
+    ok(m, {"type": "kasse_edit", "id": "k2", "name": "Spende Wirt", "amount": "6,50", "date": "2026-10-03", "member": "b"})
+    k2 = next(k for k in m.data["kasse"] if k["id"] == "k2")
+    assert k2["name"] == "Spende Wirt" and k2["amount"] == 6.5 and k2["member"] == "b"
+    from homeassistant.util import dt as dt_util
+    assert dt_util.as_local(dt_util.utc_from_timestamp(k2["ts"] / 1000)).date().isoformat() == "2026-10-03"
+    assert not m.apply([{"type": "kasse_edit", "id": "k2", "member": "gibtsnicht"}])[0]["ok"]
+    assert not m.apply([{"type": "kasse_edit", "id": "k2", "date": "03.10.2026"}])[0]["ok"]
+    # ⚙️ Maskottchen-Schalter
+    ok(m, {"type": "settings", "settings": {"mascot": True}})
+    assert m.data["settings"]["mascot"] is True
