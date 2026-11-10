@@ -169,6 +169,8 @@ actions:
 **Einstellungen → Geräte & Dienste → Kegelclub → Eintrag hinzufügen** und einen Namen geben. Jeder Club hat eigene Mitglieder, Strafen, Kasse, PIN und Sensoren (`sensor.kegelclub_<name>_…`). In der Karte wählst du ihn bei „Welcher Club?“.
 </details>
 
+**⏳ Wann kommt die nächste Beta?** Ehrlich gesagt: Ich baue die Integrationen mit Hilfe von Claude (KI). Wie schnell neue Betas kommen, hängt davon ab, wie viel Claude-Kontingent (Tokens) gerade frei ist. Ist es aufgebraucht, muss ich warten, bis es wieder aufgefüllt ist – keine Tokens, keine Betas. 😅 Danke für eure Geduld und euer Verständnis! 🙏
+
 ---
 
 ## 💙 Gefällt dir der Kegelclub?
