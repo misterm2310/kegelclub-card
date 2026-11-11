@@ -6,7 +6,7 @@
 // - Jede Änderung (Pumpe, Einzahlung, wer da ist …) wird als kleine „Änderung“ verschickt.
 // - Klappt das Verschicken nicht (kein Netz auf der Kegelbahn), landet die Änderung im Postausgang und wird
 //   später nachgeschickt. Bis dahin rechnet die Karte selbst so, als wäre sie schon angekommen.
-const KC_VERSION = "1.0.1";
+const KC_VERSION = "1.0.2-beta.1";
 
 const MONTHS = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
 const QKEY = "kegelclub_queue";
@@ -51,6 +51,7 @@ const KC_GUIDE = [
 ];
 // 🆕 Was ist neu – das Neueste oben (wie bei der Einkaufsliste)
 const KC_NEWS = [
+  ["1.0.2-beta.1", "🗂️ <b>Was ist neu</b> ist jetzt immer richtig sortiert: die höchste Version oben, die offizielle Version vor ihren Betas"],
   ["1.0.1", "🎉 <b>Offizielle Version 1.0.1:</b> Alles aus 4 Betas ist jetzt fest drin – Gut Holz! · 🏦 <b>In Kasse buchen</b> nach dem Abschließen, PIN für Kasse und fertige Abende, Buchungen ändern · 🎯 <b>Spielmodus</b> beim Kegelabend (nur „Wer war's?“ und Strafen) · 🗂️ Mitglieder &amp; Strafen wie die Kategorien der Einkaufsliste · ⓘ Erklärungen zum Antippen statt Textwand · 🎳 Kegelfigur"],
   ["1.0.1-beta.4", "ⓘ <b>Erklärungen zum Antippen</b> wie bei der Einkaufsliste: Neben den Feldern in ⚙️ (Regeln &amp; Beträge, Über den Club, Mitglieder, Strafen, Schutz …) steht ein kleines <b>i</b> – antippen klappt die Erklärung auf, statt dass dort eine Textwand steht · 🆕 Hinweis: Ab Home Assistant 2026.11 findest du HACS unter <b>Einstellungen → Marketplace</b>"],
   ["1.0.1-beta.3", "🗂️ <b>Mitglieder & Strafen wie die Kategorien der Einkaufsliste:</b> jede Zeile ein Kasten mit Farbstreifen, „antippen zum Einstellen“ – Einstellen klappt darunter auf."],
@@ -80,6 +81,8 @@ const THEMEKEY = "kcapp_theme";   // 🌓 Hell / Dunkel – nur in der Offline-A
 const kcTheme = () => { try { return localStorage.getItem(THEMEKEY) || "auto"; } catch (_) { return "auto"; } };
 // 👁️ Was man für alle ausblenden kann (gleiche Schlüssel wie VIEW_KEYS in manager.py)
 const KC_VIEW = [["kasse", "bank-outline", "Reiter „Kasse“", "Kassenstand und Schulden"], ["statistik", "chart-bar", "Reiter „Statistik“", "Könige und Diagramme"]];
+// 🗂️ „Was ist neu“ immer nach Version sortiert: höchste oben, die offizielle Version vor ihren Betas
+const kcNewsSorted = () => KC_NEWS.map((n, i) => [n, i]).sort((x, y) => kcVerCmp(y[0][0], x[0][0]) || x[1] - y[1]).map((x) => x[0]);
 function kcVerCmp(a, b) {
   const p = (v) => { const m = /^(\d+)\.(\d+)\.(\d+)(?:-beta\.(\d+))?/.exec(String(v).trim()); return m ? [+m[1], +m[2], +m[3], m[4] === undefined ? Infinity : +m[4]] : [0, 0, 0, Infinity]; };
   const [x, y] = [p(a), p(b)];
@@ -2174,7 +2177,7 @@ ${scope} .ksf{text-align:center;font-size:10px;color:#999;margin-top:12px}`;
     const li = (t) => `<ul>${t.split(" · ").map((x) => `<li>${x}</li>`).join("")}</ul>`;
     const cur = KC_NEWS.find((n) => n[0] === KC_VERSION);
     const beta = /-beta/.test(KC_VERSION) && cur ? `<div class="betabox"><b>🧪 Du bist in der Beta ${KC_VERSION}</b><p class="small" style="margin:4px 0 2px">Neu in dieser Beta:</p>${li(cur[1])}</div>` : "";
-    return `${beta}<p class="small">Das Neueste steht oben.</p>${KC_NEWS.filter((n) => !beta || n !== cur).map((n) => `<p style="margin:10px 0 0"><b>v${n[0]}</b></p>${li(n[1])}`).join("")}`;
+    return `${beta}<p class="small">Das Neueste steht oben.</p>${kcNewsSorted().filter((n) => !beta || n !== cur).map((n) => `<p style="margin:10px 0 0"><b>v${n[0]}</b></p>${li(n[1])}`).join("")}`;
   }
   // 🙏 Credits – genau wie bei der Einkaufsliste (Logo, Version, Knöpfe, PayPal), in ⚙️ und in der Anleitung
   _creditsHtml() {
