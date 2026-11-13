@@ -6,7 +6,7 @@
 // - Jede Änderung (Pumpe, Einzahlung, wer da ist …) wird als kleine „Änderung“ verschickt.
 // - Klappt das Verschicken nicht (kein Netz auf der Kegelbahn), landet die Änderung im Postausgang und wird
 //   später nachgeschickt. Bis dahin rechnet die Karte selbst so, als wäre sie schon angekommen.
-const KC_VERSION = "1.0.2-beta.1";
+const KC_VERSION = "1.0.2-beta.2";
 
 const MONTHS = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
 const QKEY = "kegelclub_queue";
@@ -51,6 +51,7 @@ const KC_GUIDE = [
 ];
 // 🆕 Was ist neu – das Neueste oben (wie bei der Einkaufsliste)
 const KC_NEWS = [
+  ["1.0.2-beta.2", "🆕 <b>Was ist neu</b> sieht jetzt aus wie bei der Einkaufsliste: In einer Beta steht oben ein <b>oranger Kasten</b> mit allem, was in dieser Beta-Runde neu ist (höchste Beta oben). Darunter <b>„Die letzten Neuerungen bis Version …“</b> – die letzten 15 Neuerungen als eine Liste, das Neueste oben, statt vieler Abschnitte je Version"],
   ["1.0.2-beta.1", "🗂️ <b>Was ist neu</b> ist jetzt immer richtig sortiert: die höchste Version oben, die offizielle Version vor ihren Betas"],
   ["1.0.1", "🎉 <b>Offizielle Version 1.0.1:</b> Alles aus 4 Betas ist jetzt fest drin – Gut Holz! · 🏦 <b>In Kasse buchen</b> nach dem Abschließen, PIN für Kasse und fertige Abende, Buchungen ändern · 🎯 <b>Spielmodus</b> beim Kegelabend (nur „Wer war's?“ und Strafen) · 🗂️ Mitglieder &amp; Strafen wie die Kategorien der Einkaufsliste · ⓘ Erklärungen zum Antippen statt Textwand · 🎳 Kegelfigur"],
   ["1.0.1-beta.4", "ⓘ <b>Erklärungen zum Antippen</b> wie bei der Einkaufsliste: Neben den Feldern in ⚙️ (Regeln &amp; Beträge, Über den Club, Mitglieder, Strafen, Schutz …) steht ein kleines <b>i</b> – antippen klappt die Erklärung auf, statt dass dort eine Textwand steht · 🆕 Hinweis: Ab Home Assistant 2026.11 findest du HACS unter <b>Einstellungen → Marketplace</b>"],
@@ -81,6 +82,7 @@ const THEMEKEY = "kcapp_theme";   // 🌓 Hell / Dunkel – nur in der Offline-A
 const kcTheme = () => { try { return localStorage.getItem(THEMEKEY) || "auto"; } catch (_) { return "auto"; } };
 // 👁️ Was man für alle ausblenden kann (gleiche Schlüssel wie VIEW_KEYS in manager.py)
 const KC_VIEW = [["kasse", "bank-outline", "Reiter „Kasse“", "Kassenstand und Schulden"], ["statistik", "chart-bar", "Reiter „Statistik“", "Könige und Diagramme"]];
+const KC_NEWS_MAX = 15; // 🆕 höchstens so viele Neuerungen unter „Was ist neu“ (wie Einkaufsliste)
 // 🗂️ „Was ist neu“ immer nach Version sortiert: höchste oben, die offizielle Version vor ihren Betas
 const kcNewsSorted = () => KC_NEWS.map((n, i) => [n, i]).sort((x, y) => kcVerCmp(y[0][0], x[0][0]) || x[1] - y[1]).map((x) => x[0]);
 function kcVerCmp(a, b) {
@@ -2174,10 +2176,20 @@ ${scope} .ksf{text-align:center;font-size:10px;color:#999;margin-top:12px}`;
   }
   _newsHtml() {
     if (KC_LANG === "en") return `<div class="betabox" translate="no"><b>${/-beta/.test(KC_VERSION) ? "🧪 You are on beta" : "Version"} ${KC_VERSION}</b><p class="small" style="margin:4px 0 2px">The release notes are written in German. You find them on <a href="${REPO}/releases" target="_blank" rel="noopener">GitHub → Releases</a>.</p></div>`;
-    const li = (t) => `<ul>${t.split(" · ").map((x) => `<li>${x}</li>`).join("")}</ul>`;
-    const cur = KC_NEWS.find((n) => n[0] === KC_VERSION);
-    const beta = /-beta/.test(KC_VERSION) && cur ? `<div class="betabox"><b>🧪 Du bist in der Beta ${KC_VERSION}</b><p class="small" style="margin:4px 0 2px">Neu in dieser Beta:</p>${li(cur[1])}</div>` : "";
-    return `${beta}<p class="small">Das Neueste steht oben.</p>${kcNewsSorted().filter((n) => !beta || n !== cur).map((n) => `<p style="margin:10px 0 0"><b>v${n[0]}</b></p>${li(n[1])}`).join("")}`;
+    // 🆕 wie bei der Einkaufsliste: oben der orange Beta-Kasten (nur in einer Beta), darunter höchstens 15 Neuerungen, das Neueste oben
+    const base = (v) => String(v).replace(/-beta.*$/, "");
+    const isBeta = (v) => /-beta/.test(v);
+    const news = kcNewsSorted().filter((n) => kcVerCmp(n[0], KC_VERSION) <= 0); // nichts Neueres als die eingebaute Version
+    // 🧪 diese Beta-Runde = alle Betas mit derselben Nummer vorne (z. B. 1.0.2-beta.1, 1.0.2-beta.2 …)
+    const round = isBeta(KC_VERSION) ? news.filter((n) => isBeta(n[0]) && base(n[0]) === base(KC_VERSION)) : [];
+    const beta = round.length ? `<div class="betabox"><b>🧪 Du bist in der Beta ${esc(KC_VERSION)}</b><p class="small" style="margin:4px 0 2px">Neu in dieser Beta:</p><ul style="margin:0">${round.map((n) => `<li><b>beta.${esc(n[0].replace(/^.*-beta\./, ""))}</b> · ${n[1]}</li>`).join("")}</ul></div>` : "";
+    // 📋 der Rest: die Betas bringen die Einzelheiten – eine offizielle Version zählt nur mit, wenn sie keine eigenen Betas hatte (sonst stünde alles doppelt)
+    const rest = news.filter((n) => !round.includes(n) && (isBeta(n[0]) || !news.some((m) => isBeta(m[0]) && base(m[0]) === n[0])));
+    // ✂️ an „ · “ trennen – aber nicht mitten in fett Geschriebenem (z. B. „<b>Abend · Statistik · Kasse</b>“)
+    const split = (t) => t.split(" · ").reduce((a, x) => { const l = a[a.length - 1]; if (l !== undefined && (l.match(/<b>/g) || []).length > (l.match(/<\/b>/g) || []).length) a[a.length - 1] = `${l} · ${x}`; else a.push(x); return a; }, []);
+    const items = rest.flatMap((n) => split(n[1])).slice(0, KC_NEWS_MAX);
+    const upTo = news.find((n) => !isBeta(n[0]))?.[0] || KC_VERSION; // letzte offizielle Version
+    return `<div>${beta}<p class="small">Die letzten Neuerungen bis Version <b>${esc(upTo)}</b> – das Neueste steht oben</p><ul>${items.map((x) => `<li>${x}</li>`).join("")}</ul></div>`;
   }
   // 🙏 Credits – genau wie bei der Einkaufsliste (Logo, Version, Knöpfe, PayPal), in ⚙️ und in der Anleitung
   _creditsHtml() {

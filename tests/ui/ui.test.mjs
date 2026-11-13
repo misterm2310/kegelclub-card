@@ -342,6 +342,14 @@ check("Club: Editor zurück auf erstes Buch entfernt „buch“", rb.changed && 
   p.off("dialog", onDlg);
   check("Offline-App-Adresse kopieren klappt auch ohne Zwischenablage-Erlaubnis (kein Fenster)", r.copied?.includes("/app/") && dialogs === 0 && /kopiert/i.test(r.toast), JSON.stringify({ ...r, dialogs }));
 }
+// 🆕 „Was ist neu“ wie Einkaufsliste: oranger Beta-Kasten, darunter max. 15 Neuerungen bis zur letzten offiziellen Version
+{
+  const r = await sr(`const c = h.host; const d = document.createElement("div"); d.innerHTML = c._newsHtml();
+    const box = d.querySelector(".betabox"); const lis = [...d.querySelectorAll(":scope > div > ul > li")];
+    return { box: box?.textContent || "", boxN: box?.querySelectorAll("li").length || 0, n: lis.length, head: d.querySelector(":scope > div > p.small")?.textContent || "", ver: [...d.querySelectorAll("b")].some((b) => /^v\d/.test(b.textContent)) };`);
+  check("Was ist neu: oranger Beta-Kasten mit beta.2 oben", /Du bist in der Beta 1\.0\.2-beta\.2/.test(r.box) && /^.*beta\.2/.test(r.box) && r.box.indexOf("beta.2") < r.box.indexOf("beta.1") && r.boxN === 2, JSON.stringify(r));
+  check("Was ist neu: höchstens 15 Neuerungen bis Version 1.0.1, keine Abschnitte je Version", r.n > 0 && r.n <= 15 && /bis Version 1\.0\.1/.test(r.head) && !r.ver, JSON.stringify(r));
+}
 check("Keine Fehler in der Konsole", errs.length === 0, errs.join(" | "));
 await b.close();
 srv.close();
