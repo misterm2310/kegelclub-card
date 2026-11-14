@@ -305,6 +305,29 @@ async def test_gone_early_club_info_email(hass, setup):
     assert not m.apply([{"type": "member_save", "item": {"id": "a", "name": "Anna", "email": "kaputt"}}], "Test")[0]["ok"]
 
 
+
+async def test_gone_cap_entered_afterwards(hass, setup):
+    """🚪 Erst hinterher aufgeschrieben: „Zahlt mit“ von Hand – Dieter zahlt von 3 Neunen nur 1."""
+    m = mgr(hass)
+    club(m)
+    ok(m, {"type": "abend_start", "op_id": "s1", "id": "ev1", "hours": 0})
+    for who in ("a", "a", "b"):
+        ok(m, {"type": "abend_count", "abend": "ev1", "member": who, "strafe": "neun"})
+    ok(m, {"type": "abend_status", "abend": "ev1", "member": "d", "status": "gone", "ts": 50})  # erst am Ende eingetragen
+    members, strafen = m._maps()
+    b = bill_evening(m.evening("ev1"), members, strafen, m.data["settings"])
+    assert b["people"]["d"]["from_others"] == 0.3  # Stand beim Eintragen: alle 3
+    ok(m, {"type": "abend_gone_cap", "abend": "ev1", "member": "d", "strafe": "neun", "n": 1})
+    b = bill_evening(m.evening("ev1"), members, strafen, m.data["settings"])
+    assert b["people"]["d"]["from_others"] == 0.1 and sum(n for k, n in b["people"]["d"]["items"].items() if ">" in k) == 1
+    assert b["people"]["c"]["from_others"] == 0.3  # die anderen unverändert
+    ok(m, {"type": "abend_gone_cap", "abend": "ev1", "member": "d", "strafe": "neun", "n": None})  # zurück auf den Stand beim Gehen
+    assert bill_evening(m.evening("ev1"), members, strafen, m.data["settings"])["people"]["d"]["from_others"] == 0.3
+    assert not m.apply([{"type": "abend_gone_cap", "abend": "ev1", "member": "c", "strafe": "neun", "n": 1}], "Test")[0]["ok"]  # Carla ist nicht gegangen
+    ok(m, {"type": "abend_gone_cap", "abend": "ev1", "member": "d", "strafe": "neun", "n": 0})
+    ok(m, {"type": "abend_status", "abend": "ev1", "member": "d", "status": "play", "ts": 60})  # doch da → Handwert weg
+    assert "d" not in (m.evening("ev1").get("gone_cap") or {})
+
 async def test_pin_offline_key(hass, setup):
     """📴 Offline-Schlüssel: Karte bekommt nur PBKDF2, nie die PIN; ältere PINs holen ihn beim ersten richtigen Eintippen nach."""
     import hashlib  # noqa: PLC0415

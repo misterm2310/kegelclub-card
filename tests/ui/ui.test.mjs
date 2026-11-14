@@ -72,6 +72,12 @@ check("Eigene Strafe wieder raus", (await heroBig()) === "2,70 €", await heroB
 await tap('.stbtn[data-id="m6"]');
 last = await p.evaluate(() => fake.applied.at(-1));
 check("Status weiter: schaut zu → gegangen", last?.type === "abend_status" && last.status === "gone" && await sr(`return /gegangen \\d\\d:\\d\\d/.test(h.querySelector('.stbtn[data-id="m6"]').textContent);`), JSON.stringify(last));
+check("Gegangen: Zeile „Zahlt mit“ in der Abrechnung", await sr(`const it = [...h.querySelectorAll('.bill .item')].find((x) => /Frida Holz/.test(x.textContent)); return /Zahlt mit: Alle Neune/.test(it?.textContent) && it.querySelector('.gcn').textContent === "3" && /von 3/.test(it.textContent);`), await sr(`return [...h.querySelectorAll('.gonecap')].map((x) => x.textContent).join(" | ");`));
+await tap('.gonecap .gcb[data-d="-1"]');
+last = await p.evaluate(() => fake.applied.at(-1));
+check("Zahlt mit − : nachgetragen, Frida zahlt eine Neun weniger", last?.type === "abend_gone_cap" && last.member === "m6" && last.n === 2 && await sr(`return h.querySelector('.gonecap .gcn').textContent === "2";`), JSON.stringify(last));
+await shot("2b-gegangen-zahlt-mit.png");
+await tap('.gonecap .gcb[data-d="1"]');
 await tap('.stbtn[data-id="m6"]');
 last = await p.evaluate(() => fake.applied.at(-1));
 check("Status weiter: gegangen → abgemeldet", last?.type === "abend_status" && last.status === "excused", JSON.stringify(last));
@@ -347,7 +353,7 @@ check("Club: Editor zurück auf erstes Buch entfernt „buch“", rb.changed && 
   const r = await sr(`const c = h.host; const d = document.createElement("div"); d.innerHTML = c._newsHtml();
     const box = d.querySelector(".betabox"); const lis = [...d.querySelectorAll(":scope > div > ul > li")];
     return { box: box?.textContent || "", boxN: box?.querySelectorAll("li").length || 0, n: lis.length, head: d.querySelector(":scope > div > p.small")?.textContent || "", ver: [...d.querySelectorAll("b")].some((b) => /^v\d/.test(b.textContent)) };`);
-  check("Was ist neu: oranger Beta-Kasten mit beta.2 oben", /Du bist in der Beta 1\.0\.2-beta\.2/.test(r.box) && /^.*beta\.2/.test(r.box) && r.box.indexOf("beta.2") < r.box.indexOf("beta.1") && r.boxN === 2, JSON.stringify(r));
+  check("Was ist neu: oranger Beta-Kasten, höchste Beta oben", /Du bist in der Beta 1\.0\.2-beta\.3/.test(r.box) && r.box.indexOf("beta.3") < r.box.indexOf("beta.2") && r.box.indexOf("beta.2") < r.box.indexOf("beta.1") && r.boxN === 3, JSON.stringify(r));
   check("Was ist neu: höchstens 15 Neuerungen bis Version 1.0.1, keine Abschnitte je Version", r.n > 0 && r.n <= 15 && /bis Version 1\.0\.1/.test(r.head) && !r.ver, JSON.stringify(r));
 }
 check("Keine Fehler in der Konsole", errs.length === 0, errs.join(" | "));

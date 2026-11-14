@@ -6,7 +6,7 @@
 // - Jede Änderung (Pumpe, Einzahlung, wer da ist …) wird als kleine „Änderung“ verschickt.
 // - Klappt das Verschicken nicht (kein Netz auf der Kegelbahn), landet die Änderung im Postausgang und wird
 //   später nachgeschickt. Bis dahin rechnet die Karte selbst so, als wäre sie schon angekommen.
-const KC_VERSION = "1.0.2-beta.2";
+const KC_VERSION = "1.0.2-beta.3";
 
 const MONTHS = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
 const QKEY = "kegelclub_queue";
@@ -30,7 +30,7 @@ const MEMBER_COLORS = ["#1e88e5", "#e91e63", "#8e24aa", "#fb8c00", "#00897b", "#
 // 📖 Anleitung – einfach erklärt, Kapitel zum Aufklappen
 const KC_GUIDE = [
   { icon: "rocket-launch-outline", title: "Erste Schritte", text: `Beim allerersten Öffnen fragt die Karte, wie du starten willst: <b>leer</b>, mit <b>Beispiel-Strafen</b> oder mit der <b>Datei aus „Alle Neune“</b>.<br>Danach unter ⚙️ → <b>„Mitglieder & Strafen“</b> eure Leute anlegen und unter ⚙️ → <b>„Regeln & Beträge“</b> Grundbetrag und Kegelbahn einstellen. Fertig – gut Holz! 🎳` },
-  { icon: "bowling", title: "Ein Kegelabend", text: `Reiter <b>„Abend“</b> → <b>„Kegelabend starten“</b>. Alle Mitglieder stehen als Kacheln da – in der Reihenfolge wie unter ⚙️ → „Mitglieder & Strafen“.<br><b>1.</b> Wer ist da? <b>Kleiner Knopf unten an der Kachel</b> schaltet weiter: kegelt → schaut zu → 🚪 gegangen → abgemeldet → nicht abgemeldet. Wer fehlt, bleibt als <b>blasse Kachel</b> stehen. Für Fehlende geht nur eine Strafe per Hand (<b>„Eigene“</b>).<br><b>2.</b> <b>„Grundbetrag kassiert“</b> antippen, sobald alle bezahlt haben (einzeln geht es in der Abrechnung).<br><b>3.</b> Strafe buchen: <b>Person antippen</b> (blau umrandet), dann die <b>Strafe antippen</b>. Jeder Tipp = +1. Vertippt? Das rote <b>−</b> oben links auf der Kachel nimmt eine zurück. Etwas Besonderes? <b>„Eigene“</b> = Betrag und Grund selbst eintippen.<br><b>4.</b> Zum Schluss in der <b>Abrechnung</b> (rechts stehen nur die Strafen) auf die <b>Münze</b> tippen, wenn bezahlt wurde – sie wird grün ✓.<br><b>5.</b> <b>„Abend abschließen“</b>. Hat noch jemand offen, sagt die Karte vorher Bescheid. Mit Knopf zum <b>Teilen</b> (z. B. in die WhatsApp-Gruppe).` },
+  { icon: "bowling", title: "Ein Kegelabend", text: `Reiter <b>„Abend“</b> → <b>„Kegelabend starten“</b>. Alle Mitglieder stehen als Kacheln da – in der Reihenfolge wie unter ⚙️ → „Mitglieder & Strafen“.<br><b>1.</b> Wer ist da? <b>Kleiner Knopf unten an der Kachel</b> schaltet weiter: kegelt → schaut zu → 🚪 gegangen → abgemeldet → nicht abgemeldet. Bei <b>„gegangen“</b> steht in der Abrechnung <b>„Zahlt mit: … − / +“</b>: Schreibt ihr erst hinterher auf, stellst du dort ein, wie viele Neuner er vor dem Gehen noch mitbezahlt. Wer fehlt, bleibt als <b>blasse Kachel</b> stehen. Für Fehlende geht nur eine Strafe per Hand (<b>„Eigene“</b>).<br><b>2.</b> <b>„Grundbetrag kassiert“</b> antippen, sobald alle bezahlt haben (einzeln geht es in der Abrechnung).<br><b>3.</b> Strafe buchen: <b>Person antippen</b> (blau umrandet), dann die <b>Strafe antippen</b>. Jeder Tipp = +1. Vertippt? Das rote <b>−</b> oben links auf der Kachel nimmt eine zurück. Etwas Besonderes? <b>„Eigene“</b> = Betrag und Grund selbst eintippen.<br><b>4.</b> Zum Schluss in der <b>Abrechnung</b> (rechts stehen nur die Strafen) auf die <b>Münze</b> tippen, wenn bezahlt wurde – sie wird grün ✓.<br><b>5.</b> <b>„Abend abschließen“</b>. Hat noch jemand offen, sagt die Karte vorher Bescheid. Mit Knopf zum <b>Teilen</b> (z. B. in die WhatsApp-Gruppe).` },
   { icon: "bank-outline", title: "In Kasse buchen", text: `Nach <b>„Abend abschließen“</b> siehst du die Abrechnung, und unten rechts neben „Wieder öffnen“ steht der Knopf <b>„In Kasse buchen“</b>. Ein Tipp darauf – dann geht die Kegelbahn aus der Kasse und du bist wieder am Start. Ohne Buchen startet kein neuer Abend. Vertippt? „Abend wieder öffnen“.` },
   { icon: "pencil-outline", title: "Buchungen ändern & PIN", text: `Reiter <b>„Kasse“</b> → eine Buchung <b>antippen</b>: Name, Betrag, Datum und „Von wem?“ ändern oder löschen. Kegelbahn-Zeilen rechnen sich aus den Stunden und lassen sich darum nur im Abend ändern. Mit <b>PIN</b> (⚙️ → Schutz) öffnet sich die Kasse nur mit PIN – und abgeschlossene Abende lassen sich nur mit PIN ändern oder löschen. Löschst du einen Abend, gehen seine Kassenbuchungen mit (↩️ Rückgängig holt alles zurück).` },
   { icon: "account-plus-outline", title: "Gäste", text: `Im laufenden Abend <b>„＋ Gast“</b> antippen: bekannten Gast wählen oder neuen Namen eintippen. Für Gäste gelten die gleichen Regeln wie für Mitglieder. Ein Gast, der nicht da ist, zahlt nichts – er gehört ja nicht zum Abend.` },
@@ -51,6 +51,7 @@ const KC_GUIDE = [
 ];
 // 🆕 Was ist neu – das Neueste oben (wie bei der Einkaufsliste)
 const KC_NEWS = [
+  ["1.0.2-beta.3", "🚪 <b>Früher gegangen – auch beim Nachtragen:</b> Wer auf „gegangen“ steht, hat in der Abrechnung eine Zeile <b>„Zahlt mit: Alle Neune − 3 von 5 +“</b>. Damit stellst du ein, wie viele Neuner (und andere „alle anderen zahlen“-Strafen) er vor dem Gehen noch mitbezahlt – praktisch, wenn ihr erst nach dem Kegeln aufschreibt"],
   ["1.0.2-beta.2", "🆕 <b>Was ist neu</b> sieht jetzt aus wie bei der Einkaufsliste: In einer Beta steht oben ein <b>oranger Kasten</b> mit allem, was in dieser Beta-Runde neu ist (höchste Beta oben). Darunter <b>„Die letzten Neuerungen bis Version …“</b> – die letzten 15 Neuerungen als eine Liste, das Neueste oben, statt vieler Abschnitte je Version"],
   ["1.0.2-beta.1", "🗂️ <b>Was ist neu</b> ist jetzt immer richtig sortiert: die höchste Version oben, die offizielle Version vor ihren Betas"],
   ["1.0.1", "🎉 <b>Offizielle Version 1.0.1:</b> Alles aus 4 Betas ist jetzt fest drin – Gut Holz! · 🏦 <b>In Kasse buchen</b> nach dem Abschließen, PIN für Kasse und fertige Abende, Buchungen ändern · 🎯 <b>Spielmodus</b> beim Kegelabend (nur „Wer war's?“ und Strafen) · 🗂️ Mitglieder &amp; Strafen wie die Kategorien der Einkaufsliste · ⓘ Erklärungen zum Antippen statt Textwand · 🎳 Kegelfigur"],
@@ -685,6 +686,7 @@ function billEvening(ev, members, strafen, settings) {
   const price = (sid) => prices[sid] ? [Number(prices[sid][0]) || 0, String(prices[sid][1])] : [Number(strafen[sid]?.amount) || 0, strafen[sid]?.payer || "self"];
   const players = Object.keys(people).filter((m) => people[m].status === "play");
   const gone = Object.keys(people).filter((m) => people[m].status === "gone"); // 🚪 zahlt nur, was bis zum Gehen gezählt war
+  const capLeft = Object.fromEntries(gone.map((g) => [g, Object.fromEntries(Object.entries(ev.gone_cap?.[g] || {}).map(([s, v]) => [s, Math.max(0, Number(v) || 0)]))])); // 🚪 von Hand: so viele hat er noch mitbezahlt
   const fines = !ev.no_fines;
   for (const [mid, per] of Object.entries(counts)) {
     for (const [sid, n0] of Object.entries(per || {})) {
@@ -693,7 +695,10 @@ function billEvening(ev, members, strafen, settings) {
       const [amount, payer] = price(sid);
       if (payer === "others") {
         for (const oid of [...players, ...gone]) if (oid !== mid) {
-          const k = players.includes(oid) ? n : Math.min(n, Number(ev.gone?.[oid]?.[mid]?.[sid]) || 0);
+          let k;
+          if (players.includes(oid)) k = n;
+          else if (sid in capLeft[oid]) { k = Math.min(n, capLeft[oid][sid]); capLeft[oid][sid] -= k; }
+          else k = Math.min(n, Number(ev.gone?.[oid]?.[mid]?.[sid]) || 0);
           if (k <= 0) continue;
           people[oid].from_others += fines ? k * amount : 0; people[oid].items[`${sid}>${mid}`] = (people[oid].items[`${sid}>${mid}`] || 0) + k;
         }
@@ -792,8 +797,12 @@ function applyLocal(d, op) {
       (ev.status_ts = ev.status_ts || {})[op.member] = op.ts;
       if (["excused", "absent", "out"].includes(op.status)) d.kasse = d.kasse.filter((k) => !(k.abend === ev.id && k.member === op.member && k.tag === "base")); // 💶 nicht da → Grundbetrag zurück
       if (op.status === "gone") { (ev.gone = ev.gone || {})[op.member] = Object.fromEntries(Object.entries(ev.counts || {}).filter(([o]) => o !== op.member).map(([o, per]) => [o, { ...per }])); (ev.gone_ts = ev.gone_ts || {})[op.member] = op.ts; }
-      else { if (ev.gone) delete ev.gone[op.member]; if (ev.gone_ts) delete ev.gone_ts[op.member]; }
+      else { if (ev.gone) delete ev.gone[op.member]; if (ev.gone_ts) delete ev.gone_ts[op.member]; if (ev.gone_cap) delete ev.gone_cap[op.member]; }
       if (op.status === "out") delete ev.status[op.member]; else ev.status[op.member] = op.status;
+    } else if (t === "abend_gone_cap") {
+      if (ev.status[op.member] !== "gone") return;
+      const c = ((ev.gone_cap = ev.gone_cap || {})[op.member] = ev.gone_cap[op.member] || {});
+      if (op.n == null) delete c[op.strafe]; else c[op.strafe] = Math.max(0, Math.min(999, Math.round(Number(op.n) || 0)));
     } else if (t === "abend_count") {
       if (!(op.member in ev.status)) return;
       const s = d.strafen.find((x) => x.id === op.strafe);
@@ -1293,6 +1302,12 @@ ol.steps li { margin:3px 0; }
 .pp.gone { opacity:.75; }
 .clubbday { margin:0 2px 10px; padding:8px 12px; border-radius:12px; background:color-mix(in srgb, #fb8c00 14%, transparent); font-weight:500; text-align:center; }
 .edit textarea { width:100%; box-sizing:border-box; font:inherit; border-radius:10px; padding:8px; border:1px solid var(--divider-color); background:var(--card-background-color); color:var(--primary-text-color); resize:vertical; }
+.gonecap { display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-top:4px; font-size:.85em; }
+.gonecap .gcb { width:28px; height:28px; border-radius:50%; border:1.5px solid var(--primary-color, #03a9f4); background:none; color:var(--primary-color, #03a9f4); font-weight:700; cursor:pointer; padding:0; }
+.gonecap .gcb:disabled { opacity:.35; cursor:default; }
+.gonecap .gcn { min-width:18px; text-align:center; }
+.gonecap > span:first-child { white-space:nowrap; }
+.gonecap .gct { color:var(--secondary-text-color); }
 .flab { display:inline-flex; align-items:center; gap:6px; }
 .finfo { flex:none; width:20px; height:20px; padding:0; margin-left:6px; border-radius:50%; border:1.5px solid var(--primary-color, #03a9f4); background:none; color:var(--primary-color, #03a9f4); font:700 11px/1 serif; font-style:italic; cursor:pointer; vertical-align:middle; }
 .finfo[aria-expanded="true"] { background:var(--primary-color, #03a9f4); color:#fff; }
@@ -1777,8 +1792,18 @@ class KegelclubCard extends HTMLElement {
       const tags = isAway(mid) ? [`<span class="tag">${esc(this._stLabel(ev, mid, p.status))}</span>`, baseTag, p.extra ? `<button class="tag ${finesOk ? "ok" : "no"}" data-a="coin" data-id="${esc(mid)}" title="Antippen = bezahlt / nicht bezahlt">+ ${money(p.extra)} nicht abgemeldet ${finesOk ? "✓" : ""}</button>` : ""].join("") : [`<span class="tag">${esc(this._stLabel(ev, mid, p.status))}</span>`,
         baseTag,
         p.lane ? `<span class="tag">inkl. Bahn ${money(p.lane)}</span>` : "", ev.no_fines && Object.keys(p.items).length ? `<span class="tag">keine Strafen berechnet</span>` : ""].join("");
+      let goneRow = ""; // 🚪 gegangen: von Hand einstellen, wie viele „alle anderen zahlen“-Strafen er noch mitbezahlt (für Clubs, die erst hinterher aufschreiben)
+      if (p.status === "gone" && live) {
+        const tot = {}, got = {};
+        for (const [o, per] of Object.entries(ev.counts || {})) if (o !== mid) for (const [sid, n] of Object.entries(per || {})) {
+          const pr = ev.prices?.[sid] || [0, strafen[sid]?.payer || "self"];
+          if (pr[1] === "others" && Number(n) > 0) tot[sid] = (tot[sid] || 0) + Number(n);
+        }
+        for (const [k, n] of Object.entries(p.items)) { const [sid, from] = k.split(">"); if (from) got[sid] = (got[sid] || 0) + n; }
+        goneRow = Object.entries(tot).map(([sid, t]) => `<div class="gonecap"><span>🚪 Zahlt mit: <b data-noicon>${esc(strafen[sid]?.name || "?")}</b></span><button class="gcb" data-a="gonecap" data-id="${esc(mid)}" data-v="${esc(sid)}" data-d="-1" ${got[sid] ? "" : "disabled"} aria-label="weniger">−</button><b class="gcn">${got[sid] || 0}</b><span class="gct">von ${t}</span><button class="gcb" data-a="gonecap" data-id="${esc(mid)}" data-v="${esc(sid)}" data-d="1" ${(got[sid] || 0) < t ? "" : "disabled"} aria-label="mehr">+</button></div>`).join("");
+      }
       const coin = due > 0.004 || paidF > 0 ? `<button class="iconbtn coin ${finesOk ? "ok" : ""}" data-a="coin" data-id="${esc(mid)}" title="${finesOk ? "Bezahlt ✓ – antippen = zurücknehmen" : "Antippen = Strafen bezahlt"}" aria-label="bezahlt">${ic(finesOk ? "check-circle" : "hand-coin-outline")}</button>` : `<span class="iconbtn coin"></span>`;
-      return `<div class="item ${isAway(mid) ? "off" : ""}" style="--cc:${st.color}">${this._avatar(d, mid, 34)}<div class="n"><b data-noicon>${esc(members[mid]?.name || "?")}</b><div class="meta">${tags}</div>${chips ? `<div class="chips" style="margin-top:3px">${chips}</div>` : ""}</div><div class="amt">${this._m(due, finesOk ? "" : "neg")}</div>${coin}</div>`;
+      return `<div class="item ${isAway(mid) ? "off" : ""}" style="--cc:${st.color}">${this._avatar(d, mid, 34)}<div class="n"><b data-noicon>${esc(members[mid]?.name || "?")}</b><div class="meta">${tags}</div>${chips ? `<div class="chips" style="margin-top:3px">${chips}</div>` : ""}${goneRow}</div><div class="amt">${this._m(due, finesOk ? "" : "neg")}</div>${coin}</div>`;
     }).join("")}</div>`;
     return h;
   }
@@ -2473,6 +2498,14 @@ ${scope} .ksf{text-align:center;font-size:10px;color:#999;margin-top:12px}`;
       if (this._fiOpen.has(k)) this._fiOpen.delete(k); else this._fiOpen.add(k);
       if (h) h.hidden = !this._fiOpen.has(k);
       el.setAttribute("aria-expanded", String(this._fiOpen.has(k)));
+      return;
+    }
+    if (a === "gonecap") { // 🚪 „Zahlt mit“ ± – setzt die Zahl fest (statt Stand beim Gehen)
+      const evx = d && (evFind(d) || d.abende.find((x) => x.id === this._evId));
+      if (!evx) return;
+      const [mm, ss] = maps(d), bx = billEvening(evx, mm, ss, d.settings), sid = el.dataset.v;
+      const cur = Object.entries(bx.people[id]?.items || {}).reduce((s, [k, n]) => s + (k.startsWith(sid + ">") ? n : 0), 0);
+      this._send({ type: "abend_gone_cap", abend: evx.id, member: id, strafe: sid, n: Math.max(0, cur + Number(el.dataset.d || 0)) });
       return;
     }
     if (a === "playmode") { // 🎯 Spielmodus an/aus (pro Gerät gemerkt) – wie der Lademodus der Einkaufsliste

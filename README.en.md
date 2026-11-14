@@ -57,7 +57,7 @@ Copy `custom_components/kegelclub` to `/config/custom_components/kegelclub` and 
 
 1. **First start**: the card asks how you want to start – **empty**, with **sample fines** or with the **file from “Alle Neune”**.
 2. Add **members** (⚙️ → **Members & fines**, photos too) and set base fee and lane under ⚙️ → **Rules & amounts**.
-3. **Start bowling evening**. The small button under each person switches: bowling → watching → 🚪 left early → excused → no-show.
+3. **Start bowling evening**. The small button under each person switches: bowling → watching → 🚪 left early → excused → no-show. For 🚪 **left early**, set under **“Pays along”** in the bill how many nines they still paid before leaving (handy if you write everything down afterwards).
 4. **Book a fine**: tap the person first, then the fine.
 5. **Close evening** → the bill goes to the **cash** under “who owes what”. Paid? Tap the green check.
 

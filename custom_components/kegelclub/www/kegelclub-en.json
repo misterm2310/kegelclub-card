@@ -535,5 +535,8 @@
 "Mit einer PIN (4–8 Ziffern) sperrst du ⚙️ (auch Mitglieder &amp; Strafen), z. B. auf dem Tablet am Kegeltisch. Strafen buchen und die Kasse ansehen gehen weiter ohne PIN.<br>Die PIN liegt nur als Prüfsumme in Home Assistant. Vergessen? Admin → <b>Geräte &amp; Dienste → Kegelclub → Konfigurieren → „PIN zurücksetzen“</b>. 5× falsch = 1 Minute Pause. Ohne Netz prüft die Karte die PIN selbst.": "With a PIN (4–8 digits) you lock ⚙️ (also members &amp; fines), e.g. on the tablet at the bowling table. Booking fines and viewing the cash box still work without a PIN.<br>The PIN is only stored as a checksum in Home Assistant. Forgotten? Admin → <b>Devices &amp; services → Kegelclub → Configure → “Reset PIN”</b>. 5× wrong = 1 minute pause. Without network the card checks the PIN itself.",
 "aktiv": "active",
 "Was ist das?": "What is this?",
-"Erklärung": "Explanation"
+"Erklärung": "Explanation",
+"🚪 Zahlt mit:": "🚪 Pays along:",
+"weniger": "less",
+"mehr": "more"
 }
