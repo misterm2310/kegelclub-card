@@ -6,7 +6,7 @@
 // - Jede Änderung (Pumpe, Einzahlung, wer da ist …) wird als kleine „Änderung“ verschickt.
 // - Klappt das Verschicken nicht (kein Netz auf der Kegelbahn), landet die Änderung im Postausgang und wird
 //   später nachgeschickt. Bis dahin rechnet die Karte selbst so, als wäre sie schon angekommen.
-const KC_VERSION = "1.0.2-beta.3";
+const KC_VERSION = "1.0.2";
 
 const MONTHS = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
 const QKEY = "kegelclub_queue";
@@ -37,6 +37,7 @@ const KC_GUIDE = [
   { icon: "cash-multiple", title: "Was kostet was?", text: `Unter ⚙️ → <b>„Regeln & Beträge“</b>:<br>• <b>Grundbetrag</b> pro Person und Abend (z. B. 7,50 €).<br>• <b>Zuschauer zahlen</b> den Grundbetrag (Schalter).<br>• <b>Fehlende Mitglieder zahlen</b> den Grundbetrag (Schalter) – egal ob abgemeldet oder nicht.<br>• <b>Nicht abgemeldet</b>: Extra-Betrag obendrauf (z. B. 5,00 €).<br>• <b>Kegelbahn</b>: pro Stunde, aus der <b>Kasse</b> (wird beim <b>Abschließen</b> als Zeile „Kegelbahn“ in die Buchungen geschrieben), auf die Anwesenden <b>aufgeteilt</b> oder <b>gar nicht</b>.<br>Ändern gilt ab sofort und für den laufenden Abend. Abgeschlossene Abende bleiben, wie sie waren.` },
   { icon: "gavel", title: "Sündenregister (Strafen)", text: `⚙️ → <b>„Mitglieder & Strafen“</b> → Bereich <b>Strafen</b> → <b>＋ Neu</b>. Jede Strafe hat Name, Symbol, Betrag und <b>„Wer zahlt?“</b>:<br>• <b>Er selbst</b> – z. B. Pumpe, Klingeln.<br>• <b>Alle anderen, die mitkegeln</b> – z. B. <b>Alle Neune</b>: Wer die Neun wirft, zahlt nichts, alle anderen Mitkegler zahlen. Zuschauer und Fehlende bleiben verschont.<br>Am Griff ⠿ ziehen = Reihenfolge der Knöpfe am Abend.` },
   { icon: "hand-okay", title: "Heute keine Strafen berechnen", text: `Ausflug, Weihnachtsfeier, Geburtstag? Im Abend (oder später in der Liste der Abende) den Schalter <b>„Heute keine Strafen berechnen“</b> an: Gezählt wird trotzdem (für die Statistik), bezahlt wird nur der Grundbetrag.` },
+  { icon: "calculator-variant-outline", title: "Taschenrechner", text: `Oben auf <b>🧮</b> tippen – den Knopf gibt es auf dem Reiter <b>„Kasse“</b> und beim laufenden <b>Kegelabend</b>. Rechnet mit + − × ÷ und %. <b>K</b> setzt den Kassenstand ein (Kasse), <b>A</b> die Summe der Abrechnung (Abend). Unten: <b>„Als Einzahlung“</b> bzw. <b>„Als Ausgabe“</b> trägt das Ergebnis ins Buchen-Feld der Kasse ein, <b>„Kopieren“</b> z. B. für WhatsApp. Am PC geht auch die <b>Tastatur</b> (Ziffern, + − * /, Enter, Esc).` },
   { icon: "bank-outline", title: "Kegelkasse", text: `Reiter <b>„Kasse“</b>: oben der <b>Kassenstand</b>, darunter <b>„Wer schuldet was“</b>. Hat jemand bezahlt: <b>grünen Haken ✓</b> antippen – dann ist alles beglichen (Rückgängig geht 8 Sekunden lang). Teilbetrag? Auf die Person tippen.<br><b>＋ Einzahlung</b> und <b>− Ausgabe</b> (z. B. Kegelfahrt, Essen) für alles andere. Die Kegelbahn bucht sich je nach Einstellung selbst.<br><b>„Soll“</b> = Kasse + was noch offen ist.` },
   { icon: "chart-bar", title: "Statistik & Ehrungen", text: `Reiter <b>„Statistik“</b>: Jahr mit ‹ › wählen. Oben die <b>Könige</b> (wer hat die meisten Pumpen, Neunen …), dann <b>Strafen pro Person</b> (Säulen), <b>Strafen nach Art</b> (Kuchen), <b>Kasse übers Jahr</b> (Linie) und <b>Anwesenheit</b>.` },
   { icon: "history", title: "Alte Abende", text: `Unten im Reiter „Abend“ stehen die letzten Abende. Antippen = Abrechnung ansehen, <b>wieder öffnen</b> (z. B. vergessene Pumpe nachtragen), Datum ändern oder löschen.` },
@@ -51,6 +52,7 @@ const KC_GUIDE = [
 ];
 // 🆕 Was ist neu – das Neueste oben (wie bei der Einkaufsliste)
 const KC_NEWS = [
+  ["1.0.2", "🎉 <b>Offizielle Version 1.0.2:</b> Alles aus 3 Betas ist jetzt fest drin – Gut Holz! · 🚪 <b>Früher gegangen auch beim Nachtragen</b> („Zahlt mit: Alle Neune − 3 von 5 +“ in der Abrechnung) · 🆕 <b>Was ist neu</b> wie bei der Einkaufsliste, immer richtig sortiert · 🧮 <b>Taschenrechner wie bei Fixkosten:</b> oben auf 🧮 tippen – auf dem Reiter <b>Kasse</b> und beim laufenden <b>Kegelabend</b>. Rechnet mit + − × ÷ und %. <b>K</b> setzt den Kassenstand ein, <b>A</b> die Summe der Abrechnung. Das Ergebnis geht direkt als <b>Einzahlung</b> oder <b>Ausgabe</b> in die Kasse oder wird kopiert. Am PC geht auch die Tastatur"],
   ["1.0.2-beta.3", "🚪 <b>Früher gegangen – auch beim Nachtragen:</b> Wer auf „gegangen“ steht, hat in der Abrechnung eine Zeile <b>„Zahlt mit: Alle Neune − 3 von 5 +“</b>. Damit stellst du ein, wie viele Neuner (und andere „alle anderen zahlen“-Strafen) er vor dem Gehen noch mitbezahlt – praktisch, wenn ihr erst nach dem Kegeln aufschreibt"],
   ["1.0.2-beta.2", "🆕 <b>Was ist neu</b> sieht jetzt aus wie bei der Einkaufsliste: In einer Beta steht oben ein <b>oranger Kasten</b> mit allem, was in dieser Beta-Runde neu ist (höchste Beta oben). Darunter <b>„Die letzten Neuerungen bis Version …“</b> – die letzten 15 Neuerungen als eine Liste, das Neueste oben, statt vieler Abschnitte je Version"],
   ["1.0.2-beta.1", "🗂️ <b>Was ist neu</b> ist jetzt immer richtig sortiert: die höchste Version oben, die offizielle Version vor ihren Betas"],
@@ -94,6 +96,34 @@ function kcVerCmp(a, b) {
 }
 const esc = (x) => String(x ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 // 📋 Text kopieren – mit Ersatzweg wie bei der Einkaufsliste, falls das Handy die Zwischenablage sperrt (z. B. in der HA-App oder ohne https)
+// 🧮 Taschenrechner wie bei Fixkosten: rechnet selbst (ohne eval), Punkt vor Strich, % = /100
+function kcCalcEval(expr) {
+  const src = String(expr || "").replace(/\s/g, "");
+  if (!src) return null;
+  const toks = src.match(/\d+(?:[.,]\d*)?|[-+×÷%−]/g);
+  if (!toks || toks.join("") !== src) return null;
+  const out = [], ops = [];
+  const prec = { "+": 1, "−": 1, "-": 1, "×": 2, "÷": 2 };
+  const apply = () => {
+    const o = ops.pop(), b = out.pop(), a = out.pop();
+    if (a === undefined || b === undefined) throw new Error("x");
+    out.push(o === "+" ? a + b : o === "×" ? a * b : o === "÷" ? (b === 0 ? NaN : a / b) : a - b);
+  };
+  let expectNum = true, sign = 1;
+  try {
+    for (const t of toks) {
+      if (/\d/.test(t)) { out.push(sign * Number(t.replace(",", "."))); sign = 1; expectNum = false; }
+      else if (t === "%") { if (expectNum) return null; out.push(out.pop() / 100); }
+      else if (expectNum && (t === "−" || t === "-")) sign = -sign;
+      else if (expectNum) return null;
+      else { while (ops.length && prec[ops[ops.length - 1]] >= prec[t]) apply(); ops.push(t); expectNum = true; }
+    }
+    if (expectNum) return null;
+    while (ops.length) apply();
+  } catch (_) { return null; }
+  const r = out[0];
+  return out.length === 1 && Number.isFinite(r) ? Math.round(r * 100) / 100 : null;
+}
 function kcCopy(text, inp) {
   const old = () => {
     try {
@@ -1302,6 +1332,15 @@ ol.steps li { margin:3px 0; }
 .pp.gone { opacity:.75; }
 .clubbday { margin:0 2px 10px; padding:8px 12px; border-radius:12px; background:color-mix(in srgb, #fb8c00 14%, transparent); font-weight:500; text-align:center; }
 .edit textarea { width:100%; box-sizing:border-box; font:inherit; border-radius:10px; padding:8px; border:1px solid var(--divider-color); background:var(--card-background-color); color:var(--primary-text-color); resize:vertical; }
+.calc { border-radius:12px; padding:10px; margin:0 2px 10px; background:var(--secondary-background-color, rgba(127,127,127,.1)); }
+.calc .disp { display:flex; flex-direction:column; align-items:flex-end; background:var(--card-background-color); border-radius:10px; padding:6px 12px; margin-bottom:8px; min-height:62px; }
+.calc .expr { font-size:.9em; color:var(--secondary-text-color); min-height:1.3em; word-break:break-all; text-align:right; }
+.calc .res { font-size:1.8em; font-weight:600; font-variant-numeric:tabular-nums; }
+.calc .keys { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; }
+.calc .keys button { border:0; border-radius:10px; padding:12px 0; font-size:1.15em; cursor:pointer; background:var(--card-background-color); }
+.calc .keys button.op { color:var(--pc); font-weight:600; }
+.calc .keys button.eq { background:var(--pc); color:#fff; }
+.calc .keys button.cl { color:var(--kc-red); }
 .gonecap { display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-top:4px; font-size:.85em; }
 .gonecap .gcb { width:28px; height:28px; border-radius:50%; border:1.5px solid var(--primary-color, #03a9f4); background:none; color:var(--primary-color, #03a9f4); font-weight:700; cursor:pointer; padding:0; }
 .gonecap .gcb:disabled { opacity:.35; cursor:default; }
@@ -1418,6 +1457,17 @@ class KegelclubCard extends HTMLElement {
     root.addEventListener("click", (e) => { if (lpFired) { lpFired = false; e.stopImmediatePropagation(); e.preventDefault(); } }, true);
     root.addEventListener("contextmenu", (e) => { if (lpBtn(e.target)) e.preventDefault(); }, true);
     this._onKey = (e) => {
+      if (this._calc && this.isConnected && !this._padShown && !e.ctrlKey && !e.metaKey && !e.altKey) { // 🧮 Taschenrechner per Tastatur – nicht, wenn man gerade in einem Feld tippt
+        const t = e.composedPath?.()[0];
+        if (t && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName || "")) return;
+        const map = { "+": "+", "-": "−", "*": "×", x: "×", X: "×", "/": "÷", ":": "÷", "%": "%", ",": ",", ".": ",", "=": "=", Enter: "=", Backspace: "⌫", Delete: "C", Escape: "C", k: "K", K: "K", a: "A", A: "A" };
+        const k = /^\d$/.test(e.key) ? e.key : map[e.key];
+        const b = k && this.shadowRoot.querySelector(`.calc [data-a="ckey"][data-v="${k}"]`);
+        if (!b) return;
+        e.preventDefault(); e.stopPropagation();
+        b.click();
+        return;
+      }
       if (!this._padShown || !this.isConnected || !this._pad) return;
       if (/^\d$/.test(e.key)) this._padPress(e.key);
       else if (e.key === "Backspace") this._padPress("⌫");
@@ -1567,7 +1617,9 @@ class KegelclubCard extends HTMLElement {
     const isLocked = d?.pin && !pinOpen();
     const inSet = this._view === "set";
     const awakeHere = !!(d && !page && !["set", "kasse", "stats", "edit"].includes(this._view) && evFind(d));
-    const tools = this._lockAll ? "" : `${awakeHere ? `<button class="iconbtn awake ${this._awakeOn ? "on" : ""}" data-a="awake" title="${this._awakeOn ? "Bildschirm immer an – antippen zum Ausschalten" : "Bildschirm immer an (antippen)"}" aria-label="Bildschirm immer an">${ic(this._awakeOn ? "lightbulb-on" : "lightbulb-outline")}${this._lb("Bildschirm")}</button>` : ""}
+    const calcHere = !!(d && !page && !this._lockAll && ((this._view === "kasse" && !(d.pin && !pinOpen())) || awakeHere)); // 🧮 nur auf Kasse und beim laufenden Kegelabend
+    if (!calcHere) this._calc = null;
+    const tools = this._lockAll ? "" : `${calcHere ? `<button class="iconbtn ${this._calc ? "on" : ""}" data-a="calc" title="Taschenrechner">${ic("calculator-variant-outline")}${this._lb("Rechner")}</button>` : ""}${awakeHere ? `<button class="iconbtn awake ${this._awakeOn ? "on" : ""}" data-a="awake" title="${this._awakeOn ? "Bildschirm immer an – antippen zum Ausschalten" : "Bildschirm immer an (antippen)"}" aria-label="Bildschirm immer an">${ic(this._awakeOn ? "lightbulb-on" : "lightbulb-outline")}${this._lb("Bildschirm")}</button>` : ""}
       <button class="iconbtn" data-a="lock" title="${appLock ? "App jetzt sperren" : isLocked ? "Gesperrt – PIN nötig für ⚙️, Kasse und fertige Abende" : "Jetzt sperren"}">${ic(isLocked && !appLock ? "lock-outline" : "lock-open-variant-outline")}${this._lb(isLocked && !appLock ? "Gesperrt" : "Sperren")}</button>
       ${showBack ? `<button class="iconbtn" data-a="back" title="${deeper ? "Zurück" : "Schließen"}">${ic(deeper ? "arrow-left" : "close")}${this._lb(deeper ? "Zurück" : "Schließen")}</button>` : ""}`;
     let body;
@@ -1586,6 +1638,7 @@ class KegelclubCard extends HTMLElement {
       if (bday) body += `<div class="clubbday" role="status">🎉 ${esc(bday)}</div>`;
       if (!page && this._view !== "set" && !(playOn && s.running && this._view === "abend")) body += `<div class="tabs">${tabs.map(([k, i, l]) => `<button class="tab ${this._view === k ? "active" : ""}" data-a="tab" data-v="${k}">${ic(i)}${l}</button>`).join("")}</div>`;
       if (!locked) pinTouch();
+      if (this._calc && !page) body += this._calcView(d);
       body += page ? `<div class="sec pagehost"><div class="sechead"><span class="ic" style="--ic:${page.color}">${ic(page.icon)}</span><h3>${page.title}</h3></div><div class="pagebody">${page.html}</div></div>`
         : this._view === "edit" ? this._editView(d) : this._view === "set" ? this._setView(d) : this._view === "kasse" ? this._kasseView(d) : this._view === "stats" ? this._statsView(d) : this._abendView(d);
     }
@@ -1951,6 +2004,22 @@ ${scope} .ksf{text-align:center;font-size:10px;color:#999;margin-top:12px}`;
   }
 
   // ---------------------------------------------------------------- 🏦 Kasse
+  _calcSum(d) { // 🧮 „A“: Summe der Abrechnung des laufenden Abends (Strafen + Bahnanteil + Extra)
+    const ev = evFind(d);
+    if (!ev) return 0;
+    const [members, strafen] = maps(d), b = billEvening(ev, members, strafen, d.settings);
+    return r2(Object.values(b.people).reduce((s, p) => s + p.fines + p.lane + p.extra, 0));
+  }
+  _calcView(d) {
+    const c = this._calc, res = kcCalcEval(c.expr), kasse = this._view === "kasse";
+    const sk = kasse ? ["K", "Kassenstand einsetzen"] : ["A", "Summe der Abrechnung einsetzen"];
+    const keys = [["C", "cl"], ["⌫", "cl"], ["%", "op"], ["÷", "op"], ["7"], ["8"], ["9"], ["×", "op"], ["4"], ["5"], ["6"], ["−", "op"], ["1"], ["2"], ["3"], ["+", "op"], [sk[0], "op"], ["0"], [","], ["=", "eq"]];
+    return `<div class="calc"><div class="disp"><div class="expr">${esc(c.expr || " ")}</div><div class="res">${res == null ? "–" : money(res)}</div></div>
+      <div class="keys">${keys.map(([k, cl]) => `<button class="${cl || ""}" data-a="ckey" data-v="${k}" title="${k === sk[0] ? sk[1] : ""}">${k}</button>`).join("")}</div>
+      <div class="btnrow">${kasse ? `<button class="btn small" data-a="cuse" data-v="in" ${res == null ? "disabled" : ""}>${ic("plus")}Als Einzahlung</button>
+      <button class="btn small" data-a="cuse" data-v="out" ${res == null ? "disabled" : ""}>${ic("minus")}Als Ausgabe</button>` : ""}
+      <button class="btn small" data-a="cuse" data-v="copy" ${res == null ? "disabled" : ""}>${ic("content-copy")}Kopieren</button></div></div>`;
+  }
   _kasseView(d) {
     const s = d.summary;
     const hc = s.kasse < 0 ? "var(--kc-red)" : "var(--kc-green)";
@@ -1971,7 +2040,7 @@ ${scope} .ksf{text-align:center;font-size:10px;color:#999;margin-top:12px}`;
     h += `<div class="seg" style="margin:0 2px 6px"><button class="${this._kform === "in" ? "on" : ""}" data-a="kform" data-v="in">＋ Einzahlung</button><button class="${this._kform === "out" ? "on" : ""}" data-a="kform" data-v="out">− Ausgabe</button></div>
       <form class="edit" data-a="kadd"><div class="f">${this._kform === "in" ? `<label>Von wem?<select name="member"><option value="">– niemand (sonstige Einnahme) –</option>${mem.map((m) => `<option value="${esc(m.id)}" data-user>${esc(m.name)}</option>`).join("")}</select></label>` : ""}
         <label ${this._kform === "in" ? "" : `class="wide"`}>Wofür?<input name="name" placeholder="${this._kform === "in" ? "Einzahlung" : "z. B. Kegelfahrt, Essen"}" autocomplete="off"></label>
-        <label>Betrag (${KC_MONEY.sym})<input name="amount" inputmode="decimal" autocomplete="off"></label>
+        <label>Betrag (${KC_MONEY.sym})<input name="amount" inputmode="decimal" autocomplete="off" value="${esc(this._prefAmount || "")}"></label>
         <label>Datum<input name="date" type="date" value="${todayIso()}"></label></div>
         <div class="btnrow end"><button class="btn main" type="submit">${ic("check")}Buchen</button></div></form>`;
     // 🎳 Kegelbahn: beim Abschließen aus der Kasse – als eigene Zeile (rechnet sich aus den Stunden, darum ohne ✕)
@@ -2508,6 +2577,27 @@ ${scope} .ksf{text-align:center;font-size:10px;color:#999;margin-top:12px}`;
       this._send({ type: "abend_gone_cap", abend: evx.id, member: id, strafe: sid, n: Math.max(0, cur + Number(el.dataset.d || 0)) });
       return;
     }
+    if (a === "calc") { this._calc = this._calc ? null : { expr: "" }; redraw(); return; }
+    if (a === "ckey") {
+      const k = el.dataset.v, c = this._calc;
+      if (!c) return;
+      if (k === "C") c.expr = "";
+      else if (k === "⌫") c.expr = c.expr.slice(0, -1);
+      else if (k === "=") { const r = kcCalcEval(c.expr); if (r != null) c.expr = numDe(r); }
+      else if (k === "K") c.expr += numDe(d.summary.kasse);
+      else if (k === "A") c.expr += numDe(this._calcSum(d));
+      else c.expr += k;
+      redraw(); return;
+    }
+    if (a === "cuse") {
+      const r = kcCalcEval(this._calc?.expr);
+      if (r == null) return;
+      if (el.dataset.v === "in" || el.dataset.v === "out") { // 🏦 Ergebnis ins Buchen-Formular der Kasse
+        this._kform = el.dataset.v; this._prefAmount = numDe(Math.abs(r)); this._calc = null; redraw();
+        setTimeout(() => { const f = this.shadowRoot.querySelector('form[data-a="kadd"]'); f?.scrollIntoView?.({ block: "center" }); f?.querySelector('input[name="name"]')?.focus(); }, 30);
+      } else kcCopy(numDe(r), null).then(() => this._toast("📋 Kopiert"));
+      return;
+    }
     if (a === "playmode") { // 🎯 Spielmodus an/aus (pro Gerät gemerkt) – wie der Lademodus der Einkaufsliste
       const on = !store.get("kegelclub_spielmodus", false);
       store.put("kegelclub_spielmodus", on);
@@ -2808,6 +2898,7 @@ ${scope} .ksf{text-align:center;font-size:10px;color:#999;margin-top:12px}`;
       return;
     }
     if (a === "kadd") {
+      this._prefAmount = null;
       const v = Math.abs(parseMoney(data.amount));
       if (!v || Number.isNaN(v)) { this._toast("Bitte einen Betrag eintippen"); return; }
       const when = data.date ? new Date(data.date + "T12:00:00").getTime() : Date.now();

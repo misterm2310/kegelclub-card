@@ -145,6 +145,15 @@ check("Kegelkasse (Bahn nur für abgeschlossene Abende)", (await heroBig()) === 
 check("Kegelbahn als eigene Zeile in den Buchungen", await sr(`return [...h.querySelectorAll('.item b')].filter((x) => /^Kegelbahn /.test(x.textContent)).length === 3;`));
 check("Schuldner-Liste da", await sr(`return h.querySelectorAll('[data-a="open"][data-k="pay"]').length >= 3;`), await sr(`return h.querySelectorAll('[data-a="open"][data-k="pay"]').length;`));
 await shot("3-kasse.png");
+// 🧮 Taschenrechner auf der Kasse
+await tap('[data-a="calc"]');
+for (const k of ["K", "−", "1", "5", "=", "+", "5", "%"]) await tap(`.calc [data-a="ckey"][data-v="${k}"]`);
+check("Rechner: K = Kassenstand, rechnet 315,30 − 15 + 5 %", await sr(`return /^300,35.€$/.test(h.querySelector('.calc .res').textContent.trim()) && h.querySelector('.calc .expr').textContent.trim() === "300,3+5%";`), await sr(`return h.querySelector('.calc .expr').textContent + " = " + h.querySelector('.calc .res').textContent;`));
+await tap('.calc [data-a="ckey"][data-v="C"]');
+for (const k of ["1", "2", ",", "5", "0", "×", "2"]) await tap(`.calc [data-a="ckey"][data-v="${k}"]`);
+await shot("3c-rechner.png");
+await tap('.calc [data-a="cuse"][data-v="out"]');
+check("Rechner: „Als Ausgabe“ trägt 25 ins Buchen-Feld ein und klappt zu", await sr(`return !h.querySelector('.calc') && h.querySelector('form[data-a="kadd"] input[name="amount"]').value === "25" && h.querySelector('[data-a="kform"][data-v="out"]').classList.contains("on");`), await sr(`return h.querySelector('form[data-a="kadd"] input[name="amount"]').value;`));
 
 // 📴 Offline: Strafe landet im Postausgang und wird später nachgeschickt
 await tap('[data-a="tab"][data-v="abend"]');
@@ -353,8 +362,8 @@ check("Club: Editor zurück auf erstes Buch entfernt „buch“", rb.changed && 
   const r = await sr(`const c = h.host; const d = document.createElement("div"); d.innerHTML = c._newsHtml();
     const box = d.querySelector(".betabox"); const lis = [...d.querySelectorAll(":scope > div > ul > li")];
     return { box: box?.textContent || "", boxN: box?.querySelectorAll("li").length || 0, n: lis.length, head: d.querySelector(":scope > div > p.small")?.textContent || "", ver: [...d.querySelectorAll("b")].some((b) => /^v\d/.test(b.textContent)) };`);
-  check("Was ist neu: oranger Beta-Kasten, höchste Beta oben", /Du bist in der Beta 1\.0\.2-beta\.3/.test(r.box) && r.box.indexOf("beta.3") < r.box.indexOf("beta.2") && r.box.indexOf("beta.2") < r.box.indexOf("beta.1") && r.boxN === 3, JSON.stringify(r));
-  check("Was ist neu: höchstens 15 Neuerungen bis Version 1.0.1, keine Abschnitte je Version", r.n > 0 && r.n <= 15 && /bis Version 1\.0\.1/.test(r.head) && !r.ver, JSON.stringify(r));
+  check("Was ist neu: offizielle Version = kein Beta-Kasten", !r.box && r.boxN === 0, JSON.stringify(r));
+  check("Was ist neu: höchstens 15 Neuerungen bis Version 1.0.2, offizielle 1.0.2 ganz oben", r.n > 0 && r.n <= 15 && /bis Version 1\.0\.2/.test(r.head) && !r.ver, JSON.stringify(r));
 }
 check("Keine Fehler in der Konsole", errs.length === 0, errs.join(" | "));
 await b.close();
