@@ -22,6 +22,7 @@ One click opens it right in your Home Assistant: [![Open in HACS](https://my.hom
 - 🧮 **Rules are settings**: base fee, watchers pay yes/no, absent members pay yes/no, extra for no-shows, lane per hour (from the cash, split or off). Fits any club.
 - 🙌 **Waive fines** for trips, Christmas parties & co.
 - 🏦 **Club cash** with “who owes what”, payments, expenses and CSV.
+- 🧮 **Calculator** like in Fixkosten on the cash tab and during the evening – result straight into a deposit or expense.
 - 📊 **Statistics** (one year or all years): overview with previous-year comparison and records, kings, cash history · people with their own detail page · evening-by-evening table · fines by type and a "who got what" matrix.
 - 📤 **Print & share**: print an evening's bill, share a real PDF (iPhone: Share → Print), QR code for phones or plain text. 📸 Member photos.
 - 🏠 **About the club**: name, founding date (with a greeting on the anniversary), lane, schedule, notes. ✉️ E-mail per member and “Mail everyone”. 💡 Keep the screen on during the evening.
@@ -57,7 +58,7 @@ Copy `custom_components/kegelclub` to `/config/custom_components/kegelclub` and 
 
 1. **First start**: the card asks how you want to start – **empty**, with **sample fines** or with the **file from “Alle Neune”**.
 2. Add **members** (⚙️ → **Members & fines**, photos too) and set base fee and lane under ⚙️ → **Rules & amounts**.
-3. **Start bowling evening**. The small button under each person switches: bowling → watching → 🚪 left early → excused → no-show.
+3. **Start bowling evening**. The small button under each person switches: bowling → watching → 🚪 left early → excused → no-show. For 🚪 **left early**, set under **“Pays along”** in the bill how many nines they still paid before leaving (handy if you write everything down afterwards).
 4. **Book a fine**: tap the person first, then the fine.
 5. **Close evening** → the bill goes to the **cash** under “who owes what”. Paid? Tap the green check.
 

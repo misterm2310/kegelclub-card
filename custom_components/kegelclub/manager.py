@@ -155,6 +155,7 @@ def bill_evening(ev: dict[str, Any], members: dict[str, dict[str, Any]], strafen
 
     players = [m for m, p in people.items() if p["status"] == "play"]
     gone = {m: (ev.get("gone") or {}).get(m) or {} for m, p in people.items() if p["status"] == "gone"}  # 🚪 Stand der Zählung beim Gehen
+    cap_left = {g: {s: max(0, int(v or 0)) for s, v in ((ev.get("gone_cap") or {}).get(g) or {}).items()} for g in gone}  # 🚪 von Hand: so viele hat er noch mitbezahlt
     fines = not ev.get("no_fines")  # 🙌 „Strafen erlassen“: gezählt wird trotzdem (Statistik), bezahlt nicht
     for mid, per in counts.items():
         for sid, n in (per or {}).items():
@@ -165,7 +166,13 @@ def bill_evening(ev: dict[str, Any], members: dict[str, dict[str, Any]], strafen
             if payer == "others":
                 for oid in players + [g for g in gone if g != mid]:
                     if oid != mid:
-                        k = n if oid in players else min(n, int(((gone[oid] or {}).get(mid) or {}).get(sid, 0)))  # 🚪 gegangen: nur was bis dahin fiel
+                        if oid in players:
+                            k = n
+                        elif sid in cap_left.get(oid, {}):
+                            k = min(n, cap_left[oid][sid])
+                            cap_left[oid][sid] -= k
+                        else:
+                            k = min(n, int(((gone[oid] or {}).get(mid) or {}).get(sid, 0)))  # 🚪 gegangen: nur was bis dahin fiel
                         if k <= 0:
                             continue
                         people[oid]["from_others"] += k * amount if fines else 0.0
@@ -490,6 +497,8 @@ class KegelclubManager:
         if t == "abend_count":
             n = int(op.get("delta") or 1)
             return f"{'💸' if n > 0 else '↩️'} {self._sname(op.get('strafe'))} {'+' if n > 0 else ''}{n} · {self._mname(op.get('member'))}"
+        if t == "abend_gone_cap":
+            return f"🚪 {self._mname(op.get('member'))} zahlt {self._sname(op.get('strafe'))} noch {op.get('n')}× mit"
         if t == "abend_status":
             st = {"play": "kegelt", "watch": "schaut zu", "gone": "ist gegangen", "excused": "abgemeldet", "absent": "fehlt (nicht abgemeldet)", "out": "nicht dabei"}.get(str(op.get("status")), "?")
             return f"👤 {self._mname(op.get('member'))}: {st}"
@@ -647,6 +656,7 @@ class KegelclubManager:
             else:
                 (ev.get("gone") or {}).pop(mid, None)
                 (ev.get("gone_ts") or {}).pop(mid, None)
+                (ev.get("gone_cap") or {}).pop(mid, None)
             ev["status"][mid] = st
         elif t == "abend_count":
             ev = self.evening(op.get("abend"))
@@ -661,6 +671,16 @@ class KegelclubManager:
             per[sid] = max(0, int(per.get(sid, 0)) + int(op.get("delta") or 1))
             if not per[sid]:
                 per.pop(sid)
+        elif t == "abend_gone_cap":  # 🚪 nachgetragen: wie viele „alle anderen zahlen“-Strafen hat er vor dem Gehen noch mitbezahlt?
+            ev = self.evening(op.get("abend"))
+            mid, sid = str(op["member"]), str(op["strafe"])
+            if (ev.get("status") or {}).get(mid) != "gone":
+                raise HomeAssistantError(f"{self._mname(mid)} ist an dem Abend nicht „gegangen“")
+            caps = ev.setdefault("gone_cap", {}).setdefault(mid, {})
+            if op.get("n") is None:
+                caps.pop(sid, None)
+            else:
+                caps[sid] = max(0, min(999, int(op["n"])))
         elif t == "abend_hours":
             ev = self.evening(op.get("abend"))
             h = float(str(op.get("hours", 0)).replace(",", "."))
