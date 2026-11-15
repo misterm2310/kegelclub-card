@@ -32,7 +32,7 @@ import time
 import uuid
 import zipfile
 from collections.abc import Callable
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 from urllib.parse import quote
@@ -104,6 +104,14 @@ def parse_money(value: Any) -> float:
 
 def r2(v: float) -> float:
     return round(float(v) + 0.0, 2)
+
+
+def _date_ms(value: Any) -> int:
+    """Datum „JJJJ-MM-TT“ → Millisekunden (UTC-Mitternacht, wie Date.parse in der Karte)."""
+    try:
+        return int(datetime.strptime(str(value)[:10], "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp() * 1000)
+    except (TypeError, ValueError):
+        return 0
 
 
 def _empty() -> dict[str, Any]:
@@ -284,6 +292,8 @@ class KegelclubManager:
         d = self.data
         members, strafen = self._maps()
         charged: dict[str, float] = {m: 0.0 for m in members}
+        flow: dict[str, list] = {}  # je Person [Zeit, Betrag, Reihenfolge] – Abend = plus, Zahlung = minus
+        ev_t: dict[str, int] = {}
         lane_kasse = 0.0
         last = None
         for ev in d["abende"]:
@@ -292,8 +302,10 @@ class KegelclubManager:
                 lane_kasse += b["lane_kasse"]
             if ev.get("imported"):  # 📥 alte Abende aus der App: schon in der Kasse gebucht, keine offenen Beträge
                 continue
+            t = ev_t[ev["id"]] = int(ev.get("started") or _date_ms(ev.get("date")))
             for mid, p in b["people"].items():
                 charged[mid] = charged.get(mid, 0.0) + p["total"]
+                flow.setdefault(mid, []).append((t, p["total"], 0))
             if ev.get("closed") and (last is None or str(ev.get("date")) >= str(last.get("date"))):
                 last = {"id": ev["id"], "date": ev.get("date"), "total": b["total"]}
         paid: dict[str, float] = {}
@@ -306,10 +318,14 @@ class KegelclubManager:
                 k_in += amt
                 if k.get("member") and not k.get("imported"):
                     paid[k["member"]] = paid.get(k["member"], 0.0) + amt
+                    flow.setdefault(k["member"], []).append((max(int(k.get("ts") or 0), ev_t.get(k.get("abend"), 0)), -amt, 1))
         people = []
         open_total = 0.0
         for mid, m in members.items():
-            debt = r2(charged.get(mid, 0.0) - paid.get(mid, 0.0))
+            # 🚫 Kein Guthaben: der Reihe nach – Zahlungen bauen Schulden höchstens bis 0 € ab, nie ins Plus
+            debt = 0.0
+            for _t, v, _o in sorted(flow.get(mid, []), key=lambda x: (x[0], x[2])):
+                debt = max(0.0, r2(debt + v))
             if debt > 0:
                 open_total += debt
             people.append({"id": mid, "name": m.get("name"), "guest": bool(m.get("guest")), "charged": r2(charged.get(mid, 0.0)), "paid": r2(paid.get(mid, 0.0)), "debt": debt})

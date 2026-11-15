@@ -113,9 +113,24 @@ check("Spielmodus-Knopf oben neben „läuft“", await sr(`const b = h.querySel
 await tap('[data-a="playmode"]');
 await shot("3b-spielmodus.png");
 check("Spielmodus an: nur Personen und Strafen, ohne Status-Knöpfchen", await sr(`return !h.querySelector('.hero') && !h.querySelector('.evbar') && !h.querySelector('.bill') && !h.querySelector('[data-a="evclose"]') && !!h.querySelector('.ppl.play .pp') && getComputedStyle(h.querySelector('.ppl.play .stbtn')).display === "none" && !!h.querySelector('.fines .fine');`));
+check("Spielmodus: nur wer kegelt, unten keine Anleitung", await sr(`const ev = h.host._data.abende.find((e) => !e.closed); const n = Object.values(ev.status).filter((x) => x === "play").length; return h.querySelectorAll('.ppl.play .pp').length === n && n < Object.keys(ev.status).length && !h.querySelector('.foot');`), await sr(`return h.querySelectorAll('.ppl.play .pp').length;`));
+{ // 👈👉 seitlich wischen = nächster Spieler
+  const swipe = (dx) => p.evaluate((dx) => { const c = document.querySelector('#c1'), t0 = c.shadowRoot.querySelector('.ppl'); const mk = (x) => new Touch({ identifier: 1, target: t0, clientX: x, clientY: 300 });
+    c.shadowRoot.dispatchEvent(new TouchEvent("touchstart", { touches: [mk(200)], changedTouches: [mk(200)], bubbles: true, composed: true }));
+    c.shadowRoot.dispatchEvent(new TouchEvent("touchend", { touches: [], changedTouches: [mk(200 + dx)], bubbles: true, composed: true })); return c._sel; }, dx);
+  const selBefore = await p.evaluate(() => document.querySelector('#c1')._sel);
+  await p.evaluate(() => { const c = document.querySelector('#c1'); c._sel = null; c._force = true; c._render(); });
+  const ids = await sr(`return [...h.querySelectorAll('.ppl.play .pp')].map((x) => x.dataset.id);`);
+  const s1 = await swipe(-120), s2 = await swipe(-120), s3 = await swipe(120);
+  check("Spielmodus: nach links wischen = nächster, nach rechts = voriger Spieler", s1 === ids[0] && s2 === ids[1] && s3 === ids[0], JSON.stringify({ ids, s1, s2, s3 }));
+  const s4 = await swipe(-30);
+  check("Spielmodus: kurzes Wischen wechselt nicht", s4 === ids[0], s4);
+  await p.evaluate((x) => { const c = document.querySelector('#c1'); c._sel = x; c._force = true; c._render(); }, selBefore);
+}
 check("Spielmodus wird pro Gerät gemerkt", await p.evaluate(() => localStorage.getItem("kegelclub_spielmodus") === "true"));
 await tap('[data-a="playmode"]');
-check("Spielmodus aus: wieder alles da", await sr(`return !!h.querySelector('.hero') && !!h.querySelector('.bill') && !!h.querySelector('[data-a="evclose"]');`));
+check("Spielmodus aus: wieder alles da", await sr(`return !!h.querySelector('.hero') && !!h.querySelector('.bill') && !!h.querySelector('[data-a="evclose"]') && !!h.querySelector('.foot');`));
+check("Laufender Abend: kein 🧮 oben (kommt erst nach „Abend abschließen“)", await sr(`return !h.querySelector('.head [data-a="calc"]');`));
 // 📤 Drucken & Teilen
 check("Bildschirm-an-Knopf oben vor dem Schloss, kein Auge mehr", await sr(`const b = [...h.querySelectorAll('.head .iconbtn')].map((x) => x.dataset.a).join(','); return b.includes('awake,lock') && !b.includes('hide') && !h.querySelector('.hero [data-a="awake"]');`));
 await tap('.bill ~ .btnrow [data-a="share"], [data-a="share"]');
@@ -144,6 +159,7 @@ await tap('[data-a="tab"][data-v="kasse"]');
 check("Kegelkasse (Bahn nur für abgeschlossene Abende)", (await heroBig()) === "315,30 €", await heroBig());
 check("Kegelbahn als eigene Zeile in den Buchungen", await sr(`return [...h.querySelectorAll('.item b')].filter((x) => /^Kegelbahn /.test(x.textContent)).length === 3;`));
 check("Schuldner-Liste da", await sr(`return h.querySelectorAll('[data-a="open"][data-k="pay"]').length >= 3;`), await sr(`return h.querySelectorAll('[data-a="open"][data-k="pay"]').length;`));
+check("Kasse: kein „Guthaben“, „Buchen“ ist zugeklappt", await sr(`return !/Guthaben/.test(h.textContent) && !!h.querySelector('[data-a="kfold"]') && !h.querySelector('form[data-a="kadd"]');`));
 await shot("3-kasse.png");
 // 🧮 Taschenrechner auf der Kasse
 await tap('[data-a="calc"]');
@@ -279,6 +295,17 @@ if (shots) await a.screenshot({ path: path.join(shots, "6-app-anmeldung.png") })
   await shot("7-in-kasse-buchen.png");
   await tap('[data-a="back"]');
   check("Ohne Buchen geht's nicht weiter (kein „Kegelabend starten“)", await sr(`return !h.querySelector('form[data-a="evstart"]') && !!h.querySelector('[data-a="evbook"]');`));
+  check("Nach dem Abschließen: Grundbetrag nur noch Anzeige", await sr(`return !h.querySelector('.bill [data-a="basetoggle"]') && [...h.querySelectorAll('.bill .tag')].some((x) => /Grundbetrag/.test(x.textContent));`));
+  const nApplied = await p.evaluate(() => fake.applied.length);
+  await tap('.bill [data-a="coin"][data-ev]');
+  last = await p.evaluate(() => fake.applied.at(-1));
+  check("Nach dem Abschließen: 🪙 rechts abhaken klappt", (await p.evaluate(() => fake.applied.length)) > nApplied && (last?.type === "pay" ? last.abend && last.tag === "fines" : last?.type === "kasse_delete"), JSON.stringify(last));
+  await tap('.head [data-a="calc"]');
+  check("Nach dem Abschließen: 🧮 da, ganz normaler Rechner (ohne A)", await sr(`return !!h.querySelector('.calc') && !h.querySelector('.calc [data-v="A"]') && !h.querySelector('.calc [data-a="cuse"][data-v="in"]');`));
+  for (const k of ["7", ",", "5", "×", "4", "="]) await tap(`.calc [data-a="ckey"][data-v="${k}"]`);
+  check("Rechner nach dem Abend: 7,5 × 4 = 30", await sr(`return h.querySelector('.calc .expr').textContent.trim() === "30";`), await sr(`return h.querySelector('.calc .expr').textContent;`));
+  await shot("7b-rechner-nach-abend.png");
+  await tap('.head [data-a="calc"]');
   await tap('[data-a="evbook"]');
   last = await p.evaluate(() => fake.applied.at(-1));
   check("„In Kasse buchen“ schickt abend_book und geht zurück zum Start", last?.type === "abend_book" && await sr(`return !!h.querySelector('form[data-a="evstart"]');`), JSON.stringify(last));
@@ -362,7 +389,7 @@ check("Club: Editor zurück auf erstes Buch entfernt „buch“", rb.changed && 
   const r = await sr(`const c = h.host; const d = document.createElement("div"); d.innerHTML = c._newsHtml();
     const box = d.querySelector(".betabox"); const lis = [...d.querySelectorAll(":scope > div > ul > li")];
     return { box: box?.textContent || "", boxN: box?.querySelectorAll("li").length || 0, n: lis.length, head: d.querySelector(":scope > div > p.small")?.textContent || "", ver: [...d.querySelectorAll("b")].some((b) => /^v\d/.test(b.textContent)) };`);
-  check("Was ist neu: offizielle Version = kein Beta-Kasten", !r.box && r.boxN === 0, JSON.stringify(r));
+  check("Was ist neu: Beta-Kasten mit 1.0.3-beta.1", /1\.0\.3-beta\.1|Beta 1/.test(r.box) && r.boxN >= 1, JSON.stringify(r));
   check("Was ist neu: höchstens 15 Neuerungen bis Version 1.0.2, offizielle 1.0.2 ganz oben", r.n > 0 && r.n <= 15 && /bis Version 1\.0\.2/.test(r.head) && !r.ver, JSON.stringify(r));
 }
 check("Keine Fehler in der Konsole", errs.length === 0, errs.join(" | "));

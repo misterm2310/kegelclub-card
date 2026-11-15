@@ -545,5 +545,7 @@
 "Als Ausgabe": "As expense",
 "Kassenstand einsetzen": "Insert cash balance",
 "Summe der Abrechnung einsetzen": "Insert bill total",
-"📋 Kopiert": "📋 Copied"
+"📋 Kopiert": "📋 Copied",
+"Abend ist abgeschlossen": "Evening is closed",
+"Stand am Kegelabend {}:": "Balance at the evening {0}:"
 }

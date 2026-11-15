@@ -23,7 +23,9 @@ Ein Klick öffnet es direkt in deinem Home Assistant: [![In HACS öffnen](https:
 - 🧮 **Regeln als Einstellung**: Grundbetrag, Zuschauer zahlen ja/nein, Fehlende zahlen ja/nein, Extra bei „nicht abgemeldet“, Kegelbahn pro Stunde (aus der Kasse, aufgeteilt oder aus). Passt so für jeden Club.
 - 🙌 **Strafen erlassen** für Ausflug, Weihnachtsfeier & Co.
 - 🏦 **Kegelkasse** mit „Wer schuldet was“, Einzahlungen, Ausgaben und CSV.
-- 🧮 **Taschenrechner** wie bei Fixkosten auf Kasse und beim Kegelabend – Ergebnis direkt als Einzahlung oder Ausgabe.
+- 🧮 **Taschenrechner** wie bei Fixkosten auf Kasse und nach „Abend abschließen“ – auf der Kasse geht das Ergebnis direkt als Einzahlung oder Ausgabe.
+- 🚫 **Kein Guthaben, nur Schulden**: Wer mehr zahlt, als er schuldet, steht auf 0 € – das Geld liegt einfach in der Kasse.
+- 🎯 **Spielmodus** am Kegelabend: nur wer kegelt, nur Strafen, seitlich wischen = nächster Spieler.
 - 📊 **Statistik** (ein Jahr oder alle Jahre): Überblick mit Vergleich zum Vorjahr und Rekorden, Könige, Kasse-Verlauf · Personen mit eigener Detailseite · Tabelle Abend für Abend · Strafen nach Art und „Wer hat was?“-Tabelle.
 - 📤 **Drucken & Teilen**: Abrechnung eines Abends drucken, als echte PDF teilen (iPhone: Teilen → Drucken), als QR-Code fürs Handy oder als Text. 📸 Fotos für Mitglieder.
 - 🏠 **Über den Club**: Name, Gründung (mit Glückwunsch am Jahrestag), Bahn, Termin, Notizen. ✉️ E-Mail je Mitglied und „Mail an alle“. 💡 Bildschirm bleibt beim Kegelabend an.

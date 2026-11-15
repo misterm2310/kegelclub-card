@@ -247,7 +247,7 @@ async def test_pay_at_table_and_hand_fine(hass, setup):
     ok(m, {"type": "pay", "member": "a", "amount": 2.3, "abend": "e1", "tag": "fines"})
     assert {p["id"]: p["debt"] for p in m.summary()["people"]}["a"] == 0
     ok(m, {"type": "abend_extra_delete", "abend": "e1", "id": "x1"})
-    assert {p["id"]: p["debt"] for p in m.summary()["people"]}["a"] == -2.0  # Guthaben
+    assert {p["id"]: p["debt"] for p in m.summary()["people"]}["a"] == 0  # 🚫 kein Guthaben – zu viel Gezahltes bleibt einfach in der Kasse
     assert m.summary()["kasse"] == 30 + 2.3  # Bahn noch nicht abgezogen
     ok(m, {"type": "abend_status", "abend": "e1", "member": "d", "status": "excused"})  # 💶 doch nicht da → Grundbetrag zurück
     assert not any(k.get("member") == "d" and k.get("tag") == "base" for k in m.data["kasse"])
@@ -327,6 +327,22 @@ async def test_gone_cap_entered_afterwards(hass, setup):
     ok(m, {"type": "abend_gone_cap", "abend": "ev1", "member": "d", "strafe": "neun", "n": 0})
     ok(m, {"type": "abend_status", "abend": "ev1", "member": "d", "status": "play", "ts": 60})  # doch da → Handwert weg
     assert "d" not in (m.evening("ev1").get("gone_cap") or {})
+
+async def test_no_credit_only_debts(hass, setup):
+    """🚫 Kein Guthaben: Wer zu viel zahlt (z. B. Altschulden aus „Alle Neune“), steht auf 0 – der nächste Abend zählt voll."""
+    m = mgr(hass)
+    club(m)
+    ok(m, {"type": "pay", "member": "a", "amount": 20, "id": "alt", "ts": 500})  # Altschulden, die die Karte nicht kennt
+    p = {x["id"]: x for x in m.summary()["people"]}
+    assert p["a"]["debt"] == 0 and p["a"]["paid"] == 20  # kein −20 €
+    ok(m, {"type": "abend_start", "op_id": "s1", "id": "ev1", "hours": 0, "ts": 1000})
+    ok(m, {"type": "abend_count", "abend": "ev1", "member": "a", "strafe": "neun"})
+    p = {x["id"]: x for x in m.summary()["people"]}
+    assert p["a"]["debt"] == p["a"]["charged"] > 0  # das Geld von vorher wird NICHT verrechnet
+    due = p["a"]["debt"]
+    ok(m, {"type": "pay", "member": "a", "amount": due + 5, "id": "p2", "ts": 2000})
+    assert {x["id"]: x for x in m.summary()["people"]}["a"]["debt"] == 0
+    assert all(x["debt"] >= 0 for x in m.summary()["people"])
 
 async def test_pin_offline_key(hass, setup):
     """📴 Offline-Schlüssel: Karte bekommt nur PBKDF2, nie die PIN; ältere PINs holen ihn beim ersten richtigen Eintippen nach."""

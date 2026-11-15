@@ -6,7 +6,7 @@
 // - Jede Änderung (Pumpe, Einzahlung, wer da ist …) wird als kleine „Änderung“ verschickt.
 // - Klappt das Verschicken nicht (kein Netz auf der Kegelbahn), landet die Änderung im Postausgang und wird
 //   später nachgeschickt. Bis dahin rechnet die Karte selbst so, als wäre sie schon angekommen.
-const KC_VERSION = "1.0.2";
+const KC_VERSION = "1.0.3-beta.1";
 
 const MONTHS = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
 const QKEY = "kegelclub_queue";
@@ -37,7 +37,7 @@ const KC_GUIDE = [
   { icon: "cash-multiple", title: "Was kostet was?", text: `Unter ⚙️ → <b>„Regeln & Beträge“</b>:<br>• <b>Grundbetrag</b> pro Person und Abend (z. B. 7,50 €).<br>• <b>Zuschauer zahlen</b> den Grundbetrag (Schalter).<br>• <b>Fehlende Mitglieder zahlen</b> den Grundbetrag (Schalter) – egal ob abgemeldet oder nicht.<br>• <b>Nicht abgemeldet</b>: Extra-Betrag obendrauf (z. B. 5,00 €).<br>• <b>Kegelbahn</b>: pro Stunde, aus der <b>Kasse</b> (wird beim <b>Abschließen</b> als Zeile „Kegelbahn“ in die Buchungen geschrieben), auf die Anwesenden <b>aufgeteilt</b> oder <b>gar nicht</b>.<br>Ändern gilt ab sofort und für den laufenden Abend. Abgeschlossene Abende bleiben, wie sie waren.` },
   { icon: "gavel", title: "Sündenregister (Strafen)", text: `⚙️ → <b>„Mitglieder & Strafen“</b> → Bereich <b>Strafen</b> → <b>＋ Neu</b>. Jede Strafe hat Name, Symbol, Betrag und <b>„Wer zahlt?“</b>:<br>• <b>Er selbst</b> – z. B. Pumpe, Klingeln.<br>• <b>Alle anderen, die mitkegeln</b> – z. B. <b>Alle Neune</b>: Wer die Neun wirft, zahlt nichts, alle anderen Mitkegler zahlen. Zuschauer und Fehlende bleiben verschont.<br>Am Griff ⠿ ziehen = Reihenfolge der Knöpfe am Abend.` },
   { icon: "hand-okay", title: "Heute keine Strafen berechnen", text: `Ausflug, Weihnachtsfeier, Geburtstag? Im Abend (oder später in der Liste der Abende) den Schalter <b>„Heute keine Strafen berechnen“</b> an: Gezählt wird trotzdem (für die Statistik), bezahlt wird nur der Grundbetrag.` },
-  { icon: "calculator-variant-outline", title: "Taschenrechner", text: `Oben auf <b>🧮</b> tippen – den Knopf gibt es auf dem Reiter <b>„Kasse“</b> und beim laufenden <b>Kegelabend</b>. Rechnet mit + − × ÷ und %. <b>K</b> setzt den Kassenstand ein (Kasse), <b>A</b> die Summe der Abrechnung (Abend). Unten: <b>„Als Einzahlung“</b> bzw. <b>„Als Ausgabe“</b> trägt das Ergebnis ins Buchen-Feld der Kasse ein, <b>„Kopieren“</b> z. B. für WhatsApp. Am PC geht auch die <b>Tastatur</b> (Ziffern, + − * /, Enter, Esc).` },
+  { icon: "calculator-variant-outline", title: "Taschenrechner", text: `Oben auf <b>🧮</b> tippen – den Knopf gibt es auf dem Reiter <b>„Kasse“</b> und nach <b>„Abend abschließen“</b> (bei „In Kasse buchen“). Rechnet mit + − × ÷ und %. <b>K</b> setzt den Kassenstand ein (Kasse). Unten: <b>„Als Einzahlung“</b> bzw. <b>„Als Ausgabe“</b> trägt das Ergebnis ins Buchen-Feld der Kasse ein, <b>„Kopieren“</b> z. B. für WhatsApp. Am PC geht auch die <b>Tastatur</b> (Ziffern, + − * /, Enter, Esc).` },
   { icon: "bank-outline", title: "Kegelkasse", text: `Reiter <b>„Kasse“</b>: oben der <b>Kassenstand</b>, darunter <b>„Wer schuldet was“</b>. Hat jemand bezahlt: <b>grünen Haken ✓</b> antippen – dann ist alles beglichen (Rückgängig geht 8 Sekunden lang). Teilbetrag? Auf die Person tippen.<br><b>＋ Einzahlung</b> und <b>− Ausgabe</b> (z. B. Kegelfahrt, Essen) für alles andere. Die Kegelbahn bucht sich je nach Einstellung selbst.<br><b>„Soll“</b> = Kasse + was noch offen ist.` },
   { icon: "chart-bar", title: "Statistik & Ehrungen", text: `Reiter <b>„Statistik“</b>: Jahr mit ‹ › wählen. Oben die <b>Könige</b> (wer hat die meisten Pumpen, Neunen …), dann <b>Strafen pro Person</b> (Säulen), <b>Strafen nach Art</b> (Kuchen), <b>Kasse übers Jahr</b> (Linie) und <b>Anwesenheit</b>.` },
   { icon: "history", title: "Alte Abende", text: `Unten im Reiter „Abend“ stehen die letzten Abende. Antippen = Abrechnung ansehen, <b>wieder öffnen</b> (z. B. vergessene Pumpe nachtragen), Datum ändern oder löschen.` },
@@ -52,6 +52,7 @@ const KC_GUIDE = [
 ];
 // 🆕 Was ist neu – das Neueste oben (wie bei der Einkaufsliste)
 const KC_NEWS = [
+  ["1.0.3-beta.1", "🧮 <b>Taschenrechner</b> nicht mehr beim laufenden Abend, sondern nach <b>„Abend abschließen“</b> (bei „In Kasse buchen“) – ganz normaler Rechner. Auf der Kasse bleibt er · 🪙 Nach dem Abschließen kann man rechts wieder <b>abhaken, wer bezahlt hat</b>. Der Grundbetrag bleibt dort fest · 🚫 <b>Kein Guthaben mehr, nur Schulden:</b> Wer mehr zahlt (z. B. Altschulden aus „Alle Neune“), steht auf 0 € – das Geld liegt einfach in der Kasse · 📊 Unter der Kegelkasse steht klein der <b>Stand am vorigen Kegelabend</b> · 📂 <b>„Buchen“</b> auf der Kasse klappt auf und zu · 🎯 <b>Spielmodus:</b> nur noch, wer <b>kegelt</b> · 👈 👉 <b>seitlich wischen</b> = nächster / voriger Spieler · unten keine Knöpfe mehr (Anleitung, Fingerabdruck, Abmelden)"],
   ["1.0.2", "🎉 <b>Offizielle Version 1.0.2:</b> Alles aus 3 Betas ist jetzt fest drin – Gut Holz! · 🚪 <b>Früher gegangen auch beim Nachtragen</b> („Zahlt mit: Alle Neune − 3 von 5 +“ in der Abrechnung) · 🆕 <b>Was ist neu</b> wie bei der Einkaufsliste, immer richtig sortiert · 🧮 <b>Taschenrechner wie bei Fixkosten:</b> oben auf 🧮 tippen – auf dem Reiter <b>Kasse</b> und beim laufenden <b>Kegelabend</b>. Rechnet mit + − × ÷ und %. <b>K</b> setzt den Kassenstand ein, <b>A</b> die Summe der Abrechnung. Das Ergebnis geht direkt als <b>Einzahlung</b> oder <b>Ausgabe</b> in die Kasse oder wird kopiert. Am PC geht auch die Tastatur"],
   ["1.0.2-beta.3", "🚪 <b>Früher gegangen – auch beim Nachtragen:</b> Wer auf „gegangen“ steht, hat in der Abrechnung eine Zeile <b>„Zahlt mit: Alle Neune − 3 von 5 +“</b>. Damit stellst du ein, wie viele Neuner (und andere „alle anderen zahlen“-Strafen) er vor dem Gehen noch mitbezahlt – praktisch, wenn ihr erst nach dem Kegeln aufschreibt"],
   ["1.0.2-beta.2", "🆕 <b>Was ist neu</b> sieht jetzt aus wie bei der Einkaufsliste: In einer Beta steht oben ein <b>oranger Kasten</b> mit allem, was in dieser Beta-Runde neu ist (höchste Beta oben). Darunter <b>„Die letzten Neuerungen bis Version …“</b> – die letzten 15 Neuerungen als eine Liste, das Neueste oben, statt vieler Abschnitte je Version"],
@@ -758,22 +759,25 @@ function billEvening(ev, members, strafen, settings) {
 const maps = (d) => [Object.fromEntries(d.members.map((m) => [m.id, m])), Object.fromEntries(d.strafen.map((s) => [s.id, s]))];
 function summary(d) {
   const [members, strafen] = maps(d);
-  const charged = {}, paid = {};
+  const charged = {}, paid = {}, flow = {}, evT = {}; // flow: je Person [Zeit, Betrag, Reihenfolge] – Abend = plus, Zahlung = minus
   let laneKasse = 0, last = null;
   for (const ev of d.abende) {
     const b = billEvening(ev, members, strafen, d.settings);
     if (ev.closed && ev.booked !== false) laneKasse += b.lane_kasse; // 🎳 Kegelbahn erst mit „In Kasse buchen“
     if (ev.closed && (!last || String(ev.date) >= String(last.date))) last = { id: ev.id, date: ev.date, total: b.total };
     if (ev.imported) continue;
-    for (const [mid, p] of Object.entries(b.people)) charged[mid] = (charged[mid] || 0) + p.total;
+    const t = evT[ev.id] = ev.started || Date.parse(ev.date) || 0;
+    for (const [mid, p] of Object.entries(b.people)) { charged[mid] = (charged[mid] || 0) + p.total; (flow[mid] ||= []).push([t, p.total, 0]); }
   }
   let kin = 0, kout = 0;
   for (const k of d.kasse) {
     const a = Number(k.amount) || 0;
-    if (k.kind === "out") kout += a; else { kin += a; if (k.member && !k.imported) paid[k.member] = (paid[k.member] || 0) + a; }
+    if (k.kind === "out") kout += a; else { kin += a; if (k.member && !k.imported) { paid[k.member] = (paid[k.member] || 0) + a; (flow[k.member] ||= []).push([Math.max(k.ts || 0, evT[k.abend] || 0), -a, 1]); } }
   }
+  // 🚫 Kein Guthaben: der Reihe nach rechnen – Zahlungen bauen Schulden höchstens bis 0 € ab, nie ins Plus (zu viel Gezahltes bleibt einfach in der Kasse)
+  const debtOf = (mid) => (flow[mid] || []).sort((x, y) => x[0] - y[0] || x[2] - y[2]).reduce((s, [, v]) => Math.max(0, r2(s + v)), 0);
   let open = 0;
-  const people = d.members.map((m) => { const debt = r2((charged[m.id] || 0) - (paid[m.id] || 0)); if (debt > 0) open += debt; return { id: m.id, name: m.name, guest: !!m.guest, charged: r2(charged[m.id] || 0), paid: r2(paid[m.id] || 0), debt }; });
+  const people = d.members.map((m) => { const debt = debtOf(m.id); if (debt > 0) open += debt; return { id: m.id, name: m.name, guest: !!m.guest, charged: r2(charged[m.id] || 0), paid: r2(paid[m.id] || 0), debt }; });
   const kasse = r2((Number(d.settings.start_balance) || 0) + kin - kout - laneKasse);
   const run = [...d.abende].reverse().find((e) => !e.closed);
   const unb = d.abende.find((e) => e.closed && e.booked === false);
@@ -1038,6 +1042,9 @@ input.swchk:checked::after { left:20px; }
 .tip { display:flex; align-items:center; gap:8px; border-radius:12px; padding:9px 12px; margin:2px 2px 8px; background:color-mix(in srgb, var(--kc-yellow) 18%, transparent); font-size:.9em; }
 .hero { border-radius:12px; padding:12px 14px; margin:2px 2px 10px; background:color-mix(in srgb, var(--hc, var(--kc-green)) 12%, transparent); }
 .hero .lbl { font-size:.85em; color:var(--secondary-text-color); }
+.hero .prevk { font-size:.82em; color:var(--secondary-text-color); margin-top:2px; }
+.ghead.fold { width:100%; border:0; background:none; font-family:inherit; cursor:pointer; text-align:left; }
+.ghead.fold .n { margin-left:auto; display:inline-flex; }
 .big { font-size:2.4em; font-weight:700; line-height:1.15; color:var(--hc, var(--kc-green)); font-variant-numeric:tabular-nums; cursor:pointer; }
 .bar { height:8px; background:color-mix(in srgb, var(--primary-text-color) 10%, transparent); border-radius:5px; overflow:hidden; margin-top:8px; }
 .bar i { display:block; height:100%; background:var(--hc, var(--kc-green)); border-radius:5px; }
@@ -1456,11 +1463,23 @@ class KegelclubCard extends HTMLElement {
     for (const ev of ["pointerup", "pointercancel", "pointerleave"]) root.addEventListener(ev, () => clearTimeout(lpTimer), true);
     root.addEventListener("click", (e) => { if (lpFired) { lpFired = false; e.stopImmediatePropagation(); e.preventDefault(); } }, true);
     root.addEventListener("contextmenu", (e) => { if (lpBtn(e.target)) e.preventDefault(); }, true);
+    // 👈👉 Spielmodus: seitlich wischen = nächster / voriger Spieler (nur klar seitlich, sonst ist es Scrollen)
+    let sw = null;
+    root.addEventListener("touchstart", (e) => { const t = e.touches[0]; sw = this._playIds && e.touches.length === 1 && !/^(INPUT|TEXTAREA|SELECT)$/.test(e.composedPath?.()[0]?.tagName || "") ? { x: t.clientX, y: t.clientY } : null; }, { passive: true });
+    root.addEventListener("touchend", (e) => {
+      const t = e.changedTouches[0], st0 = sw; sw = null;
+      if (!st0 || !t || !this._playIds?.length || this._view !== "abend") return;
+      const dx = t.clientX - st0.x, dy = t.clientY - st0.y;
+      if (Math.abs(dx) < 60 || Math.abs(dy) > Math.abs(dx) / 2) return;
+      const ids = this._playIds, i = ids.indexOf(this._sel);
+      this._sel = ids[i < 0 ? (dx < 0 ? 0 : ids.length - 1) : (i + (dx < 0 ? 1 : -1) + ids.length) % ids.length];
+      this._hand = false; this._force = true; this._render();
+    }, { passive: true });
     this._onKey = (e) => {
       if (this._calc && this.isConnected && !this._padShown && !e.ctrlKey && !e.metaKey && !e.altKey) { // 🧮 Taschenrechner per Tastatur – nicht, wenn man gerade in einem Feld tippt
         const t = e.composedPath?.()[0];
         if (t && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName || "")) return;
-        const map = { "+": "+", "-": "−", "*": "×", x: "×", X: "×", "/": "÷", ":": "÷", "%": "%", ",": ",", ".": ",", "=": "=", Enter: "=", Backspace: "⌫", Delete: "C", Escape: "C", k: "K", K: "K", a: "A", A: "A" };
+        const map = { "+": "+", "-": "−", "*": "×", x: "×", X: "×", "/": "÷", ":": "÷", "%": "%", ",": ",", ".": ",", "=": "=", Enter: "=", Backspace: "⌫", Delete: "C", Escape: "C", k: "K", K: "K" };
         const k = /^\d$/.test(e.key) ? e.key : map[e.key];
         const b = k && this.shadowRoot.querySelector(`.calc [data-a="ckey"][data-v="${k}"]`);
         if (!b) return;
@@ -1617,7 +1636,8 @@ class KegelclubCard extends HTMLElement {
     const isLocked = d?.pin && !pinOpen();
     const inSet = this._view === "set";
     const awakeHere = !!(d && !page && !["set", "kasse", "stats", "edit"].includes(this._view) && evFind(d));
-    const calcHere = !!(d && !page && !this._lockAll && ((this._view === "kasse" && !(d.pin && !pinOpen())) || awakeHere)); // 🧮 nur auf Kasse und beim laufenden Kegelabend
+    const unbHere = !!(d && !page && !["set", "kasse", "stats", "edit"].includes(this._view) && !evFind(d) && d.abende.some((e) => e.closed && e.booked === false)); // 🏦 Abend abgeschlossen, noch nicht gebucht
+    const calcHere = !!(d && !page && !this._lockAll && ((this._view === "kasse" && !(d.pin && !pinOpen())) || unbHere)); // 🧮 nur auf Kasse und nach „Abend abschließen“ (bei „In Kasse buchen“)
     if (!calcHere) this._calc = null;
     const tools = this._lockAll ? "" : `${calcHere ? `<button class="iconbtn ${this._calc ? "on" : ""}" data-a="calc" title="Taschenrechner">${ic("calculator-variant-outline")}${this._lb("Rechner")}</button>` : ""}${awakeHere ? `<button class="iconbtn awake ${this._awakeOn ? "on" : ""}" data-a="awake" title="${this._awakeOn ? "Bildschirm immer an – antippen zum Ausschalten" : "Bildschirm immer an (antippen)"}" aria-label="Bildschirm immer an">${ic(this._awakeOn ? "lightbulb-on" : "lightbulb-outline")}${this._lb("Bildschirm")}</button>` : ""}
       <button class="iconbtn" data-a="lock" title="${appLock ? "App jetzt sperren" : isLocked ? "Gesperrt – PIN nötig für ⚙️, Kasse und fertige Abende" : "Jetzt sperren"}">${ic(isLocked && !appLock ? "lock-outline" : "lock-open-variant-outline")}${this._lb(isLocked && !appLock ? "Gesperrt" : "Sperren")}</button>
@@ -1642,8 +1662,10 @@ class KegelclubCard extends HTMLElement {
       body += page ? `<div class="sec pagehost"><div class="sechead"><span class="ic" style="--ic:${page.color}">${ic(page.icon)}</span><h3>${page.title}</h3></div><div class="pagebody">${page.html}</div></div>`
         : this._view === "edit" ? this._editView(d) : this._view === "set" ? this._setView(d) : this._view === "kasse" ? this._kasseView(d) : this._view === "stats" ? this._statsView(d) : this._abendView(d);
     }
+    const playFoot = !!(d && !page && this._view === "abend" && d.summary?.running && store.get("kegelclub_spielmodus", false)); // 🎯 Spielmodus: unten nichts (Anleitung, und in der App Fingerabdruck/Abmelden)
+    if (this._app) document.documentElement.classList.toggle("kc-play", playFoot);
     this.shadowRoot.innerHTML = `<style>${CSS}</style>${top}<ha-card>${body}</ha-card>
-      <div class="foot"><button class="${this._view === "guide" ? "on" : ""}" data-a="tab" data-v="${this._view === "guide" ? "abend" : "guide"}">${ic("book-open-page-variant-outline")}<span>Anleitung</span></button></div>
+      ${playFoot ? "" : `<div class="foot"><button class="${this._view === "guide" ? "on" : ""}" data-a="tab" data-v="${this._view === "guide" ? "abend" : "guide"}">${ic("book-open-page-variant-outline")}<span>Anleitung</span></button></div>`}
       ${this._undo ? `<div class="undobar" role="status"><span class="ut">${esc(this._undo.label)}</span><button class="ub" data-a="undo">↩️ Rückgängig</button></div>` : ""}`;
     if (KC_LANG !== "de" && KC_DICT) {
       try { kcCollectUser(this._data); if (this._config?.title && this._config.title !== "Kegelclub") KC_USER.add(kcNorm(this._config.title)); kcTranslateTree(this.shadowRoot); } catch (_) { /* dann eben Deutsch */ }
@@ -1676,6 +1698,7 @@ class KegelclubCard extends HTMLElement {
 
   // ---------------------------------------------------------------- 🎳 Abend
   _abendView(d) {
+    this._playIds = null;
     const ev = evFind(d);
     if (!d.members.length && !d.setup_done && !ev) return this._wizard(d);
     if (ev) return this._evRunning(d, ev);
@@ -1774,14 +1797,16 @@ class KegelclubCard extends HTMLElement {
     const [members, strafen] = maps(d);
     const b = billEvening(ev, members, strafen, d.settings);
     const here = (mid) => ["play", "watch", "gone"].includes(ev.status[mid]);
+    const play = !!store.get("kegelclub_spielmodus", false); // 🎯 Spielmodus: nur „Wer war's?“ und „Strafen“
     const all = this._order(d, Object.keys(ev.status)), ids = all.filter(here);
-    if (this._sel && !all.includes(this._sel)) this._sel = null;
+    const shown = play ? all.filter((m) => ev.status[m] === "play") : all; // 🎯 im Spielmodus nur, wer kegelt
+    this._playIds = play ? shown : null; // 👈👉 fürs Wischen
+    if (this._sel && !shown.includes(this._sel)) this._sel = null;
     const sel = this._sel, selAway = !!sel && !here(sel);
     const finesSum = r2(all.reduce((s, m) => s + b.people[m].fines, 0));
     const feeSum = r2(ids.reduce((s, m) => s + b.people[m].fee, 0));
     const feeOpen = ids.filter((m) => b.people[m].fee > 0 && this._paidAt(d, ev.id, m, "base") < b.people[m].fee - 0.004);
     const feePaid = r2(ids.reduce((s, m) => s + Math.min(b.people[m].fee, this._paidAt(d, ev.id, m, "base")), 0));
-    const play = !!store.get("kegelclub_spielmodus", false); // 🎯 Spielmodus: nur „Wer war's?“ und „Strafen“
     let h = "";
     if (!play) {
     // 🧾 Klar getrennt: was beim Grundbetrag schon kassiert ist – und die Kegelbahn extra (die geht erst mit „In Kasse buchen“ aus der Kasse)
@@ -1802,7 +1827,7 @@ class KegelclubCard extends HTMLElement {
     }
     }
     h += this._gh("account-group-outline", "#1e88e5", "Wer war's?", sel ? `<span data-noicon>${esc(members[sel]?.name || "")}</span>` : "Person antippen");
-    h += `<div class="ppl ${play ? "play" : ""}">${all.map((mid) => {
+    h += `<div class="ppl ${play ? "play" : ""}">${shown.map((mid) => {
       const m = members[mid] || {}, p = b.people[mid], st = STATUS[p.status] || STATUS.play;
       return `<div class="pp ${sel === mid ? "sel" : ""} ${here(mid) ? "" : "off"} ${p.status === "gone" ? "gone" : ""}" data-a="pick" data-id="${esc(mid)}" role="button">${m.guest ? `<span class="gst">Gast</span>` : ""}<span class="av ${m.photo ? "ph" : ""}" style="--ac:${mcol(d, mid)}">${m.photo ? `<img src="${esc(m.photo)}" alt="">` : esc(initials(m.name))}</span><span class="nm" data-noicon>${esc(m.name || "?")}</span><span class="sum">${this._m(p.fines)}</span>
         <button class="stbtn" style="--sc:${st.color}" data-a="status" data-id="${esc(mid)}" title="Antippen = weiter: kegelt → schaut zu → gegangen → abgemeldet → nicht abgemeldet">${ic(st.icon)}${esc(this._stLabel(ev, mid, p.status))}</button></div>`;
@@ -1816,7 +1841,7 @@ class KegelclubCard extends HTMLElement {
     if (sel && this._hand) h += `<form class="edit" data-a="hand"><div class="f"><label class="wide">Wofür? (z. B. Bier umgekippt)<input name="name" autocomplete="off"></label><label>Betrag (${KC_MONEY.sym})<input name="amount" inputmode="decimal" autocomplete="off"></label></div>
       <div class="btnrow end"><button type="button" class="btn" data-a="handopen">${ic("close")}Abbrechen</button><button class="btn main" type="submit">${ic("check")}Für ${esc(members[sel]?.name || "")} buchen</button></div></form>`;
     if (!fines.length) h += `<div class="empty">Noch keine Strafen – unter ⚙️ → „Mitglieder & Strafen“ anlegen.</div>`;
-    if (play) return h + `<p class="small playhint">🎯 Spielmodus – oben auf „Alles“ tippen zeigt wieder Abrechnung, Grundbetrag und „Abend abschließen“.</p>`;
+    if (play) return h + `<p class="small playhint">🎯 Spielmodus – 👈 👉 seitlich wischen = nächster / voriger Spieler. Oben auf „Alles“ tippen zeigt wieder Abrechnung, Grundbetrag und „Abend abschließen“.</p>`;
     h += this._billHtml(d, ev, b, true);
     h += `<div class="btnrow"><button class="btn main" data-a="evclose" data-id="${esc(ev.id)}">${ic("flag-checkered")}Abend abschließen</button><button class="btn" data-a="share" data-id="${esc(ev.id)}">${ic("share-variant-outline")}Teilen</button></div>`;
     return h;
@@ -1840,9 +1865,9 @@ class KegelclubCard extends HTMLElement {
       if (ev.imported) return `<div class="item" style="--cc:${st.color}"><div class="n"><b data-noicon>${esc(members[mid]?.name || "?")}</b>${chips ? `<div class="chips" style="margin-top:3px">${chips}</div>` : ""}</div><div class="amt">${this._m(p.total)}</div></div>`;
       const due = r2(p.fines + p.lane + p.extra), paidF = this._paidAt(d, ev.id, mid, "fines"), paidB = this._paidAt(d, ev.id, mid, "base");
       const baseOk = !p.fee || paidB >= p.fee - 0.004, finesOk = due <= 0.004 || paidF >= due - 0.004;
-      const baseLock = baseOk && paidB > 0 && this._hasFines(ev, mid); // 🔒 wer schon eine Strafe hat, saß am Tisch – Grundbetrag bleibt bezahlt
-      const baseTag = p.fee ? baseLock ? `<span class="tag ok" title="Gesperrt: ${esc(this._name(d, mid))} hat schon Strafen">Grundbetrag ${money(p.fee)} ✓ 🔒</span>` : `<button class="tag ${baseOk ? "ok" : "no"}" data-a="basetoggle" data-id="${esc(mid)}" title="Antippen = Grundbetrag bezahlt / nicht bezahlt">Grundbetrag ${money(p.fee)} ${baseOk ? "✓" : "offen"}</button>` : "";
-      const tags = isAway(mid) ? [`<span class="tag">${esc(this._stLabel(ev, mid, p.status))}</span>`, baseTag, p.extra ? `<button class="tag ${finesOk ? "ok" : "no"}" data-a="coin" data-id="${esc(mid)}" title="Antippen = bezahlt / nicht bezahlt">+ ${money(p.extra)} nicht abgemeldet ${finesOk ? "✓" : ""}</button>` : ""].join("") : [`<span class="tag">${esc(this._stLabel(ev, mid, p.status))}</span>`,
+      const baseLock = (baseOk && paidB > 0 && this._hasFines(ev, mid)) || (!live && ev.closed); // 🔒 nach „Abend abschließen“ bleibt der Grundbetrag, wie er ist // 🔒 wer schon eine Strafe hat, saß am Tisch – Grundbetrag bleibt bezahlt
+      const baseTag = p.fee ? baseLock ? `<span class="tag ${baseOk ? "ok" : "no"}" title="${live ? `Gesperrt: ${esc(this._name(d, mid))} hat schon Strafen` : "Abend ist abgeschlossen"}">Grundbetrag ${money(p.fee)} ${baseOk ? "✓" : "offen"}${live ? " 🔒" : ""}</span>` : `<button class="tag ${baseOk ? "ok" : "no"}" data-a="basetoggle" data-id="${esc(mid)}" title="Antippen = Grundbetrag bezahlt / nicht bezahlt">Grundbetrag ${money(p.fee)} ${baseOk ? "✓" : "offen"}</button>` : "";
+      const tags = isAway(mid) ? [`<span class="tag">${esc(this._stLabel(ev, mid, p.status))}</span>`, baseTag, p.extra ? `<button class="tag ${finesOk ? "ok" : "no"}" data-a="coin" data-id="${esc(mid)}" data-ev="${esc(ev.id)}" title="Antippen = bezahlt / nicht bezahlt">+ ${money(p.extra)} nicht abgemeldet ${finesOk ? "✓" : ""}</button>` : ""].join("") : [`<span class="tag">${esc(this._stLabel(ev, mid, p.status))}</span>`,
         baseTag,
         p.lane ? `<span class="tag">inkl. Bahn ${money(p.lane)}</span>` : "", ev.no_fines && Object.keys(p.items).length ? `<span class="tag">keine Strafen berechnet</span>` : ""].join("");
       let goneRow = ""; // 🚪 gegangen: von Hand einstellen, wie viele „alle anderen zahlen“-Strafen er noch mitbezahlt (für Clubs, die erst hinterher aufschreiben)
@@ -1855,7 +1880,7 @@ class KegelclubCard extends HTMLElement {
         for (const [k, n] of Object.entries(p.items)) { const [sid, from] = k.split(">"); if (from) got[sid] = (got[sid] || 0) + n; }
         goneRow = Object.entries(tot).map(([sid, t]) => `<div class="gonecap"><span>🚪 Zahlt mit: <b data-noicon>${esc(strafen[sid]?.name || "?")}</b></span><button class="gcb" data-a="gonecap" data-id="${esc(mid)}" data-v="${esc(sid)}" data-d="-1" ${got[sid] ? "" : "disabled"} aria-label="weniger">−</button><b class="gcn">${got[sid] || 0}</b><span class="gct">von ${t}</span><button class="gcb" data-a="gonecap" data-id="${esc(mid)}" data-v="${esc(sid)}" data-d="1" ${(got[sid] || 0) < t ? "" : "disabled"} aria-label="mehr">+</button></div>`).join("");
       }
-      const coin = due > 0.004 || paidF > 0 ? `<button class="iconbtn coin ${finesOk ? "ok" : ""}" data-a="coin" data-id="${esc(mid)}" title="${finesOk ? "Bezahlt ✓ – antippen = zurücknehmen" : "Antippen = Strafen bezahlt"}" aria-label="bezahlt">${ic(finesOk ? "check-circle" : "hand-coin-outline")}</button>` : `<span class="iconbtn coin"></span>`;
+      const coin = due > 0.004 || paidF > 0 ? `<button class="iconbtn coin ${finesOk ? "ok" : ""}" data-a="coin" data-id="${esc(mid)}" data-ev="${esc(ev.id)}" title="${finesOk ? "Bezahlt ✓ – antippen = zurücknehmen" : "Antippen = Strafen bezahlt"}" aria-label="bezahlt">${ic(finesOk ? "check-circle" : "hand-coin-outline")}</button>` : `<span class="iconbtn coin"></span>`;
       return `<div class="item ${isAway(mid) ? "off" : ""}" style="--cc:${st.color}">${this._avatar(d, mid, 34)}<div class="n"><b data-noicon>${esc(members[mid]?.name || "?")}</b><div class="meta">${tags}</div>${chips ? `<div class="chips" style="margin-top:3px">${chips}</div>` : ""}${goneRow}</div><div class="amt">${this._m(due, finesOk ? "" : "neg")}</div>${coin}</div>`;
     }).join("")}</div>`;
     return h;
@@ -2004,26 +2029,33 @@ ${scope} .ksf{text-align:center;font-size:10px;color:#999;margin-top:12px}`;
   }
 
   // ---------------------------------------------------------------- 🏦 Kasse
-  _calcSum(d) { // 🧮 „A“: Summe der Abrechnung des laufenden Abends (Strafen + Bahnanteil + Extra)
-    const ev = evFind(d);
-    if (!ev) return 0;
-    const [members, strafen] = maps(d), b = billEvening(ev, members, strafen, d.settings);
-    return r2(Object.values(b.people).reduce((s, p) => s + p.fines + p.lane + p.extra, 0));
-  }
   _calcView(d) {
     const c = this._calc, res = kcCalcEval(c.expr), kasse = this._view === "kasse";
-    const sk = kasse ? ["K", "Kassenstand einsetzen"] : ["A", "Summe der Abrechnung einsetzen"];
-    const keys = [["C", "cl"], ["⌫", "cl"], ["%", "op"], ["÷", "op"], ["7"], ["8"], ["9"], ["×", "op"], ["4"], ["5"], ["6"], ["−", "op"], ["1"], ["2"], ["3"], ["+", "op"], [sk[0], "op"], ["0"], [","], ["=", "eq"]];
+    const sk = kasse ? ["K", "Kassenstand einsetzen"] : ["00", ""]; // nach dem Abend: ganz normaler Rechner
+    const keys = [["C", "cl"], ["⌫", "cl"], ["%", "op"], ["÷", "op"], ["7"], ["8"], ["9"], ["×", "op"], ["4"], ["5"], ["6"], ["−", "op"], ["1"], ["2"], ["3"], ["+", "op"], [sk[0], kasse ? "op" : ""], ["0"], [","], ["=", "eq"]];
     return `<div class="calc"><div class="disp"><div class="expr">${esc(c.expr || " ")}</div><div class="res">${res == null ? "–" : money(res)}</div></div>
       <div class="keys">${keys.map(([k, cl]) => `<button class="${cl || ""}" data-a="ckey" data-v="${k}" title="${k === sk[0] ? sk[1] : ""}">${k}</button>`).join("")}</div>
       <div class="btnrow">${kasse ? `<button class="btn small" data-a="cuse" data-v="in" ${res == null ? "disabled" : ""}>${ic("plus")}Als Einzahlung</button>
       <button class="btn small" data-a="cuse" data-v="out" ${res == null ? "disabled" : ""}>${ic("minus")}Als Ausgabe</button>` : ""}
       <button class="btn small" data-a="cuse" data-v="copy" ${res == null ? "disabled" : ""}>${ic("content-copy")}Kopieren</button></div></div>`;
   }
+  // 📊 Kassenstand am vorigen Kegelabend (der heutige zählt nicht) – zum Vergleichen mit heute
+  _prevKasse(d) {
+    const today = todayIso();
+    const ev = [...d.abende].filter((e) => e.closed && e.booked !== false && String(e.date) < today).sort((a, b) => String(a.date).localeCompare(String(b.date))).pop();
+    if (!ev) return null;
+    const T = Math.max(new Date(ev.date + "T23:59:59").getTime(), ev.closed_ts || 0, ev.booked_ts || 0);
+    const [mm, ss] = maps(d);
+    let bal = Number(d.settings.start_balance) || 0;
+    for (const k of d.kasse) if ((k.ts || 0) <= T) bal += (k.kind === "out" ? -1 : 1) * (Number(k.amount) || 0);
+    for (const e of d.abende) if (e.closed && e.booked !== false && (e.closed_ts || e.started || Date.parse(e.date) || 0) <= T) bal -= billEvening(e, mm, ss, d.settings).lane_kasse;
+    return { date: ev.date, bal: r2(bal) };
+  }
   _kasseView(d) {
     const s = d.summary;
     const hc = s.kasse < 0 ? "var(--kc-red)" : "var(--kc-green)";
-    let h = `<div class="hero" style="--hc:${hc}"><div class="lbl">Kegelkasse</div><div class="big kasse">${this._mv(s.kasse, "kasse")}</div></div>
+    const prev = this._prevKasse(d);
+    let h = `<div class="hero" style="--hc:${hc}"><div class="lbl">Kegelkasse</div><div class="big kasse">${this._mv(s.kasse, "kasse")}</div>${prev ? `<div class="prevk">Stand am Kegelabend ${esc(fmtDate(prev.date, { day: "2-digit", month: "2-digit", year: "2-digit" }))}: ${this._mv(prev.bal, "kprev")}</div>` : ""}</div>
       <div class="tiles"><div class="tile"><span>${ic("account-clock-outline")}Noch offen</span><b>${this._m(s.open, s.open ? "neg" : "")}</b></div>
       <div class="tile"><span>${ic("scale-balance")}Soll</span><b>${this._mv(s.soll, "soll")}</b></div>
       <div class="tile"><span>${ic("bowling")}Kegelbahn</span><b>${this._m(s.lane_total)}</b></div></div>`;
@@ -2032,12 +2064,11 @@ ${scope} .ksf{text-align:center;font-size:10px;color:#999;margin-top:12px}`;
     h += this._gh("account-cash-outline", "var(--kc-red)", "Wer schuldet was", debtors.length ? this._m(s.open, "neg") : "");
     h += debtors.length ? debtors.map((p) => (`<div class="item click" style="--cc:${mcol(d, p.id)}" data-a="open" data-k="pay" data-id="${esc(p.id)}" title="Antippen = Teilbetrag"><div class="n"><b data-noicon>${esc(p.name)}</b><div class="meta">${p.guest ? `<span class="tag">Gast</span>` : ""}<span class="tag">bezahlt ${money(p.paid)}</span></div></div><div class="amt">${this._m(p.debt, "neg")}</div>
         <button class="iconbtn okbtn" data-a="payall" data-id="${esc(p.id)}" title="✓ Hat alles bezahlt" aria-label="bezahlt">${ic("check-bold")}${this._lb("bezahlt")}</button></div>` + (this._open?.kind === "pay" && this._open.id === p.id ? this._payForm(p) : ""))).join("") : `<div class="empty">Alle haben bezahlt 🎉</div>`;
-    const credit = s.people.filter((p) => p.debt < -0.004);
-    if (credit.length) h += `<p class="small">Guthaben: ${credit.map((p) => `<span data-noicon>${esc(p.name)}</span> ${money(-p.debt)}`).join(" · ")}</p>`;
-    // ＋ Einzahlung / − Ausgabe
+    // ＋ Einzahlung / − Ausgabe – zum Einklappen (Standard zu, jedes Gerät merkt es sich)
     const mem = d.members.filter((m) => m.active !== false);
-    h += this._gh("swap-vertical", "#1e88e5", "Buchen", "");
-    h += `<div class="seg" style="margin:0 2px 6px"><button class="${this._kform === "in" ? "on" : ""}" data-a="kform" data-v="in">＋ Einzahlung</button><button class="${this._kform === "out" ? "on" : ""}" data-a="kform" data-v="out">− Ausgabe</button></div>
+    const kOpen = !!store.get("kegelclub_buchen_auf", false);
+    h += `<button class="ghead fold" data-a="kfold" aria-expanded="${kOpen}"><span class="gdot" style="--gc:#1e88e5">${ic("swap-vertical")}</span><span>Buchen</span><span class="n">${ic(kOpen ? "chevron-up" : "chevron-down")}</span></button>`;
+    if (kOpen) h += `<div class="seg" style="margin:0 2px 6px"><button class="${this._kform === "in" ? "on" : ""}" data-a="kform" data-v="in">＋ Einzahlung</button><button class="${this._kform === "out" ? "on" : ""}" data-a="kform" data-v="out">− Ausgabe</button></div>
       <form class="edit" data-a="kadd"><div class="f">${this._kform === "in" ? `<label>Von wem?<select name="member"><option value="">– niemand (sonstige Einnahme) –</option>${mem.map((m) => `<option value="${esc(m.id)}" data-user>${esc(m.name)}</option>`).join("")}</select></label>` : ""}
         <label ${this._kform === "in" ? "" : `class="wide"`}>Wofür?<input name="name" placeholder="${this._kform === "in" ? "Einzahlung" : "z. B. Kegelfahrt, Essen"}" autocomplete="off"></label>
         <label>Betrag (${KC_MONEY.sym})<input name="amount" inputmode="decimal" autocomplete="off" value="${esc(this._prefAmount || "")}"></label>
@@ -2577,6 +2608,7 @@ ${scope} .ksf{text-align:center;font-size:10px;color:#999;margin-top:12px}`;
       this._send({ type: "abend_gone_cap", abend: evx.id, member: id, strafe: sid, n: Math.max(0, cur + Number(el.dataset.d || 0)) });
       return;
     }
+    if (a === "kfold") { store.put("kegelclub_buchen_auf", !store.get("kegelclub_buchen_auf", false)); redraw(); return; } // 📂 „Buchen“ auf/zu
     if (a === "calc") { this._calc = this._calc ? null : { expr: "" }; redraw(); return; }
     if (a === "ckey") {
       const k = el.dataset.v, c = this._calc;
@@ -2585,7 +2617,6 @@ ${scope} .ksf{text-align:center;font-size:10px;color:#999;margin-top:12px}`;
       else if (k === "⌫") c.expr = c.expr.slice(0, -1);
       else if (k === "=") { const r = kcCalcEval(c.expr); if (r != null) c.expr = numDe(r); }
       else if (k === "K") c.expr += numDe(d.summary.kasse);
-      else if (k === "A") c.expr += numDe(this._calcSum(d));
       else c.expr += k;
       redraw(); return;
     }
@@ -2593,7 +2624,7 @@ ${scope} .ksf{text-align:center;font-size:10px;color:#999;margin-top:12px}`;
       const r = kcCalcEval(this._calc?.expr);
       if (r == null) return;
       if (el.dataset.v === "in" || el.dataset.v === "out") { // 🏦 Ergebnis ins Buchen-Formular der Kasse
-        this._kform = el.dataset.v; this._prefAmount = numDe(Math.abs(r)); this._calc = null; redraw();
+        this._kform = el.dataset.v; this._prefAmount = numDe(Math.abs(r)); this._calc = null; store.put("kegelclub_buchen_auf", true); redraw();
         setTimeout(() => { const f = this.shadowRoot.querySelector('form[data-a="kadd"]'); f?.scrollIntoView?.({ block: "center" }); f?.querySelector('input[name="name"]')?.focus(); }, 30);
       } else kcCopy(numDe(r), null).then(() => this._toast("📋 Kopiert"));
       return;
@@ -2670,7 +2701,8 @@ ${scope} .ksf{text-align:center;font-size:10px;color:#999;margin-top:12px}`;
       }
       if (ops.length) this._undoFor(`💶 Grundbetrag von ${ops.length} kassiert`, ops.map((o) => ({ type: "kasse_delete", id: o.id })));
     }
-    else if ((a === "basetoggle" || a === "coin") && ev) {
+    else if ((a === "basetoggle" || a === "coin") && (el.dataset.ev ? d.abende.some((x) => x.id === el.dataset.ev) : ev)) {
+      const ev = el.dataset.ev ? d.abende.find((x) => x.id === el.dataset.ev) : evFind(d); // 🪙 auch nach „Abend abschließen“: der angezeigte Abend
       const tag = a === "coin" ? "fines" : "base";
       const p = billEvening(ev, ...maps(d), d.settings).people[id]; if (!p) return;
       const due = tag === "base" ? p.fee : r2(p.fines + p.lane + p.extra), paid = this._paidAt(d, ev.id, id, tag);
