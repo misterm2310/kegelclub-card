@@ -6,7 +6,7 @@
 // - Jede Änderung (Pumpe, Einzahlung, wer da ist …) wird als kleine „Änderung“ verschickt.
 // - Klappt das Verschicken nicht (kein Netz auf der Kegelbahn), landet die Änderung im Postausgang und wird
 //   später nachgeschickt. Bis dahin rechnet die Karte selbst so, als wäre sie schon angekommen.
-const KC_VERSION = "1.0.3-beta.1";
+const KC_VERSION = "1.0.3-beta.2";
 
 const MONTHS = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
 const QKEY = "kegelclub_queue";
@@ -43,7 +43,7 @@ const KC_GUIDE = [
   { icon: "history", title: "Alte Abende", text: `Unten im Reiter „Abend“ stehen die letzten Abende. Antippen = Abrechnung ansehen, <b>wieder öffnen</b> (z. B. vergessene Pumpe nachtragen), Datum ändern oder löschen.` },
   { icon: "database-import-outline", title: "Aus „Alle Neune“ umziehen", text: `In der App „Alle Neune“ die Daten <b>exportieren</b> (Datenbank-Datei). Dann hier ⚙️ → <b>„Import & Sicherung“</b> → Datei wählen. Erst kommt eine <b>Vorschau</b> (wie viele Abende, Personen, Buchungen, Kassenstand), erst nach „Übernehmen“ wird etwas geändert.<br>Übernommen werden Mitglieder, Ehemalige, Gäste, Strafen mit Preisen, alle Abende mit Strafen (für die Statistik) und die <b>komplette Kasse</b>. Alte Abende zählen nicht als „offen“ – die waren in der App ja schon abgerechnet. Spiele werden nicht übernommen.` },
   { icon: "content-save-outline", title: "Sichern", text: `⚙️ → „Import & Sicherung“: <b>„Sicherung speichern“</b> lädt alles als Datei herunter (.json). Mit derselben Datei holst du später alles zurück. Die Kasse gibt es zusätzlich als <b>CSV</b> für Excel.` },
-  { icon: "cellphone-lock", title: "Offline-App für die Kegelbahn", text: `Auf der Kegelbahn ist das WLAN oft schlechter als die Pumpe vom Kassenwart. Darum gibt es eine eigene kleine App: Adresse in ⚙️ → <b>„Offline-App“</b>. Im Handy-Browser öffnen → anmelden → „Zum Startbildschirm“.<br>Ohne Netz läuft alles weiter. Was du einträgst, wartet im <b>Postausgang</b> (oben „⏳ wartet“) und wird von selbst nachgeschickt. Nichts zählt doppelt – auch wenn zwei Handys gleichzeitig Strafen buchen.` },
+  { icon: "cellphone-lock", title: "Offline-App für die Kegelbahn", text: `Auf der Kegelbahn ist das WLAN oft schlechter als die Pumpe vom Kassenwart. Darum gibt es eine eigene kleine App: Adresse in ⚙️ → <b>„Offline-App“</b>. Im Handy-Browser öffnen → anmelden → „Zum Startbildschirm“.<br>Ohne Netz läuft alles weiter. Was du einträgst, wartet im <b>Postausgang</b> (oben „⏳ wartet“) und wird von selbst nachgeschickt, sobald das Netz wieder da ist – auf Android-Handys sogar, wenn die App zu ist. Nichts zählt doppelt – auch wenn zwei Handys gleichzeitig Strafen buchen.` },
   { icon: "shield-key-outline", title: "PIN-Sperre und Seitenleiste", text: `In ⚙️ unter <b>„Schutz“</b> legst du eine PIN (4–8 Ziffern) fest. Dann fragt ⚙️ danach (auch für Mitglieder & Strafen). Strafen buchen geht weiter ohne PIN. Wahlweise sperrt die PIN die <b>ganze Karte</b>.<br><b>PIN vergessen?</b> Ein Admin geht auf <b>Einstellungen → Geräte & Dienste → Kegelclub → Konfigurieren</b> und hakt <b>„PIN zurücksetzen“</b> an. Dort gibt es auch <b>„In der Seitenleiste anzeigen“</b>.` },
   { icon: "home-group", title: "Mehrere Clubs", text: `<b>Einstellungen → Geräte &amp; Dienste → Kegelclub → Eintrag hinzufügen</b> und einen Namen geben. Jeder Club hat eigene Mitglieder, Strafen, Kasse, PIN und Sensoren. Im Karten-Editor wählst du bei „Welcher Club?“.` },
   { icon: "home-assistant", title: "Sensoren und Aktionen", text: `Sensoren: <b>Kegelkasse</b>, <b>Offen</b> (mit allen Schuldnern), <b>Letzter Abend</b> und <b>Kegelabend läuft</b> (an/aus).<br>Aktionen für Automationen: <code>kegelclub.strafe_buchen</code>, <code>kegelclub.abend_starten</code>, <code>kegelclub.abend_abschliessen</code>, <code>kegelclub.einzahlung</code>, <code>kegelclub.ausgabe</code>, <code>kegelclub.daten_abrufen</code>. Beispiele stehen im README.` },
@@ -52,6 +52,7 @@ const KC_GUIDE = [
 ];
 // 🆕 Was ist neu – das Neueste oben (wie bei der Einkaufsliste)
 const KC_NEWS = [
+  ["1.0.3-beta.2", "📶 <b>Wieder online = im Hintergrund nachschicken</b> (wie bei der Einkaufsliste): Was im Funkloch auf der Kegelbahn gebucht wurde, schickt die Offline-App von selbst an Home Assistant, sobald das Netz wieder da ist – auf Android-Handys sogar, wenn die App schon zu ist. Beim nächsten Öffnen steht dann „✅ … im Hintergrund nachgeschickt“. Ist die Karte offen, meldet sie „✅ Wieder online – … nachgeschickt“. iPhones können das im Hintergrund leider nicht, dort wird wie bisher beim Öffnen nachgeschickt."],
   ["1.0.3-beta.1", "🧮 <b>Taschenrechner</b> nicht mehr beim laufenden Abend, sondern nach <b>„Abend abschließen“</b> (bei „In Kasse buchen“) – ganz normaler Rechner. Auf der Kasse bleibt er · 🪙 Nach dem Abschließen kann man rechts wieder <b>abhaken, wer bezahlt hat</b>. Der Grundbetrag bleibt dort fest · 🚫 <b>Kein Guthaben mehr, nur Schulden:</b> Wer mehr zahlt (z. B. Altschulden aus „Alle Neune“), steht auf 0 € – das Geld liegt einfach in der Kasse · 📊 Unter der Kegelkasse steht klein der <b>Stand am vorigen Kegelabend</b> · 📂 <b>„Buchen“</b> auf der Kasse klappt auf und zu · 🎯 <b>Spielmodus:</b> nur noch, wer <b>kegelt</b> · 👈 👉 <b>seitlich wischen</b> = nächster / voriger Spieler · unten keine Knöpfe mehr (Anleitung, Fingerabdruck, Abmelden)"],
   ["1.0.2", "🎉 <b>Offizielle Version 1.0.2:</b> Alles aus 3 Betas ist jetzt fest drin – Gut Holz! · 🚪 <b>Früher gegangen auch beim Nachtragen</b> („Zahlt mit: Alle Neune − 3 von 5 +“ in der Abrechnung) · 🆕 <b>Was ist neu</b> wie bei der Einkaufsliste, immer richtig sortiert · 🧮 <b>Taschenrechner wie bei Fixkosten:</b> oben auf 🧮 tippen – auf dem Reiter <b>Kasse</b> und beim laufenden <b>Kegelabend</b>. Rechnet mit + − × ÷ und %. <b>K</b> setzt den Kassenstand ein, <b>A</b> die Summe der Abrechnung. Das Ergebnis geht direkt als <b>Einzahlung</b> oder <b>Ausgabe</b> in die Kasse oder wird kopiert. Am PC geht auch die Tastatur"],
   ["1.0.2-beta.3", "🚪 <b>Früher gegangen – auch beim Nachtragen:</b> Wer auf „gegangen“ steht, hat in der Abrechnung eine Zeile <b>„Zahlt mit: Alle Neune − 3 von 5 +“</b>. Damit stellst du ein, wie viele Neuner (und andere „alle anderen zahlen“-Strafen) er vor dem Gehen noch mitbezahlt – praktisch, wenn ihr erst nach dem Kegeln aufschreibt"],
@@ -1531,7 +1532,8 @@ class KegelclubCard extends HTMLElement {
       this._subscribe();
       this._render();
     }
-    if (hass.connected !== false) this._flush();
+    if (hass.connected === false) { if (this._queue.length) this._wasOff = true; }
+    else this._flush();
   }
   connectedCallback() { if (this._hass && !this._unsub) this._subscribe(); document.addEventListener("keydown", this._onKey, true); }
   disconnectedCallback() { this._awakeStop(); this._unsub?.then((u) => u?.()).catch(() => {}); this._unsub = null; document.removeEventListener("keydown", this._onKey, true); }
@@ -1557,7 +1559,7 @@ class KegelclubCard extends HTMLElement {
   _send(op) {
     op = { op_id: uid(), ts: Date.now(), ...op };
     this._queue.push(op);
-    store.put(this._qk, this._queue);
+    this._saveQ();
     this._render();
     this._flush();
     return op;
@@ -1571,14 +1573,33 @@ class KegelclubCard extends HTMLElement {
       const done = new Set(batch.map((o) => o.op_id));
       const failed = (res?.results || []).filter((r) => !r.ok);
       this._queue = this._queue.filter((o) => !done.has(o.op_id));
-      store.put(this._qk, this._queue);
+      this._saveQ();
       if (failed.length) this._toast("⚠️ " + failed.map((f) => f.error).join(", "));
+      if (this._wasOff) { // 📶 Netz war weg und ist wieder da: kurz Bescheid sagen (wie bei der Einkaufsliste)
+        this._offSent = (this._offSent || 0) + batch.length;
+        if (!this._queue.length) { const n = this._offSent; this._wasOff = false; this._offSent = 0; this._toast(`✅ Wieder online – ${n} ${n === 1 ? "Änderung" : "Änderungen"} nachgeschickt`); }
+      }
       this._render();
       if (this._queue.length) setTimeout(() => this._flush(), 50);
     } catch (_) {
+      this._wasOff = true;
       clearTimeout(this._retry);
       this._retry = setTimeout(() => this._flush(), 15000);
     } finally { this._flushing = false; }
+  }
+  // 💾 Postausgang im Handy speichern. Die Offline-App bekommt ihn zusätzlich mit, damit ihr Hintergrund-Helfer (sw.js)
+  // ihn auch bei geschlossener App nachschicken kann, sobald das Netz wieder da ist.
+  _saveQ() {
+    store.put(this._qk, this._queue);
+    if (this._app) window.dispatchEvent(new CustomEvent("kegelclub-queue", { detail: { key: this._qk, book: this._book || "", queue: this._queue } }));
+  }
+  // 🔄 Die Offline-App hat im Hintergrund schon nachgeschickt: Postausgang frisch aus dem Handy-Speicher holen
+  _reloadQueue() {
+    const q = store.get(this._qk, []);
+    if (JSON.stringify(q) === JSON.stringify(this._queue)) return;
+    this._queue = q;
+    this._force = true;
+    this._render();
   }
   _toast(message) { this.dispatchEvent(new CustomEvent("hass-notification", { detail: { message: kcT(message) }, bubbles: true, composed: true })); }
 
@@ -2825,7 +2846,7 @@ ${scope} .ksf{text-align:center;font-size:10px;color:#999;margin-top:12px}`;
     else if (a === "factory") {
       if (!kcConfirm("Wirklich ALLES löschen?\n\nMitglieder, Strafen, alle Abende und die ganze Kasse. Nur die PIN bleibt.\n\nDas geht nicht rückgängig.")) return;
       if (!kcConfirm("Letzte Frage: Wirklich ALLES auf Werkseinstellungen setzen?")) return;
-      this._queue = []; store.put(this._qk, this._queue);
+      this._queue = []; this._saveQ();
       this._hass.callWS({ type: "kegelclub/factory_reset", ...this._bk() }).then(() => { this._toast("💣 Alles zurückgesetzt"); this._sheet = null; this._view = "abend"; redraw(); }, (err) => this._toast("⚠️ " + (err?.message || "Das hat nicht geklappt")));
     }
     // 📥 Import & Sicherung

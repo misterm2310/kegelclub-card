@@ -104,7 +104,7 @@ Grundbetrag 7,50 €, Pumpe 0,10 €, „Alle Neune“ 0,10 € (alle anderen za
 <details><summary>Für die Kegelbahn mit schlechtem WLAN – <i>aufklappen</i></summary>
 
 Adresse steht in der Karte unter ⚙️ → **Offline-App** (`/kegelclub/app/`). Im Handy-Browser öffnen, mit dem Home-Assistant-Benutzer anmelden, **„Zum Startbildschirm hinzufügen“**.
-Ohne Netz läuft alles weiter: Was du buchst, wartet im Postausgang und wird nachgeschickt. Nichts zählt doppelt, auch wenn zwei Handys gleichzeitig buchen. Für unterwegs braucht es eine **https**-Adresse (z. B. Nabu Casa).
+Ohne Netz läuft alles weiter: Was du buchst, wartet im Postausgang und wird nachgeschickt, sobald das Netz wieder da ist – auf Android-Handys sogar im Hintergrund, wenn die App zu ist (iPhone: beim nächsten Öffnen). Nichts zählt doppelt, auch wenn zwei Handys gleichzeitig buchen. Für unterwegs braucht es eine **https**-Adresse (z. B. Nabu Casa).
 </details>
 
 ---

@@ -72,6 +72,60 @@ function toast(msg) {
 }
 window.addEventListener("hass-notification", (e) => toast(e.detail?.message || ""));
 
+// ---------------------------------------------------------------- 🔄 Im Hintergrund nachschicken (wie bei der Einkaufsliste)
+// Für Doofe: Der Postausgang liegt im Handy-Speicher der Seite. Den kann der Hintergrund-Helfer (sw.js) aber nicht lesen.
+// Darum legt die Seite eine Kopie in einen kleinen gemeinsamen Speicher (IndexedDB) – samt Anmeldung.
+// App zu + Netz kommt zurück = Android/Chrome weckt den Helfer, der schickt alles an Home Assistant.
+// Beim nächsten Öffnen räumt die Seite weg, was der Helfer schon geschickt hat. Doppelt zählt nichts (jede Änderung hat ihre Nummer).
+// iPhones kennen das leider nicht – dort wird wie bisher beim nächsten Öffnen nachgeschickt.
+let dbp = null;
+function db() {
+  if (!("indexedDB" in window)) return Promise.reject(new Error("idb"));
+  return dbp || (dbp = new Promise((ok, fail) => {
+    const r = indexedDB.open("kegelclub-app", 1);
+    r.onupgradeneeded = () => r.result.createObjectStore("kv");
+    r.onsuccess = () => ok(r.result);
+    r.onerror = () => { dbp = null; fail(r.error); };
+  }));
+}
+async function kv(mode, fn) {
+  const d = await db();
+  return new Promise((ok, fail) => {
+    const tx = d.transaction("kv", mode);
+    let out;
+    fn(tx.objectStore("kv"), (v) => { out = v; });
+    tx.oncomplete = () => ok(out);
+    tx.onerror = () => fail(tx.error);
+  });
+}
+const kvGet = (k) => kv("readonly", (st, set) => { const r = st.get(k); r.onsuccess = () => set(r.result); }).catch(() => undefined);
+const kvSet = (k, v) => kv("readwrite", (st) => { st.put(v, k); }).catch(() => {});
+const kvDel = (k) => kv("readwrite", (st) => { st.delete(k); }).catch(() => {});
+const saveAuth = () => { put(K.auth, auth); if (auth) kvSet("auth", { ...auth, client_id: CLIENT_ID }); };
+window.addEventListener("kegelclub-queue", (e) => { const d = e.detail || {}; if (d.key) kvSet("q:" + d.key, { book: d.book || "", queue: d.queue || [] }); });
+function askBackgroundSync() {
+  const waiting = kcKeys("kegelclub_queue").some((k) => (get(k, []) || []).length);
+  if (!waiting || !("serviceWorker" in navigator)) return;
+  navigator.serviceWorker.ready.then((reg) => reg.sync?.register("kc-queue")).catch(() => {});
+}
+// Was hat der Helfer schon geschickt? Aus dem Postausgang streichen, damit „⏳ wartet“ sofort stimmt.
+async function takeBackgroundSent() {
+  const sent = await kvGet("sent");
+  if (!Array.isArray(sent) || !sent.length) return;
+  await kvDel("sent");
+  const ids = new Set(sent);
+  for (const k of kcKeys("kegelclub_queue")) {
+    const q = get(k, []);
+    const rest = Array.isArray(q) ? q.filter((o) => !ids.has(o.op_id)) : [];
+    if (rest.length !== (q || []).length) { put(k, rest); const old = await kvGet("q:" + k); kvSet("q:" + k, { book: old?.book || "", queue: rest }); }
+  }
+  card?._reloadQueue?.();
+  const n = sent.length;
+  setTimeout(() => toast(`✅ ${n} ${n === 1 ? "Änderung wurde" : "Änderungen wurden"} im Hintergrund nachgeschickt`), 300);
+}
+document.addEventListener("visibilitychange", () => { if (document.hidden) askBackgroundSync(); else takeBackgroundSent(); });
+window.addEventListener("pagehide", askBackgroundSync);
+
 // ---------------------------------------------------------------- 🎨 Symbole (in Home Assistant gibt es <ha-icon> schon – hier bauen wir es nach)
 let ICONS = null;
 const iconWait = new Set();
@@ -113,7 +167,7 @@ async function finishLogin() {
   localStorage.removeItem("kcapp_state");
   if (!saved || q.get("state") !== saved) return;
   auth = await tokenRequest({ grant_type: "authorization_code", code: q.get("code") });
-  put(K.auth, auth);
+  saveAuth();
 }
 let flow = null, flowBusy = false, flowN = 0, flowLast = {};
 const LABEL = { username: "Benutzername", password: "Passwort", code: "Code aus der Authentifizierungs-App" };
@@ -141,7 +195,7 @@ async function flowStep(res) {
   if (res.type === "create_entry") {
     flow = null;
     auth = await tokenRequest({ grant_type: "authorization_code", code: res.result });
-    put(K.auth, auth); update(); connect(); return;
+    saveAuth(); update(); connect(); return;
   }
   if (res.type === "abort") { flow = null; toast("Anmeldung abgebrochen"); update(); return; }
   flow = { n: ++flowN, id: res.flow_id, step: res.step_id, schema: res.data_schema || [], errors: res.errors || {} };
@@ -174,7 +228,7 @@ function flowHtml() {
 async function accessToken() {
   if (auth && auth.expires > Date.now()) return auth.access;
   auth = { ...(await tokenRequest({ grant_type: "refresh_token", refresh_token: auth.refresh })), refresh: auth.refresh };
-  put(K.auth, auth);
+  saveAuth();
   return auth.access;
 }
 
@@ -194,7 +248,7 @@ function connect() {
       try { ws.send(JSON.stringify({ type: "auth", access_token: await accessToken() })); }
       catch (err) { if ([400, 401].includes(err.status)) logout(true); else ws.close(); }
     } else if (m.type === "auth_invalid") {
-      auth.expires = 0; put(K.auth, auth); ws.close();
+      auth.expires = 0; saveAuth(); ws.close();
     } else if (m.type === "auth_ok") {
       ready = true;
       for (const s of subs.values()) sendSub(s);
@@ -335,6 +389,7 @@ function update() {
     wrap.innerHTML = "";
     card = document.createElement("kegelclub-card");
     card.setConfig({ title: "Kegelclub", ...(appBook() ? { buch: appBook() } : {}) });
+    card._saveQ?.(); // 🔄 Postausgang gleich für den Hintergrund-Helfer spiegeln (auch nach einem Update)
     wrap.append(card);
     const foot = document.createElement("div");
     foot.className = "foot";
@@ -367,10 +422,12 @@ function logout(silent) {
   const refresh = auth?.refresh;
   auth = null;
   localStorage.removeItem(K.auth);
+  kvDel("auth"); // 🔑 Hintergrund-Helfer darf danach nichts mehr schicken
   if (!silent) {
     // 🔒 Alles Persönliche aus dem Handy löschen
     for (const k of [K.user, ...kcKeys("kegelclub_data", "kegelclub_queue"), "kegelclub_hidden", "kcapp_buch", "kegelclub_calm", LOCK_KEY]) localStorage.removeItem(k);
     user = null;
+    try { indexedDB.deleteDatabase("kegelclub-app"); } catch (_) { /* egal */ }
     if (refresh) fetch("/auth/token", { method: "POST", body: new URLSearchParams({ action: "revoke", token: refresh }) }).catch(() => {});
   }
   try { ws?.close(); } catch (_) { /* egal */ }
@@ -381,6 +438,8 @@ function logout(silent) {
 (async () => {
   if ("serviceWorker" in navigator) navigator.serviceWorker.register(BASE + "sw.js", { scope: BASE }).catch(() => {});
   try { await finishLogin(); } catch (_) { toast("Anmeldung hat nicht geklappt 🙈"); }
+  if (auth) saveAuth(); // 🔄 auch schon Angemeldete: Hintergrund-Helfer braucht die Anmeldung
+  await takeBackgroundSent();
   const s = document.createElement("script");
   s.type = "module";
   s.src = "/kegelclub/files/kegelclub-card.js?v=" + VERSION;
