@@ -43,6 +43,10 @@ check("Laufender Abend wird gezeigt", /Kegelabend/.test(await sr(`return h.query
 check("Strafen heute 2,20 €", (await heroBig()) === "2,20 €", await heroBig());
 check("Strafen gesperrt, solange keiner gewählt ist", await sr(`return [...h.querySelectorAll('.fine')].every((b) => b.disabled);`));
 await shot("1-abend.png");
+// 🏆 Live-Rekord-Info: „Heute 4× Pumpe · Rekord …“ (aus den alten Abenden)
+const recTxt = () => sr(`return [...h.querySelectorAll('.recbar')].map((x) => [x.querySelector('b').textContent, ...[...x.querySelectorAll('.chipx')].map((c) => c.textContent.replace(/\\s+/g, ' ').trim())].join(' ')).join(' | ');`);
+check("Live-Rekord: „Heute: 4× Pumpe · Rekord 25“", /Heute: 4× Pumpe · Rekord 25/.test(await recTxt()), await recTxt());
+check("Live-Rekord: Alle Neune (2×) und Klingeln (1×) auch dabei, höchstens 3", await sr(`return h.querySelector('.recbar').querySelectorAll('.chipx.rc').length === 3;`) && /2× Alle Neune/.test(await recTxt()), await recTxt());
 await tap('.pp[data-id="m2"]');
 await tap('.fine[data-id="s1"]');
 let last = await p.evaluate(() => fake.applied.at(-1));
@@ -92,6 +96,20 @@ check("Fehlende mit Hand-Strafe: Betrag steht in der Abrechnung", await sr(`cons
 await tap('[data-a="handdel"]');
 await tap('.pp[data-id="m2"]');
 check("Abrechnung in fester Reihenfolge wie unter Mitglieder", await sr(`return [...h.querySelectorAll('.bill .item b')].map((x) => x.textContent).join() === "Anna Beispiel,Bernd Muster,Carla Kugel,Dieter Pumpe,Emil Neuner,Frida Holz";`), await sr(`return [...h.querySelectorAll('.bill .item b')].map((x) => x.textContent).join();`));
+// 🏆 Person gewählt: eigener Bestwert, Rekord gebrochen = 🔥
+await p.evaluate(() => { const c = document.querySelector("#c1"); c._server.abende.find((e) => e.id === "evnow").counts.m2.s1 = 26; c._force = true; c._render(); });
+await p.waitForTimeout(120);
+check("Live-Rekord: 26 Pumpen = neuer Rekord (vorher 25) 🔥, Bernd mit Bestwert", /26× Pumpe · neuer Rekord! \(vorher 25\) 🔥/.test(await recTxt()) && /Bernd Muster: .*26× Pumpe · neuer Rekord! \(vorher 9\)/.test(await recTxt()), await recTxt());
+await shot("12-live-rekord.png");
+await p.evaluate(() => { const c = document.querySelector("#c1"); c._server.abende.find((e) => e.id === "evnow").counts.m2.s1 = 4; });
+// ⏰ Grundbetrag vergessen? Erst nach 30 Minuten ein dezenter Hinweis
+check("Grundbetrag-Hinweis: vor 30 Minuten noch nicht da", !(await sr(`return !!h.querySelector('.feehint');`)));
+await p.evaluate(() => { const c = document.querySelector("#c1"); c._server.abende.find((e) => e.id === "evnow").started = Date.now() - 41 * 60000; c._force = true; c._render(); });
+await p.waitForTimeout(120);
+check("Grundbetrag-Hinweis nach 41 Minuten: „seit 41 Minuten … (5 offen)“ mit „Jetzt kassieren“", await sr(`const t = h.querySelector('.feehint'); return !!t && /seit 41 Minuten/.test(t.textContent) && /5 offen/.test(t.textContent) && !!t.querySelector('[data-a="basepay"]');`), await sr(`return h.querySelector('.feehint')?.textContent;`));
+await shot("13-grundbetrag-vergessen.png");
+await tap('.feehint [data-a="feehintoff"]');
+check("Grundbetrag-Hinweis: ✕ = für diesen Abend weg", !(await sr(`return !!h.querySelector('.feehint');`)));
 // 💶 Grundbetrag kassiert + Münze
 check("Knopf „Grundbetrag kassiert (5)“", await sr(`return /Grundbetrag kassiert \\(5\\)/.test(h.querySelector('[data-a="basepay"]').textContent);`), await sr(`return h.querySelector('[data-a="basepay"]').textContent;`));
 await tap('[data-a="basepay"]');
@@ -309,6 +327,24 @@ if (shots) await a.screenshot({ path: path.join(shots, "6-app-anmeldung.png") })
   await tap('[data-a="evbook"]');
   last = await p.evaluate(() => fake.applied.at(-1));
   check("„In Kasse buchen“ schickt abend_book und geht zurück zum Start", last?.type === "abend_book" && await sr(`return !!h.querySelector('form[data-a="evstart"]');`), JSON.stringify(last));
+  // 📅 Abend vorplanen: Absagen vorher antippen, beim Start stehen sie gleich richtig da
+  check("Vorplanen: alle Mitglieder (ohne Gäste) mit „kommt“", await sr(`const t = [...h.querySelectorAll('.ppl.plan .pp')]; return t.length === 6 && t.every((x) => /kommt/.test(x.textContent));`));
+  await tap('.ppl.plan .stbtn[data-id="m3"]');
+  last = await p.evaluate(() => fake.applied.at(-1));
+  check("Vorplanen: Carla antippen = abgemeldet", last?.type === "plan_status" && last.member === "m3" && last.status === "excused" && await sr(`return /abgemeldet/.test(h.querySelector('.ppl.plan .pp[data-id="m3"]').textContent);`), JSON.stringify(last));
+  await tap('.ppl.plan .stbtn[data-id="m4"]'); await tap('.ppl.plan .stbtn[data-id="m4"]');
+  check("Vorplanen: Dieter 2× = nicht abgemeldet, Kopf „1 abgemeldet · 1 nicht abgemeldet“", await sr(`return /nicht abgemeldet/.test(h.querySelector('.ppl.plan .pp[data-id="m4"]').textContent) && /1 abgemeldet · 1 nicht abgemeldet/.test(h.textContent);`));
+  await p.locator("#c1").locator('input[data-a="plandate"]').fill("2099-12-05");
+  await p.locator("#c1").locator('input[data-a="plandate"]').dispatchEvent("change");
+  await p.locator("#c1").locator('input[data-a="plandate"]').blur();
+  await p.waitForTimeout(300);
+  last = await p.evaluate(() => fake.applied.at(-1));
+  check("Vorplanen: Datum wird gemerkt und beim Start vorgeschlagen", last?.type === "plan_date" && last.date === "2099-12-05" && await sr(`return h.querySelector('form[data-a="evstart"] input[name="date"]').value === "2099-12-05";`), JSON.stringify(last));
+  await shot("14-abend-vorplanen.png");
+  const started = await p.evaluate(() => { const A = customElements.get("kegelclub-card").applyLocal, d = JSON.parse(JSON.stringify(fake.data)); A(d, { type: "abend_start", id: "neu", op_id: "x", ts: Date.now() }); const e = d.abende.find((x) => x.id === "neu"); return [e.status.m3, e.status.m4, e.status.m1, JSON.stringify(d.plan)].join(); });
+  check("Vorplanen: beim Start Carla abgemeldet, Dieter nicht abgemeldet, Plan danach leer", started === "excused,absent,play,{}", started);
+  await tap('[data-a="planclear"]');
+  check("Vorplanung leeren", (await p.evaluate(() => fake.applied.at(-1)?.type)) === "plan_clear" && !(await sr(`return !!h.querySelector('[data-a="planclear"]');`)));
   await tap('[data-a="tab"][data-v="kasse"]');
   check("Kasse ohne PIN: Tipp zur PIN", await sr(`return /Mit einer PIN/.test(h.textContent);`));
   await tap('[data-a="open"][data-k="kedit"]');

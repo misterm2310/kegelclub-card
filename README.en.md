@@ -17,6 +17,9 @@ One click opens it right in your Home Assistant: [![Open in HACS](https://my.hom
 ## ✨ Features
 
 - 🎳 **Bowling evening**: tap a person, tap a fine, done. Every tap = +1, with ↩️ undo.
+- 📅 **Plan the evening**: enter cancellations in advance – when you start, they already show as “excused” or “no-show”.
+- ⏰ **Base fee forgotten?** After 30 minutes a subtle hint appears if “Base fee collected” has not been pressed (can be switched off).
+- 🏆 **Live records** during the evening: “Today: 12× gutter ball · record 18” – break it and you get 🔥 (can be switched off).
 - 👥 **Five states**: bowling · watching · left early · excused · no-show – plus **guests** with the same rules.
 - 💸 **Your own list of fines**: name, icon, amount and **who pays** – the thrower or **all others who are bowling** (e.g. “all nine”).
 - 🧮 **Rules are settings**: base fee, watchers pay yes/no, absent members pay yes/no, extra for no-shows, lane per hour (from the cash, split or off). Fits any club.
@@ -60,9 +63,10 @@ Copy `custom_components/kegelclub` to `/config/custom_components/kegelclub` and 
 
 1. **First start**: the card asks how you want to start – **empty**, with **sample fines** or with the **file from “Alle Neune”**.
 2. Add **members** (⚙️ → **Members & fines**, photos too) and set base fee and lane under ⚙️ → **Rules & amounts**.
-3. **Start bowling evening**. The small button under each person switches: bowling → watching → 🚪 left early → excused → no-show. For 🚪 **left early**, set under **“Pays along”** in the bill how many nines they still paid before leaving (handy if you write everything down afterwards).
-4. **Book a fine**: tap the person first, then the fine.
-5. **Close evening** → the bill goes to the **cash** under “who owes what”. Paid? Tap the green check.
+3. Someone cancelled in advance? Tap them under **“Plan the evening”** (coming → excused → no-show). **Start bowling evening** takes that over. The small button under each person switches: bowling → watching → 🚪 left early → excused → no-show. For 🚪 **left early**, set under **“Pays along”** in the bill how many nines they still paid before leaving (handy if you write everything down afterwards).
+4. Tap **“Base fee collected”** once everyone has paid. Forgot? After 30 minutes a hint with **“Collect now”** appears at the top.
+5. **Book a fine**: tap the person first, then the fine.
+6. **Close evening** → the bill goes to the **cash** under “who owes what”. Paid? Tap the green check.
 
 More in the card under **📖 Guide** (with search).
 </details>

@@ -398,3 +398,29 @@ async def test_buchen_loeschen_mit_kasse_und_buchung_aendern(hass, setup):
     # ⚙️ Maskottchen-Schalter
     ok(m, {"type": "settings", "settings": {"mascot": True}})
     assert m.data["settings"]["mascot"] is True
+
+
+async def test_plan_evening(hass, setup):
+    """📅 Abend vorplanen: Absagen vorher eintragen, beim Start stehen sie gleich richtig da – danach ist der Plan leer."""
+    m = mgr(hass)
+    club(m)
+    ok(m, {"type": "plan_status", "member": "b", "status": "excused", "ts": 10},
+       {"type": "plan_status", "member": "c", "status": "absent", "ts": 10},
+       {"type": "plan_status", "member": "d", "status": "excused", "ts": 10},
+       {"type": "plan_status", "member": "d", "status": "play", "ts": 20},   # 🔁 doch wieder dabei
+       {"type": "plan_status", "member": "c", "status": "play", "ts": 5},    # 🕒 ältere Änderung zählt nicht
+       {"type": "plan_date", "date": "2026-11-14"})
+    assert m.data["plan"]["status"] == {"b": "excused", "c": "absent"} and m.data["plan"]["date"] == "2026-11-14"
+    assert not m.apply([{"type": "plan_status", "member": "zz", "status": "excused"}])[0]["ok"]
+    assert not m.apply([{"type": "plan_status", "member": "a", "status": "watch"}])[0]["ok"]
+    assert not m.apply([{"type": "plan_date", "date": "14.11."}])[0]["ok"]
+    assert any("Vorgeplant" in x.get("text", "") for x in m.data["log"])
+    ok(m, {"type": "abend_start", "id": "p1"})
+    ev = m.evening("p1")
+    assert ev["status"]["b"] == "excused" and ev["status"]["c"] == "absent" and ev["status"]["a"] == "play" and ev["status"]["d"] == "play"
+    assert set(ev["status_ts"]) == {"b", "c"}
+    assert m.data["plan"] == {}
+    people = bill_evening(ev, *m._maps(), m.data["settings"])["people"]
+    assert people["c"]["extra"] == 5.0 and people["b"]["extra"] == 0  # 🚷 nicht abgemeldet = Extra
+    ok(m, {"type": "plan_status", "member": "a", "status": "excused"}, {"type": "plan_clear"})
+    assert m.data["plan"] == {}

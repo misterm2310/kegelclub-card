@@ -6,7 +6,7 @@
 // - Jede Änderung (Pumpe, Einzahlung, wer da ist …) wird als kleine „Änderung“ verschickt.
 // - Klappt das Verschicken nicht (kein Netz auf der Kegelbahn), landet die Änderung im Postausgang und wird
 //   später nachgeschickt. Bis dahin rechnet die Karte selbst so, als wäre sie schon angekommen.
-const KC_VERSION = "1.0.3-beta.2";
+const KC_VERSION = "1.0.3-beta.3";
 
 const MONTHS = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
 const QKEY = "kegelclub_queue";
@@ -30,7 +30,7 @@ const MEMBER_COLORS = ["#1e88e5", "#e91e63", "#8e24aa", "#fb8c00", "#00897b", "#
 // 📖 Anleitung – einfach erklärt, Kapitel zum Aufklappen
 const KC_GUIDE = [
   { icon: "rocket-launch-outline", title: "Erste Schritte", text: `Beim allerersten Öffnen fragt die Karte, wie du starten willst: <b>leer</b>, mit <b>Beispiel-Strafen</b> oder mit der <b>Datei aus „Alle Neune“</b>.<br>Danach unter ⚙️ → <b>„Mitglieder & Strafen“</b> eure Leute anlegen und unter ⚙️ → <b>„Regeln & Beträge“</b> Grundbetrag und Kegelbahn einstellen. Fertig – gut Holz! 🎳` },
-  { icon: "bowling", title: "Ein Kegelabend", text: `Reiter <b>„Abend“</b> → <b>„Kegelabend starten“</b>. Alle Mitglieder stehen als Kacheln da – in der Reihenfolge wie unter ⚙️ → „Mitglieder & Strafen“.<br><b>1.</b> Wer ist da? <b>Kleiner Knopf unten an der Kachel</b> schaltet weiter: kegelt → schaut zu → 🚪 gegangen → abgemeldet → nicht abgemeldet. Bei <b>„gegangen“</b> steht in der Abrechnung <b>„Zahlt mit: … − / +“</b>: Schreibt ihr erst hinterher auf, stellst du dort ein, wie viele Neuner er vor dem Gehen noch mitbezahlt. Wer fehlt, bleibt als <b>blasse Kachel</b> stehen. Für Fehlende geht nur eine Strafe per Hand (<b>„Eigene“</b>).<br><b>2.</b> <b>„Grundbetrag kassiert“</b> antippen, sobald alle bezahlt haben (einzeln geht es in der Abrechnung).<br><b>3.</b> Strafe buchen: <b>Person antippen</b> (blau umrandet), dann die <b>Strafe antippen</b>. Jeder Tipp = +1. Vertippt? Das rote <b>−</b> oben links auf der Kachel nimmt eine zurück. Etwas Besonderes? <b>„Eigene“</b> = Betrag und Grund selbst eintippen.<br><b>4.</b> Zum Schluss in der <b>Abrechnung</b> (rechts stehen nur die Strafen) auf die <b>Münze</b> tippen, wenn bezahlt wurde – sie wird grün ✓.<br><b>5.</b> <b>„Abend abschließen“</b>. Hat noch jemand offen, sagt die Karte vorher Bescheid. Mit Knopf zum <b>Teilen</b> (z. B. in die WhatsApp-Gruppe).` },
+  { icon: "bowling", title: "Ein Kegelabend", text: `Reiter <b>„Abend“</b> → <b>„Kegelabend starten“</b>. Alle Mitglieder stehen als Kacheln da – in der Reihenfolge wie unter ⚙️ → „Mitglieder & Strafen“.<br><b>1.</b> Wer ist da? <b>Kleiner Knopf unten an der Kachel</b> schaltet weiter: kegelt → schaut zu → 🚪 gegangen → abgemeldet → nicht abgemeldet. Bei <b>„gegangen“</b> steht in der Abrechnung <b>„Zahlt mit: … − / +“</b>: Schreibt ihr erst hinterher auf, stellst du dort ein, wie viele Neuner er vor dem Gehen noch mitbezahlt. Wer fehlt, bleibt als <b>blasse Kachel</b> stehen. Für Fehlende geht nur eine Strafe per Hand (<b>„Eigene“</b>).<br><b>2.</b> <b>„Grundbetrag kassiert“</b> antippen, sobald alle bezahlt haben (einzeln geht es in der Abrechnung). Vergessen? Nach 30 Minuten erinnert ein kleiner Hinweis oben.<br><b>3.</b> Strafe buchen: <b>Person antippen</b> (blau umrandet), dann die <b>Strafe antippen</b>. Jeder Tipp = +1. Vertippt? Das rote <b>−</b> oben links auf der Kachel nimmt eine zurück. Etwas Besonderes? <b>„Eigene“</b> = Betrag und Grund selbst eintippen.<br><b>4.</b> Zum Schluss in der <b>Abrechnung</b> (rechts stehen nur die Strafen) auf die <b>Münze</b> tippen, wenn bezahlt wurde – sie wird grün ✓.<br><b>5.</b> <b>„Abend abschließen“</b>. Hat noch jemand offen, sagt die Karte vorher Bescheid. Mit Knopf zum <b>Teilen</b> (z. B. in die WhatsApp-Gruppe).` },
   { icon: "bank-outline", title: "In Kasse buchen", text: `Nach <b>„Abend abschließen“</b> siehst du die Abrechnung, und unten rechts neben „Wieder öffnen“ steht der Knopf <b>„In Kasse buchen“</b>. Ein Tipp darauf – dann geht die Kegelbahn aus der Kasse und du bist wieder am Start. Ohne Buchen startet kein neuer Abend. Vertippt? „Abend wieder öffnen“.` },
   { icon: "pencil-outline", title: "Buchungen ändern & PIN", text: `Reiter <b>„Kasse“</b> → eine Buchung <b>antippen</b>: Name, Betrag, Datum und „Von wem?“ ändern oder löschen. Kegelbahn-Zeilen rechnen sich aus den Stunden und lassen sich darum nur im Abend ändern. Mit <b>PIN</b> (⚙️ → Schutz) öffnet sich die Kasse nur mit PIN – und abgeschlossene Abende lassen sich nur mit PIN ändern oder löschen. Löschst du einen Abend, gehen seine Kassenbuchungen mit (↩️ Rückgängig holt alles zurück).` },
   { icon: "account-plus-outline", title: "Gäste", text: `Im laufenden Abend <b>„＋ Gast“</b> antippen: bekannten Gast wählen oder neuen Namen eintippen. Für Gäste gelten die gleichen Regeln wie für Mitglieder. Ein Gast, der nicht da ist, zahlt nichts – er gehört ja nicht zum Abend.` },
@@ -52,6 +52,7 @@ const KC_GUIDE = [
 ];
 // 🆕 Was ist neu – das Neueste oben (wie bei der Einkaufsliste)
 const KC_NEWS = [
+  ["1.0.3-beta.3", "📅 <b>Abend vorplanen:</b> Unter „Nächster Kegelabend“ tippst du schon vorher an, wer abgesagt hat (kommt → abgemeldet → nicht abgemeldet), dazu ein Datum zur Erinnerung. Beim „Kegelabend starten“ steht dann gleich alles richtig da · ⏰ <b>Grundbetrag vergessen?</b> Läuft der Abend seit 30 Minuten und „Grundbetrag kassiert“ wurde nicht gedrückt, kommt oben ein dezenter Hinweis mit „Jetzt kassieren“ (✕ = für heute weg, abschaltbar unter ⚙️ → Regeln & Beträge) · 🏆 <b>Live-Rekorde:</b> Im laufenden Abend steht klein „Heute: 12× Pumpe · Rekord 18“ – wird der Rekord geknackt, gibt es 🔥. Ist eine Person gewählt, steht auch ihr Bestwert da (abschaltbar unter ⚙️ → Ansicht)"],
   ["1.0.3-beta.2", "📶 <b>Wieder online = im Hintergrund nachschicken</b> (wie bei der Einkaufsliste): Was im Funkloch auf der Kegelbahn gebucht wurde, schickt die Offline-App von selbst an Home Assistant, sobald das Netz wieder da ist – auf Android-Handys sogar, wenn die App schon zu ist. Beim nächsten Öffnen steht dann „✅ … im Hintergrund nachgeschickt“. Ist die Karte offen, meldet sie „✅ Wieder online – … nachgeschickt“. iPhones können das im Hintergrund leider nicht, dort wird wie bisher beim Öffnen nachgeschickt."],
   ["1.0.3-beta.1", "🧮 <b>Taschenrechner</b> nicht mehr beim laufenden Abend, sondern nach <b>„Abend abschließen“</b> (bei „In Kasse buchen“) – ganz normaler Rechner. Auf der Kasse bleibt er · 🪙 Nach dem Abschließen kann man rechts wieder <b>abhaken, wer bezahlt hat</b>. Der Grundbetrag bleibt dort fest · 🚫 <b>Kein Guthaben mehr, nur Schulden:</b> Wer mehr zahlt (z. B. Altschulden aus „Alle Neune“), steht auf 0 € – das Geld liegt einfach in der Kasse · 📊 Unter der Kegelkasse steht klein der <b>Stand am vorigen Kegelabend</b> · 📂 <b>„Buchen“</b> auf der Kasse klappt auf und zu · 🎯 <b>Spielmodus:</b> nur noch, wer <b>kegelt</b> · 👈 👉 <b>seitlich wischen</b> = nächster / voriger Spieler · unten keine Knöpfe mehr (Anleitung, Fingerabdruck, Abmelden)"],
   ["1.0.2", "🎉 <b>Offizielle Version 1.0.2:</b> Alles aus 3 Betas ist jetzt fest drin – Gut Holz! · 🚪 <b>Früher gegangen auch beim Nachtragen</b> („Zahlt mit: Alle Neune − 3 von 5 +“ in der Abrechnung) · 🆕 <b>Was ist neu</b> wie bei der Einkaufsliste, immer richtig sortiert · 🧮 <b>Taschenrechner wie bei Fixkosten:</b> oben auf 🧮 tippen – auf dem Reiter <b>Kasse</b> und beim laufenden <b>Kegelabend</b>. Rechnet mit + − × ÷ und %. <b>K</b> setzt den Kassenstand ein, <b>A</b> die Summe der Abrechnung. Das Ergebnis geht direkt als <b>Einzahlung</b> oder <b>Ausgabe</b> in die Kasse oder wird kopiert. Am PC geht auch die Tastatur"],
@@ -820,10 +821,20 @@ function applyLocal(d, op) {
     if (evFind(d) || d.abende.some((e) => e.id === (op.id || op.op_id)) || d.abende.some((e) => e.closed && e.booked === false)) return;
     const status = {};
     for (const m of d.members) if (m.active !== false && !m.guest) status[m.id] = "play";
-    d.abende.push({ id: op.id || op.op_id, date: op.date || todayIso(), started: op.ts, closed: false, hours: Number(op.hours ?? d.settings.lane_hours ?? 3) || 0, note: "", status, status_ts: {}, counts: {}, rules: rulesOf(d.settings),
+    const status_ts = {};
+    for (const [mid, st] of Object.entries(d.plan?.status || {})) if (mid in status && ["excused", "absent"].includes(st)) { status[mid] = st; status_ts[mid] = op.ts; } // 📅 vorgeplante Absagen gleich übernehmen
+    d.plan = {}; // 📅 Plan ist verbraucht
+    d.abende.push({ id: op.id || op.op_id, date: op.date || todayIso(), started: op.ts, closed: false, hours: Number(op.hours ?? d.settings.lane_hours ?? 3) || 0, note: "", status, status_ts, counts: {}, rules: rulesOf(d.settings),
       prices: Object.fromEntries(d.strafen.map((s) => [s.id, [Number(s.amount) || 0, s.payer || "self"]])), waiting: true });
     sortAbende(d);
-  } else if (t.startsWith("abend_")) {
+  } else if (t === "plan_status") { // 📅 Abend vorplanen: wer hat schon abgesagt?
+    const plan = (d.plan = d.plan || {}), stat = (plan.status = plan.status || {}), pts = (plan.status_ts = plan.status_ts || {});
+    if ((pts[op.member] || 0) > op.ts) return;
+    pts[op.member] = op.ts;
+    if (["excused", "absent"].includes(op.status)) stat[op.member] = op.status; else delete stat[op.member];
+  } else if (t === "plan_date") { const plan = (d.plan = d.plan || {}); if (op.date) plan.date = String(op.date).slice(0, 10); else delete plan.date; }
+  else if (t === "plan_clear") d.plan = {};
+  else if (t.startsWith("abend_")) {
     const ev = t === "abend_delete" ? null : evFind(d, op.abend);
     if (t === "abend_delete") { d.abende = d.abende.filter((e) => e.id !== op.id); d.kasse = d.kasse.filter((k) => k.abend !== op.id); return; }
     if (!ev) return;
@@ -943,6 +954,24 @@ function yearStats(d, year) {
   }
   const fineSum = r2(Object.values(perPerson).reduce((s, v) => s + v, 0)), fineCnt = Object.values(perType).reduce((s, v) => s + v, 0);
   return { evs, perPerson, perType, attend, kings, line, perEv, rec, best, streak, fineSum, fineCnt };
+}
+// 🏆 Live-Rekorde (für Doofe: Wie oft gab es eine Strafe an EINEM Abend höchstens – im ganzen Club und je Person?)
+// Gezählt werden nur die anderen Abende, nicht der laufende. Ergebnis: { club: {Strafe: n}, person: {Mitglied: {Strafe: n}} }
+function liveRecords(d, skipId) {
+  const club = {}, person = {};
+  for (const ev of d.abende) {
+    if (ev.id === skipId) continue;
+    const sum = {};
+    for (const [mid, per] of Object.entries(ev.counts || {})) for (const [sid, n] of Object.entries(per || {})) {
+      const c = Number(n) || 0;
+      if (c <= 0) continue;
+      sum[sid] = (sum[sid] || 0) + c;
+      const pp = (person[mid] = person[mid] || {});
+      if (c > (pp[sid] || 0)) pp[sid] = c;
+    }
+    for (const [sid, c] of Object.entries(sum)) if (c > (club[sid] || 0)) club[sid] = c;
+  }
+  return { club, person };
 }
 // 📅 Alle Jahre, in denen es Abende gab (aufsteigend)
 function statYears(d) { return [...new Set(d.abende.map((e) => Number(String(e.date).slice(0, 4))).filter((y) => y > 1900))].sort((a, b) => a - b); }
@@ -1292,6 +1321,14 @@ ol.steps li { margin:3px 0; }
 .fine small { display:block; font-size:.75em; color:var(--secondary-text-color); }
 .fine small.oth { color:#1e88e5; }
 .fine .cnt { position:absolute; top:6px; right:8px; min-width:20px; height:20px; padding:0 5px; border-radius:999px; background:var(--pc); color:#fff; font-size:.72em; font-weight:700; display:flex; align-items:center; justify-content:center; }
+.recbar { display:flex; flex-wrap:wrap; align-items:center; gap:5px; margin:0 2px 6px; font-size:.88em; color:var(--secondary-text-color); }
+.recbar > ha-icon, .recbar > .ic { --mdc-icon-size:16px; color:#f9a825; }
+.recbar .chipx.rc { padding:1px 8px; color:var(--primary-text-color); }
+.recbar .chipx.rc.new { background:color-mix(in srgb, #f9a825 28%, transparent); font-weight:600; }
+.recbar .chipx.rc.eq { background:color-mix(in srgb, #f9a825 16%, transparent); }
+.tip.feehint { background:color-mix(in srgb, var(--kc-yellow) 12%, transparent); flex-wrap:wrap; }
+.tip.feehint .vt { flex:1 1 180px; min-width:0; }
+.ppl.plan .pp { cursor:default; }
 .evbar { display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin:2px 2px 8px; }
 .evbar .hrs { display:inline-flex; align-items:center; gap:4px; }
 .evbar .hrs input { width:64px; text-align:right; padding:6px 8px; }
@@ -1726,13 +1763,31 @@ class KegelclubCard extends HTMLElement {
     const unb = d.abende.find((e) => e.closed && e.booked === false);
     if (unb) { const keep = this._evId; this._evId = unb.id; const pg = this._evPage(d); this._evId = keep; return `<h3 style="margin:4px 2px 8px">${esc(pg.title)}</h3>${pg.html}`; } // 🏦 abgeschlossen, noch nicht gebucht: Abend ganz normal, „In Kasse buchen“ unten drunter
     const st = d.settings;
+    const plan = d.plan || {}, pDate = plan.date && plan.date >= todayIso() ? plan.date : todayIso();
     let h = `<div class="hero" style="--hc:#fb8c00"><div class="lbl">Nächster Kegelabend</div><div style="font-size:1.15em;font-weight:600;margin-top:2px">Gut Holz! 🎳</div></div>
-      <form class="edit" data-a="evstart"><div class="f"><label>Datum<input name="date" type="date" value="${todayIso()}"></label>
+      <form class="edit" data-a="evstart"><div class="f"><label>Datum<input name="date" type="date" value="${pDate}"></label>
       ${st.lane_mode === "off" ? "" : `<label>Kegelbahn (Stunden)<input name="hours" inputmode="decimal" value="${numDe(st.lane_hours ?? 3)}"></label>`}</div>
       <div class="btnrow end"><button class="btn main" type="submit">${ic("play")}Kegelabend starten</button></div></form>`;
+    h += this._planHtml(d);
     if (!d.strafen.some((s) => s.active !== false)) h += `<div class="tip">💡 Noch keine Strafen. Unter ⚙️ → <b>„Mitglieder & Strafen“</b> anlegen.</div>`;
     if (!d.members.some((m) => !m.guest && m.active !== false)) h += `<div class="tip">💡 Noch keine Mitglieder. Unter ⚙️ → <b>„Mitglieder & Strafen“</b> anlegen.</div>`;
     h += this._pastList(d);
+    return h;
+  }
+  // 📅 Abend vorplanen (für Doofe: Wer schon vorher abgesagt hat, wird hier angetippt – beim Start steht er dann gleich richtig da)
+  _planHtml(d) {
+    const plan = d.plan || {}, ps = plan.status || {};
+    const mem = d.members.filter((m) => !m.guest && m.active !== false);
+    if (!mem.length) return "";
+    const nEx = Object.values(ps).filter((x) => x === "excused").length, nAb = Object.values(ps).filter((x) => x === "absent").length;
+    const info = nEx || nAb ? [nEx ? `${nEx} abgemeldet` : "", nAb ? `${nAb} nicht abgemeldet` : ""].filter(Boolean).join(" · ") : "alle kommen";
+    let h = this._gh("calendar-check-outline", "#00897b", `Abend vorplanen${this._fi("plan")}`, info) + this._fh("plan", "Hat jemand schon vorher abgesagt? Hier antippen: <b>kommt → abgemeldet → nicht abgemeldet</b>. Beim „Kegelabend starten“ steht er dann gleich richtig da. Danach ist die Vorplanung wieder leer. Das Datum ist nur zur Erinnerung und wird beim Start vorgeschlagen.");
+    h += `<div class="edit"><div class="f"><label>Für den Abend am<input type="date" data-a="plandate" value="${esc(plan.date || "")}"></label></div>
+      <div class="ppl plan">${this._order(d, mem.map((m) => m.id)).map((mid) => {
+        const m = d.members.find((x) => x.id === mid) || {}, k = ps[mid] || "play", st = k === "play" ? { icon: "account-check-outline", color: "#43a047", label: "kommt" } : STATUS[k];
+        return `<div class="pp ${k === "play" ? "" : "off"}" data-id="${esc(mid)}"><span class="av ${m.photo ? "ph" : ""}" style="--ac:${mcol(d, mid)}">${m.photo ? `<img src="${esc(m.photo)}" alt="">` : esc(initials(m.name))}</span><span class="nm" data-noicon>${esc(m.name || "?")}</span>
+          <button class="stbtn" style="--sc:${st.color}" data-a="planst" data-id="${esc(mid)}" title="Antippen = weiter: kommt → abgemeldet → nicht abgemeldet">${ic(st.icon)}${esc(st.label)}</button></div>`;
+      }).join("")}</div>${nEx || nAb || plan.date ? `<div class="btnrow end"><button class="btn small" data-a="planclear">${ic("broom")}Vorplanung leeren</button></div>` : ""}</div>`;
     return h;
   }
   _wizard(d) {
@@ -1847,6 +1902,7 @@ class KegelclubCard extends HTMLElement {
         <div class="btnrow end"><button class="btn small" data-a="guest">${ic("close")}Fertig</button></div></div>`;
     }
     }
+    h += this._feeHint(d, ev, feeOpen) + this._recHtml(d, ev, sel, members, strafen);
     h += this._gh("account-group-outline", "#1e88e5", "Wer war's?", sel ? `<span data-noicon>${esc(members[sel]?.name || "")}</span>` : "Person antippen");
     h += `<div class="ppl ${play ? "play" : ""}">${shown.map((mid) => {
       const m = members[mid] || {}, p = b.people[mid], st = STATUS[p.status] || STATUS.play;
@@ -1865,6 +1921,39 @@ class KegelclubCard extends HTMLElement {
     if (play) return h + `<p class="small playhint">🎯 Spielmodus – 👈 👉 seitlich wischen = nächster / voriger Spieler. Oben auf „Alles“ tippen zeigt wieder Abrechnung, Grundbetrag und „Abend abschließen“.</p>`;
     h += this._billHtml(d, ev, b, true);
     h += `<div class="btnrow"><button class="btn main" data-a="evclose" data-id="${esc(ev.id)}">${ic("flag-checkered")}Abend abschließen</button><button class="btn" data-a="share" data-id="${esc(ev.id)}">${ic("share-variant-outline")}Teilen</button></div>`;
+    return h;
+  }
+  // ⏰ Grundbetrag vergessen? Läuft der Abend seit 30 Minuten und „Grundbetrag kassiert“ wurde nicht gedrückt, kommt ein dezenter Hinweis
+  _feeHint(d, ev, feeOpen) {
+    clearTimeout(this._feeT);
+    const s = d.settings || {}, t0 = Number(ev.started) || 0;
+    if (s.fee_hint === false || ev.imported || !feeOpen.length || !t0) return "";
+    const day = new Date(t0), dayIso = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, "0")}-${String(day.getDate()).padStart(2, "0")}`;
+    if (dayIso !== ev.date) return ""; // ✍️ nachgetragener Abend: da ist nichts mehr zu kassieren
+    if (store.get("kegelclub_feehint_off", "") === ev.id) return ""; // ✕ für diesen Abend weggeklickt
+    const left = t0 + 30 * 60000 - Date.now();
+    if (left > 0) { this._feeT = setTimeout(() => this._render(), Math.min(left + 1000, 2147483000)); return ""; } // ⏳ noch zu früh – meldet sich dann von selbst
+    const min = Math.floor((Date.now() - t0) / 60000), dur = min >= 120 ? `${Math.floor(min / 60)} Stunden` : `${min} Minuten`;
+    return `<div class="tip feehint">${ic("timer-outline")}<span class="vt">Der Abend läuft seit <b>${dur}</b> – Grundbetrag schon kassiert? (${feeOpen.length} offen)</span>
+      <button class="btn small main" data-a="basepay">${ic("hand-coin-outline")}Jetzt kassieren</button><button class="iconbtn" data-a="feehintoff" data-id="${esc(ev.id)}" title="Für heute ausblenden" aria-label="Für heute ausblenden">${ic("close")}</button></div>`;
+  }
+  // 🏆 Live-Rekord-Info: „Heute 12× Pumpe · Rekord 18“ – das macht Stimmung
+  _recHtml(d, ev, sel, members, strafen) {
+    if (d.settings.live_records === false || ev.imported) return "";
+    const key = `${ev.id}|${d.abende.length}|${d.abende.filter((e) => e.closed).length}`;
+    if (this._recKey !== key) { this._recKey = key; this._rec = liveRecords(d, ev.id); } // 🧠 nur neu rechnen, wenn sich die alten Abende ändern (schont schwache Tablets)
+    const rec = this._rec, today = {};
+    for (const per of Object.values(ev.counts || {})) for (const [sid, n] of Object.entries(per || {})) today[sid] = (today[sid] || 0) + (Number(n) || 0);
+    const chip = (sid, n, r, best) => {
+      const nm = `<span translate="no" data-noicon>${esc(strafen[sid]?.name || "?")}</span>`;
+      const tail = !r ? " · noch kein Rekord" : n > r ? ` · neuer Rekord! (vorher ${r})` : n === r ? " · Rekord eingestellt" : ` · ${best ? "Bestwert" : "Rekord"} ${r}`;
+      return `<span class="chipx rc ${r && n > r ? "new" : r && n === r ? "eq" : ""}"><b>${n}×</b>&nbsp;${nm}<span>${tail}</span>${r && n >= r ? " 🔥" : ""}</span>`;
+    };
+    const top = Object.entries(today).filter(([sid, n]) => n > 0 && strafen[sid]).sort((a, b) => b[1] - a[1]).slice(0, 3);
+    if (!top.length) return "";
+    let h = `<div class="recbar">${ic("trophy-outline")}<b>Heute:</b>${top.map(([sid, n]) => chip(sid, n, rec.club[sid] || 0, false)).join("")}</div>`;
+    const mine = sel ? Object.entries(ev.counts?.[sel] || {}).filter(([sid, n]) => Number(n) > 0 && strafen[sid]).sort((a, b) => b[1] - a[1]).slice(0, 2) : [];
+    if (mine.length) h += `<div class="recbar">${ic("account-outline")}<b translate="no" data-noicon>${esc(members[sel]?.name || "")}:</b>${mine.map(([sid, n]) => chip(sid, Number(n), rec.person[sel]?.[sid] || 0, true)).join("")}</div>`;
     return h;
   }
   // 🧾 Abrechnung: alle in fester Reihenfolge (Fehlende blass); rechts nur die Strafen + 💰 Münze = bezahlt
@@ -2442,6 +2531,7 @@ ${scope} .ksf{text-align:center;font-size:10px;color:#999;margin-top:12px}`;
         ${this._num("base_fee", "cash", "Grundbetrag pro Person und Abend", st.base_fee, KC_MONEY.sym, "Das zahlt jede Person pro Kegelabend. Änderungen hier gelten ab sofort, auch für den laufenden Abend. Abgeschlossene Abende bleiben, wie sie waren.")}
         ${this._sw("watch_pays", "glass-mug-variant", "Zuschauer zahlen den Grundbetrag", "da, kegelt aber nicht", st.watch_pays !== false)}
         ${this._sw("missing_pays", "account-cancel-outline", "Fehlende Mitglieder zahlen den Grundbetrag", "abgemeldet oder nicht – Gäste nie", st.missing_pays !== false)}
+        ${this._sw("fee_hint", "timer-outline", "Hinweis: Grundbetrag vergessen?", "nach 30 Minuten im laufenden Abend · Standard an", st.fee_hint !== false, "Läuft der Kegelabend seit 30 Minuten und „Grundbetrag kassiert“ wurde noch nicht gedrückt, steht oben ein kleiner Hinweis mit „Jetzt kassieren“. Mit ✕ ist er für diesen Abend weg.")}
         ${this._num("unexcused_extra", "account-alert-outline", "Extra, wenn nicht abgemeldet", st.unexcused_extra, KC_MONEY.sym, "Wer fehlt und sich <b>nicht</b> abgemeldet hat, zahlt das zusätzlich zum Grundbetrag. 0 = gibt es nicht.")}
         <div class="switch"><span>${ic("bowling")}Kegelbahn${this._fi("lane_mode")}</span><span class="seg">${[["kasse", "aus der Kasse"], ["split", "aufteilen"], ["off", "aus"]].map(([v, t]) => `<button class="${st.lane_mode === v ? "on" : ""}" data-a="lane" data-v="${v}">${t}</button>`).join("")}</span></div>${this._fh("lane_mode", "<b>Aus der Kasse:</b> Die Bahnmiete wird beim „In Kasse buchen“ aus der Clubkasse bezahlt.<br><b>Aufteilen:</b> Alle, die da sind, teilen sich die Miete.<br><b>Aus:</b> Die Bahn wird nicht erfasst.")}
         ${st.lane_mode === "off" ? "" : this._num("lane_rate", "timer-outline", "Kegelbahn pro Stunde", st.lane_rate, KC_MONEY.sym) + this._num("lane_hours", "timer-sand", "Stunden-Vorschlag für neue Abende", st.lane_hours, "Std.", "So viele Stunden stehen bei einem neuen Abend schon drin. Am Abend selbst kannst du sie noch ändern.")}
@@ -2462,6 +2552,7 @@ ${scope} .ksf{text-align:center;font-size:10px;color:#999;margin-top:12px}`;
       log: { icon: "history", color: "#5e35b1", title: "Verlauf", info: st.log_on === false ? "aus" : `${(d.log || []).length} Einträge · wer, wann, was`, html: () => this._logHtml(d, admin) },
       view: { icon: "eye-outline", color: "#00897b", title: "Ansicht – für alle", info: (() => { const n = KC_VIEW.filter(([k]) => (st.view || {})[k] === false).length; return n ? `${n} ausgeblendet` : "alles sichtbar"; })(), html: () => `
         <p class="small">Gilt für <b>alle</b> – auf allen Handys, im Dashboard und in der App.</p>
+        ${this._sw("live_records", "trophy-outline", "Live-Rekorde im laufenden Abend", "„Heute 12× Pumpe · Rekord 18“ · Standard an", st.live_records !== false)}
         ${this._sw("veil", "eye-off-outline", "Kassenstand verschleiern", "PC: Maus drüber · Handy: antippen = 4 Sekunden sichtbar", !!st.veil)}
         ${KC_VIEW.map(([k, i, t, sub]) => `<label class="switch"><span>${ic(i)}<span class="vt"><b>${t}</b><small>${sub}</small></span></span><input type="checkbox" class="swchk" data-a="setview" data-v="${k}" ${(st.view || {})[k] !== false ? "checked" : ""}></label>`).join("")}` },
       mascot: { icon: "bowling", color: "#ec407a", title: "Maskottchen", info: st.mascot ? "Kegelfigur ist da" : "aus", html: () => `
@@ -2741,7 +2832,11 @@ ${scope} .ksf{text-align:center;font-size:10px;color:#999;margin-top:12px}`;
       const ops = [].concat(this._undo.op); clearTimeout(this._undoT); this._undo = null;
       ops.forEach((o) => this._send(o)); redraw();
     }
+    else if (a === "plandate") this._send({ type: "plan_date", date: el.value || "" });
     else if (a === "evhours" && ev) { const h = Number(String(el.value).replace(",", ".")); if (Number.isFinite(h) && h >= 0) this._send({ type: "abend_hours", abend: ev.id, hours: h }); }
+    else if (a === "planst") { const cur = d.plan?.status?.[id] || "play"; this._send({ type: "plan_status", member: id, status: { play: "excused", excused: "absent", absent: "play" }[cur] }); }
+    else if (a === "planclear") this._send({ type: "plan_clear" });
+    else if (a === "feehintoff") { store.put("kegelclub_feehint_off", id); redraw(); }
     else if (a === "nofines") { const target = id || ev?.id || this._evId; if (target) this._send({ type: "abend_nofines", abend: target, value: el.checked }); }
     else if (a === "guest") { this._guestPick = !this._guestPick; redraw(); }
     else if (a === "guestadd" && ev) { this._send({ type: "abend_status", abend: ev.id, member: id, status: "play" }); this._sel = id; }

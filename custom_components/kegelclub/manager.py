@@ -119,6 +119,7 @@ def _empty() -> dict[str, Any]:
         "members": [],   # 👥 Mitglieder UND Gäste (guest: True)
         "strafen": [],   # 💸 euer Sündenregister – alles selbst angelegt
         "abende": [],    # 🎳 Kegelabende
+        "plan": {},      # 📅 Abend vorplanen: {date, status: {Mitglied: excused|absent}} – wird beim Start übernommen
         "kasse": [],     # 🏦 Einzahlungen (in) und Ausgaben (out)
         "settings": dict(DEFAULT_SETTINGS),
         "setup_done": False,  # 🧭 Einrichtungs-Assistent schon durch?
@@ -518,6 +519,13 @@ class KegelclubManager:
         if t == "abend_status":
             st = {"play": "kegelt", "watch": "schaut zu", "gone": "ist gegangen", "excused": "abgemeldet", "absent": "fehlt (nicht abgemeldet)", "out": "nicht dabei"}.get(str(op.get("status")), "?")
             return f"👤 {self._mname(op.get('member'))}: {st}"
+        if t == "plan_status":
+            st = {"play": "kommt", "excused": "hat abgesagt (abgemeldet)", "absent": "kommt nicht (nicht abgemeldet)"}.get(str(op.get("status")), "?")
+            return f"📅 Vorgeplant: {self._mname(op.get('member'))} {st}"
+        if t == "plan_date":
+            return f"📅 Nächster Abend: {op.get('date') or 'ohne Datum'}"
+        if t == "plan_clear":
+            return "📅 Vorplanung geleert"
         if t == "abend_nofines":
             return "🙌 Heute keine Strafen berechnen" if op.get("value", True) is not False else "💸 Strafen werden wieder berechnet"
         if t == "abend_hours":
@@ -641,15 +649,48 @@ class KegelclubManager:
             if any(e["id"] == eid for e in d["abende"]):
                 return
             status = {m["id"]: "play" for m in d["members"] if m.get("active", True) and not m.get("guest")}
+            status_ts: dict[str, int] = {}
+            for mid, st in ((d.get("plan") or {}).get("status") or {}).items():  # 📅 vorgeplante Absagen gleich übernehmen
+                if mid in status and st in ("excused", "absent"):
+                    status[mid] = st
+                    status_ts[mid] = ts
+            d["plan"] = {}  # 📅 Plan ist verbraucht – der nächste Abend fängt wieder leer an
             hours = op.get("hours", d["settings"].get("lane_hours", 3))
             d["abende"].append({
                 "id": eid, "date": date, "started": ts, "closed": False, "hours": float(hours or 0), "note": "",
-                "status": status, "status_ts": {}, "counts": {},
+                "status": status, "status_ts": status_ts, "counts": {},
                 "rules": rules_of(d["settings"]),
                 "prices": {s["id"]: [float(s.get("amount") or 0), s.get("payer") or "self"] for s in d["strafen"]},
                 "by": user,
             })
             d["abende"].sort(key=lambda e: (str(e.get("date") or ""), e.get("started") or 0))
+        elif t == "plan_status":  # 📅 Abend vorplanen: wer hat schon abgesagt? (play = kommt → aus dem Plan raus)
+            mid = str(op.get("member") or "")
+            st = str(op.get("status") or "play")
+            if not any(m["id"] == mid for m in d["members"]):
+                raise HomeAssistantError("Dieses Mitglied gibt es nicht")
+            if st not in ("play", "excused", "absent"):
+                raise HomeAssistantError("Unbekannter Zustand")
+            plan = d.setdefault("plan", {})
+            stat = plan.setdefault("status", {})
+            if (plan.get("status_ts") or {}).get(mid, 0) > ts:
+                return  # 🕒 neuere Änderung gewinnt (zwei Handys)
+            plan.setdefault("status_ts", {})[mid] = ts
+            if st == "play":
+                stat.pop(mid, None)
+            else:
+                stat[mid] = st
+        elif t == "plan_date":  # 📅 Für welchen Abend? (leer = einfach der nächste)
+            date = str(op.get("date") or "")[:10]
+            if date and not re.fullmatch(r"\d{4}-\d{2}-\d{2}", date):
+                raise HomeAssistantError("Datum bitte als JJJJ-MM-TT")
+            plan = d.setdefault("plan", {})
+            if date:
+                plan["date"] = date
+            else:
+                plan.pop("date", None)
+        elif t == "plan_clear":
+            d["plan"] = {}
         elif t == "abend_status":
             ev = self.evening(op.get("abend"))
             mid = str(op["member"])
