@@ -328,6 +328,9 @@ if (shots) await a.screenshot({ path: path.join(shots, "6-app-anmeldung.png") })
   last = await p.evaluate(() => fake.applied.at(-1));
   check("„In Kasse buchen“ schickt abend_book und geht zurück zum Start", last?.type === "abend_book" && await sr(`return !!h.querySelector('form[data-a="evstart"]');`), JSON.stringify(last));
   // 📅 Abend vorplanen: Absagen vorher antippen, beim Start stehen sie gleich richtig da
+  check("Vorplanen: am Anfang zugeklappt, nur die Kopfzeile", await sr(`return !!h.querySelector('[data-a="planfold"][aria-expanded="false"]') && !h.querySelector('.ppl.plan');`));
+  await tap('[data-a="planfold"]');
+  check("Vorplanen: Tipp auf die Überschrift klappt auf", await sr(`return !!h.querySelector('[data-a="planfold"][aria-expanded="true"]') && !!h.querySelector('.ppl.plan');`));
   check("Vorplanen: alle Mitglieder (ohne Gäste) mit „kommt“", await sr(`const t = [...h.querySelectorAll('.ppl.plan .pp')]; return t.length === 6 && t.every((x) => /kommt/.test(x.textContent));`));
   await tap('.ppl.plan .stbtn[data-id="m3"]');
   last = await p.evaluate(() => fake.applied.at(-1));
@@ -343,6 +346,9 @@ if (shots) await a.screenshot({ path: path.join(shots, "6-app-anmeldung.png") })
   await shot("14-abend-vorplanen.png");
   const started = await p.evaluate(() => { const A = customElements.get("kegelclub-card").applyLocal, d = JSON.parse(JSON.stringify(fake.data)); A(d, { type: "abend_start", id: "neu", op_id: "x", ts: Date.now() }); const e = d.abende.find((x) => x.id === "neu"); return [e.status.m3, e.status.m4, e.status.m1, JSON.stringify(d.plan)].join(); });
   check("Vorplanen: beim Start Carla abgemeldet, Dieter nicht abgemeldet, Plan danach leer", started === "excused,absent,play,{}", started);
+  await tap('[data-a="planfold"]');
+  check("Vorplanen zu: Absagen stehen trotzdem in der Kopfzeile", await sr(`return !h.querySelector('.ppl.plan') && /1 abgemeldet · 1 nicht abgemeldet/.test(h.querySelector('[data-a="planfold"]').textContent);`));
+  await tap('[data-a="planfold"]');
   await tap('[data-a="planclear"]');
   check("Vorplanung leeren", (await p.evaluate(() => fake.applied.at(-1)?.type)) === "plan_clear" && !(await sr(`return !!h.querySelector('[data-a="planclear"]');`)));
   await tap('[data-a="tab"][data-v="kasse"]');

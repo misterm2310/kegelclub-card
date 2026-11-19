@@ -66,7 +66,7 @@ Den Ordner `custom_components/kegelclub` nach `/config/custom_components/kegelcl
 
 1. **Erster Start**: Die Karte fragt, wie ihr starten wollt – **leer**, mit **Beispiel-Strafen** oder mit der **Datei aus „Alle Neune“**.
 2. **Mitglieder** anlegen (⚙️ → **Mitglieder & Strafen**, dort auch Fotos) und unter ⚙️ → **Regeln & Beträge** Grundbetrag und Kegelbahn einstellen.
-3. Schon vorher abgesagt? Unter **„Abend vorplanen“** die Person antippen (kommt → abgemeldet → nicht abgemeldet). **Kegelabend starten** übernimmt das. Der kleine Knopf unter jeder Person schaltet weiter: kegelt → schaut zu → 🚪 gegangen → abgemeldet → nicht abgemeldet. Bei 🚪 **gegangen** stellst du in der Abrechnung unter **„Zahlt mit“** ein, wie viele Neuner er vor dem Gehen noch mitbezahlt (praktisch, wenn ihr erst hinterher aufschreibt).
+3. Schon vorher abgesagt? **„Abend vorplanen“** aufklappen und die Person antippen (kommt → abgemeldet → nicht abgemeldet). **Kegelabend starten** übernimmt das. Der kleine Knopf unter jeder Person schaltet weiter: kegelt → schaut zu → 🚪 gegangen → abgemeldet → nicht abgemeldet. Bei 🚪 **gegangen** stellst du in der Abrechnung unter **„Zahlt mit“** ein, wie viele Neuner er vor dem Gehen noch mitbezahlt (praktisch, wenn ihr erst hinterher aufschreibt).
 4. **„Grundbetrag kassiert“** antippen, wenn am Anfang alle bezahlt haben. Vergessen? Nach 30 Minuten kommt oben ein Hinweis mit **„Jetzt kassieren“**.
 5. **Strafe buchen**: erst die Person, dann die Strafe antippen. Das rote **−** oben links nimmt eine zurück, **„Eigene“** = Betrag und Grund selbst eintippen.
 6. Zum Schluss in der **Abrechnung** auf die **Münze** tippen, wenn jemand seine Strafen bezahlt hat.

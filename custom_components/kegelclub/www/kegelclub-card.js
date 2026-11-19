@@ -6,7 +6,7 @@
 // - Jede Änderung (Pumpe, Einzahlung, wer da ist …) wird als kleine „Änderung“ verschickt.
 // - Klappt das Verschicken nicht (kein Netz auf der Kegelbahn), landet die Änderung im Postausgang und wird
 //   später nachgeschickt. Bis dahin rechnet die Karte selbst so, als wäre sie schon angekommen.
-const KC_VERSION = "1.0.3-beta.3";
+const KC_VERSION = "1.0.3-beta.4";
 
 const MONTHS = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
 const QKEY = "kegelclub_queue";
@@ -52,6 +52,7 @@ const KC_GUIDE = [
 ];
 // 🆕 Was ist neu – das Neueste oben (wie bei der Einkaufsliste)
 const KC_NEWS = [
+  ["1.0.3-beta.4", "📂 <b>„Abend vorplanen“ klappt auf und zu</b> (wie „Buchen“ auf der Kasse): Am Anfang ist es zugeklappt, ein Tipp auf die Überschrift öffnet es. Jedes Gerät merkt sich, wie du es zuletzt hattest. Wer abgesagt hat, steht trotzdem in der Überschrift („1 abgemeldet · 1 nicht abgemeldet“)"],
   ["1.0.3-beta.3", "📅 <b>Abend vorplanen:</b> Unter „Nächster Kegelabend“ tippst du schon vorher an, wer abgesagt hat (kommt → abgemeldet → nicht abgemeldet), dazu ein Datum zur Erinnerung. Beim „Kegelabend starten“ steht dann gleich alles richtig da · ⏰ <b>Grundbetrag vergessen?</b> Läuft der Abend seit 30 Minuten und „Grundbetrag kassiert“ wurde nicht gedrückt, kommt oben ein dezenter Hinweis mit „Jetzt kassieren“ (✕ = für heute weg, abschaltbar unter ⚙️ → Regeln & Beträge) · 🏆 <b>Live-Rekorde:</b> Im laufenden Abend steht klein „Heute: 12× Pumpe · Rekord 18“ – wird der Rekord geknackt, gibt es 🔥. Ist eine Person gewählt, steht auch ihr Bestwert da (abschaltbar unter ⚙️ → Ansicht)"],
   ["1.0.3-beta.2", "📶 <b>Wieder online = im Hintergrund nachschicken</b> (wie bei der Einkaufsliste): Was im Funkloch auf der Kegelbahn gebucht wurde, schickt die Offline-App von selbst an Home Assistant, sobald das Netz wieder da ist – auf Android-Handys sogar, wenn die App schon zu ist. Beim nächsten Öffnen steht dann „✅ … im Hintergrund nachgeschickt“. Ist die Karte offen, meldet sie „✅ Wieder online – … nachgeschickt“. iPhones können das im Hintergrund leider nicht, dort wird wie bisher beim Öffnen nachgeschickt."],
   ["1.0.3-beta.1", "🧮 <b>Taschenrechner</b> nicht mehr beim laufenden Abend, sondern nach <b>„Abend abschließen“</b> (bei „In Kasse buchen“) – ganz normaler Rechner. Auf der Kasse bleibt er · 🪙 Nach dem Abschließen kann man rechts wieder <b>abhaken, wer bezahlt hat</b>. Der Grundbetrag bleibt dort fest · 🚫 <b>Kein Guthaben mehr, nur Schulden:</b> Wer mehr zahlt (z. B. Altschulden aus „Alle Neune“), steht auf 0 € – das Geld liegt einfach in der Kasse · 📊 Unter der Kegelkasse steht klein der <b>Stand am vorigen Kegelabend</b> · 📂 <b>„Buchen“</b> auf der Kasse klappt auf und zu · 🎯 <b>Spielmodus:</b> nur noch, wer <b>kegelt</b> · 👈 👉 <b>seitlich wischen</b> = nächster / voriger Spieler · unten keine Knöpfe mehr (Anleitung, Fingerabdruck, Abmelden)"],
@@ -1781,7 +1782,10 @@ class KegelclubCard extends HTMLElement {
     if (!mem.length) return "";
     const nEx = Object.values(ps).filter((x) => x === "excused").length, nAb = Object.values(ps).filter((x) => x === "absent").length;
     const info = nEx || nAb ? [nEx ? `${nEx} abgemeldet` : "", nAb ? `${nAb} nicht abgemeldet` : ""].filter(Boolean).join(" · ") : "alle kommen";
-    let h = this._gh("calendar-check-outline", "#00897b", `Abend vorplanen${this._fi("plan")}`, info) + this._fh("plan", "Hat jemand schon vorher abgesagt? Hier antippen: <b>kommt → abgemeldet → nicht abgemeldet</b>. Beim „Kegelabend starten“ steht er dann gleich richtig da. Danach ist die Vorplanung wieder leer. Das Datum ist nur zur Erinnerung und wird beim Start vorgeschlagen.");
+    const open = !!store.get("kegelclub_plan_auf", false); // 📂 einklappbar wie „Buchen“ auf der Kasse – jedes Gerät merkt sich auf/zu
+    let h = `<button class="ghead fold" data-a="planfold" aria-expanded="${open}"><span class="gdot" style="--gc:#00897b">${ic("calendar-check-outline")}</span><span>Abend vorplanen</span><span class="n">${info} ${ic(open ? "chevron-up" : "chevron-down")}</span></button>`;
+    if (!open) return h; // 🙈 zu: nur die Kopfzeile, wer abgesagt hat steht trotzdem drin
+    h += `<p class="small">Hat jemand schon vorher abgesagt? Hier antippen: <b>kommt → abgemeldet → nicht abgemeldet</b>. Beim „Kegelabend starten“ steht er dann gleich richtig da. Danach ist die Vorplanung wieder leer. Das Datum ist nur zur Erinnerung und wird beim Start vorgeschlagen.</p>`;
     h += `<div class="edit"><div class="f"><label>Für den Abend am<input type="date" data-a="plandate" value="${esc(plan.date || "")}"></label></div>
       <div class="ppl plan">${this._order(d, mem.map((m) => m.id)).map((mid) => {
         const m = d.members.find((x) => x.id === mid) || {}, k = ps[mid] || "play", st = k === "play" ? { icon: "account-check-outline", color: "#43a047", label: "kommt" } : STATUS[k];
@@ -2720,6 +2724,7 @@ ${scope} .ksf{text-align:center;font-size:10px;color:#999;margin-top:12px}`;
       this._send({ type: "abend_gone_cap", abend: evx.id, member: id, strafe: sid, n: Math.max(0, cur + Number(el.dataset.d || 0)) });
       return;
     }
+    if (a === "planfold") { store.put("kegelclub_plan_auf", !store.get("kegelclub_plan_auf", false)); redraw(); return; } // 📂 „Abend vorplanen“ auf/zu
     if (a === "kfold") { store.put("kegelclub_buchen_auf", !store.get("kegelclub_buchen_auf", false)); redraw(); return; } // 📂 „Buchen“ auf/zu
     if (a === "calc") { this._calc = this._calc ? null : { expr: "" }; redraw(); return; }
     if (a === "ckey") {
