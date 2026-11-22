@@ -6,7 +6,7 @@
 // - Jede Änderung (Pumpe, Einzahlung, wer da ist …) wird als kleine „Änderung“ verschickt.
 // - Klappt das Verschicken nicht (kein Netz auf der Kegelbahn), landet die Änderung im Postausgang und wird
 //   später nachgeschickt. Bis dahin rechnet die Karte selbst so, als wäre sie schon angekommen.
-const KC_VERSION = "1.0.3-beta.4";
+const KC_VERSION = "1.0.3";
 
 const MONTHS = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
 const QKEY = "kegelclub_queue";
@@ -52,6 +52,7 @@ const KC_GUIDE = [
 ];
 // 🆕 Was ist neu – das Neueste oben (wie bei der Einkaufsliste)
 const KC_NEWS = [
+  ["1.0.3", "🎉 <b>Offizielle Version 1.0.3:</b> Alles aus 4 Betas ist jetzt fest drin – Gut Holz! · 📅 <b>Abend vorplanen</b> (klappt auf und zu): Absagen schon vorher eintragen, beim Start steht gleich „abgemeldet“ / „nicht abgemeldet“ · ⏰ <b>Grundbetrag vergessen?</b> Nach 30 Minuten ein dezenter Hinweis mit „Jetzt kassieren“ · 🏆 <b>Live-Rekorde</b> im laufenden Abend · 📶 <b>Im Hintergrund nachschicken:</b> Was im Funkloch gebucht wurde, geht von selbst raus, sobald das Netz wieder da ist · 🧮 <b>Taschenrechner</b> nach „Abend abschließen“ · 🪙 abhaken, wer bezahlt hat · 🚫 kein Guthaben mehr, nur Schulden · 📊 Stand am vorigen Kegelabend · 🎯 Spielmodus nur mit Kegelnden, seitlich wischen = nächster Spieler"],
   ["1.0.3-beta.4", "📂 <b>„Abend vorplanen“ klappt auf und zu</b> (wie „Buchen“ auf der Kasse): Am Anfang ist es zugeklappt, ein Tipp auf die Überschrift öffnet es. Jedes Gerät merkt sich, wie du es zuletzt hattest. Wer abgesagt hat, steht trotzdem in der Überschrift („1 abgemeldet · 1 nicht abgemeldet“)"],
   ["1.0.3-beta.3", "📅 <b>Abend vorplanen:</b> Unter „Nächster Kegelabend“ tippst du schon vorher an, wer abgesagt hat (kommt → abgemeldet → nicht abgemeldet), dazu ein Datum zur Erinnerung. Beim „Kegelabend starten“ steht dann gleich alles richtig da · ⏰ <b>Grundbetrag vergessen?</b> Läuft der Abend seit 30 Minuten und „Grundbetrag kassiert“ wurde nicht gedrückt, kommt oben ein dezenter Hinweis mit „Jetzt kassieren“ (✕ = für heute weg, abschaltbar unter ⚙️ → Regeln & Beträge) · 🏆 <b>Live-Rekorde:</b> Im laufenden Abend steht klein „Heute: 12× Pumpe · Rekord 18“ – wird der Rekord geknackt, gibt es 🔥. Ist eine Person gewählt, steht auch ihr Bestwert da (abschaltbar unter ⚙️ → Ansicht)"],
   ["1.0.3-beta.2", "📶 <b>Wieder online = im Hintergrund nachschicken</b> (wie bei der Einkaufsliste): Was im Funkloch auf der Kegelbahn gebucht wurde, schickt die Offline-App von selbst an Home Assistant, sobald das Netz wieder da ist – auf Android-Handys sogar, wenn die App schon zu ist. Beim nächsten Öffnen steht dann „✅ … im Hintergrund nachgeschickt“. Ist die Karte offen, meldet sie „✅ Wieder online – … nachgeschickt“. iPhones können das im Hintergrund leider nicht, dort wird wie bisher beim Öffnen nachgeschickt."],

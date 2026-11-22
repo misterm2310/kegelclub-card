@@ -431,8 +431,8 @@ check("Club: Editor zurück auf erstes Buch entfernt „buch“", rb.changed && 
   const r = await sr(`const c = h.host; const d = document.createElement("div"); d.innerHTML = c._newsHtml();
     const box = d.querySelector(".betabox"); const lis = [...d.querySelectorAll(":scope > div > ul > li")];
     return { box: box?.textContent || "", boxN: box?.querySelectorAll("li").length || 0, n: lis.length, head: d.querySelector(":scope > div > p.small")?.textContent || "", ver: [...d.querySelectorAll("b")].some((b) => /^v\d/.test(b.textContent)) };`);
-  check("Was ist neu: Beta-Kasten mit 1.0.3-beta.1", /1\.0\.3-beta\.1|Beta 1/.test(r.box) && r.boxN >= 1, JSON.stringify(r));
-  check("Was ist neu: höchstens 15 Neuerungen bis Version 1.0.2, offizielle 1.0.2 ganz oben", r.n > 0 && r.n <= 15 && /bis Version 1\.0\.2/.test(r.head) && !r.ver, JSON.stringify(r));
+  check("Was ist neu: offizielle Version = kein Beta-Kasten", !r.box && r.boxN === 0, JSON.stringify(r));
+  check("Was ist neu: höchstens 15 Neuerungen bis Version 1.0.3, offizielle 1.0.3 ganz oben", r.n > 0 && r.n <= 15 && /bis Version 1\.0\.3/.test(r.head) && !r.ver, JSON.stringify(r));
 }
 check("Keine Fehler in der Konsole", errs.length === 0, errs.join(" | "));
 await b.close();
