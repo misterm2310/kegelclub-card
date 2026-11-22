@@ -32,7 +32,7 @@ import time
 import uuid
 import zipfile
 from collections.abc import Callable
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 from urllib.parse import quote
@@ -106,11 +106,20 @@ def r2(v: float) -> float:
     return round(float(v) + 0.0, 2)
 
 
+def _date_ms(value: Any) -> int:
+    """Datum „JJJJ-MM-TT“ → Millisekunden (UTC-Mitternacht, wie Date.parse in der Karte)."""
+    try:
+        return int(datetime.strptime(str(value)[:10], "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp() * 1000)
+    except (TypeError, ValueError):
+        return 0
+
+
 def _empty() -> dict[str, Any]:
     return {
         "members": [],   # 👥 Mitglieder UND Gäste (guest: True)
         "strafen": [],   # 💸 euer Sündenregister – alles selbst angelegt
         "abende": [],    # 🎳 Kegelabende
+        "plan": {},      # 📅 Abend vorplanen: {date, status: {Mitglied: excused|absent}} – wird beim Start übernommen
         "kasse": [],     # 🏦 Einzahlungen (in) und Ausgaben (out)
         "settings": dict(DEFAULT_SETTINGS),
         "setup_done": False,  # 🧭 Einrichtungs-Assistent schon durch?
@@ -284,6 +293,8 @@ class KegelclubManager:
         d = self.data
         members, strafen = self._maps()
         charged: dict[str, float] = {m: 0.0 for m in members}
+        flow: dict[str, list] = {}  # je Person [Zeit, Betrag, Reihenfolge] – Abend = plus, Zahlung = minus
+        ev_t: dict[str, int] = {}
         lane_kasse = 0.0
         last = None
         for ev in d["abende"]:
@@ -292,8 +303,10 @@ class KegelclubManager:
                 lane_kasse += b["lane_kasse"]
             if ev.get("imported"):  # 📥 alte Abende aus der App: schon in der Kasse gebucht, keine offenen Beträge
                 continue
+            t = ev_t[ev["id"]] = int(ev.get("started") or _date_ms(ev.get("date")))
             for mid, p in b["people"].items():
                 charged[mid] = charged.get(mid, 0.0) + p["total"]
+                flow.setdefault(mid, []).append((t, p["total"], 0))
             if ev.get("closed") and (last is None or str(ev.get("date")) >= str(last.get("date"))):
                 last = {"id": ev["id"], "date": ev.get("date"), "total": b["total"]}
         paid: dict[str, float] = {}
@@ -306,10 +319,14 @@ class KegelclubManager:
                 k_in += amt
                 if k.get("member") and not k.get("imported"):
                     paid[k["member"]] = paid.get(k["member"], 0.0) + amt
+                    flow.setdefault(k["member"], []).append((max(int(k.get("ts") or 0), ev_t.get(k.get("abend"), 0)), -amt, 1))
         people = []
         open_total = 0.0
         for mid, m in members.items():
-            debt = r2(charged.get(mid, 0.0) - paid.get(mid, 0.0))
+            # 🚫 Kein Guthaben: der Reihe nach – Zahlungen bauen Schulden höchstens bis 0 € ab, nie ins Plus
+            debt = 0.0
+            for _t, v, _o in sorted(flow.get(mid, []), key=lambda x: (x[0], x[2])):
+                debt = max(0.0, r2(debt + v))
             if debt > 0:
                 open_total += debt
             people.append({"id": mid, "name": m.get("name"), "guest": bool(m.get("guest")), "charged": r2(charged.get(mid, 0.0)), "paid": r2(paid.get(mid, 0.0)), "debt": debt})
@@ -502,6 +519,13 @@ class KegelclubManager:
         if t == "abend_status":
             st = {"play": "kegelt", "watch": "schaut zu", "gone": "ist gegangen", "excused": "abgemeldet", "absent": "fehlt (nicht abgemeldet)", "out": "nicht dabei"}.get(str(op.get("status")), "?")
             return f"👤 {self._mname(op.get('member'))}: {st}"
+        if t == "plan_status":
+            st = {"play": "kommt", "excused": "hat abgesagt (abgemeldet)", "absent": "kommt nicht (nicht abgemeldet)"}.get(str(op.get("status")), "?")
+            return f"📅 Vorgeplant: {self._mname(op.get('member'))} {st}"
+        if t == "plan_date":
+            return f"📅 Nächster Abend: {op.get('date') or 'ohne Datum'}"
+        if t == "plan_clear":
+            return "📅 Vorplanung geleert"
         if t == "abend_nofines":
             return "🙌 Heute keine Strafen berechnen" if op.get("value", True) is not False else "💸 Strafen werden wieder berechnet"
         if t == "abend_hours":
@@ -625,15 +649,48 @@ class KegelclubManager:
             if any(e["id"] == eid for e in d["abende"]):
                 return
             status = {m["id"]: "play" for m in d["members"] if m.get("active", True) and not m.get("guest")}
+            status_ts: dict[str, int] = {}
+            for mid, st in ((d.get("plan") or {}).get("status") or {}).items():  # 📅 vorgeplante Absagen gleich übernehmen
+                if mid in status and st in ("excused", "absent"):
+                    status[mid] = st
+                    status_ts[mid] = ts
+            d["plan"] = {}  # 📅 Plan ist verbraucht – der nächste Abend fängt wieder leer an
             hours = op.get("hours", d["settings"].get("lane_hours", 3))
             d["abende"].append({
                 "id": eid, "date": date, "started": ts, "closed": False, "hours": float(hours or 0), "note": "",
-                "status": status, "status_ts": {}, "counts": {},
+                "status": status, "status_ts": status_ts, "counts": {},
                 "rules": rules_of(d["settings"]),
                 "prices": {s["id"]: [float(s.get("amount") or 0), s.get("payer") or "self"] for s in d["strafen"]},
                 "by": user,
             })
             d["abende"].sort(key=lambda e: (str(e.get("date") or ""), e.get("started") or 0))
+        elif t == "plan_status":  # 📅 Abend vorplanen: wer hat schon abgesagt? (play = kommt → aus dem Plan raus)
+            mid = str(op.get("member") or "")
+            st = str(op.get("status") or "play")
+            if not any(m["id"] == mid for m in d["members"]):
+                raise HomeAssistantError("Dieses Mitglied gibt es nicht")
+            if st not in ("play", "excused", "absent"):
+                raise HomeAssistantError("Unbekannter Zustand")
+            plan = d.setdefault("plan", {})
+            stat = plan.setdefault("status", {})
+            if (plan.get("status_ts") or {}).get(mid, 0) > ts:
+                return  # 🕒 neuere Änderung gewinnt (zwei Handys)
+            plan.setdefault("status_ts", {})[mid] = ts
+            if st == "play":
+                stat.pop(mid, None)
+            else:
+                stat[mid] = st
+        elif t == "plan_date":  # 📅 Für welchen Abend? (leer = einfach der nächste)
+            date = str(op.get("date") or "")[:10]
+            if date and not re.fullmatch(r"\d{4}-\d{2}-\d{2}", date):
+                raise HomeAssistantError("Datum bitte als JJJJ-MM-TT")
+            plan = d.setdefault("plan", {})
+            if date:
+                plan["date"] = date
+            else:
+                plan.pop("date", None)
+        elif t == "plan_clear":
+            d["plan"] = {}
         elif t == "abend_status":
             ev = self.evening(op.get("abend"))
             mid = str(op["member"])

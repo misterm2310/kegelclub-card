@@ -18,12 +18,17 @@ Ein Klick öffnet es direkt in deinem Home Assistant: [![In HACS öffnen](https:
 
 - 🎳 **Kegelabend**: Person antippen, Strafe antippen, fertig. Jeder Tipp = +1, mit **−** und ↩️ Rückgängig, dazu **eigene Strafen** per Hand.
 - 💶 **Kassieren am Tisch**: Grundbetrag am Anfang, Strafen per Münze in der Abrechnung.
+- 📅 **Abend vorplanen**: Absagen schon vorher eintragen – beim Start steht gleich richtig „abgemeldet“ oder „nicht abgemeldet“.
+- ⏰ **Grundbetrag vergessen?** Nach 30 Minuten kommt ein dezenter Hinweis, wenn „Grundbetrag kassiert“ noch nicht gedrückt wurde (abschaltbar).
+- 🏆 **Live-Rekorde** im laufenden Abend: „Heute: 12× Pumpe · Rekord 18“ – geknackt gibt es 🔥 (abschaltbar).
 - 👥 **Fünf Zustände**: kegelt · schaut zu · gegangen (zahlt danach keine Neuner der anderen) · abgemeldet · nicht abgemeldet – dazu **Gäste** mit den gleichen Regeln.
 - 💸 **Eigenes Sündenregister**: Name, Symbol, Betrag und **wer zahlt** – er selbst oder **alle anderen, die mitkegeln** (z. B. „Alle Neune“).
 - 🧮 **Regeln als Einstellung**: Grundbetrag, Zuschauer zahlen ja/nein, Fehlende zahlen ja/nein, Extra bei „nicht abgemeldet“, Kegelbahn pro Stunde (aus der Kasse, aufgeteilt oder aus). Passt so für jeden Club.
 - 🙌 **Strafen erlassen** für Ausflug, Weihnachtsfeier & Co.
 - 🏦 **Kegelkasse** mit „Wer schuldet was“, Einzahlungen, Ausgaben und CSV.
-- 🧮 **Taschenrechner** wie bei Fixkosten auf Kasse und beim Kegelabend – Ergebnis direkt als Einzahlung oder Ausgabe.
+- 🧮 **Taschenrechner** wie bei Fixkosten auf Kasse und nach „Abend abschließen“ – auf der Kasse geht das Ergebnis direkt als Einzahlung oder Ausgabe.
+- 🚫 **Kein Guthaben, nur Schulden**: Wer mehr zahlt, als er schuldet, steht auf 0 € – das Geld liegt einfach in der Kasse.
+- 🎯 **Spielmodus** am Kegelabend: nur wer kegelt, nur Strafen, seitlich wischen = nächster Spieler.
 - 📊 **Statistik** (ein Jahr oder alle Jahre): Überblick mit Vergleich zum Vorjahr und Rekorden, Könige, Kasse-Verlauf · Personen mit eigener Detailseite · Tabelle Abend für Abend · Strafen nach Art und „Wer hat was?“-Tabelle.
 - 📤 **Drucken & Teilen**: Abrechnung eines Abends drucken, als echte PDF teilen (iPhone: Teilen → Drucken), als QR-Code fürs Handy oder als Text. 📸 Fotos für Mitglieder.
 - 🏠 **Über den Club**: Name, Gründung (mit Glückwunsch am Jahrestag), Bahn, Termin, Notizen. ✉️ E-Mail je Mitglied und „Mail an alle“. 💡 Bildschirm bleibt beim Kegelabend an.
@@ -61,8 +66,8 @@ Den Ordner `custom_components/kegelclub` nach `/config/custom_components/kegelcl
 
 1. **Erster Start**: Die Karte fragt, wie ihr starten wollt – **leer**, mit **Beispiel-Strafen** oder mit der **Datei aus „Alle Neune“**.
 2. **Mitglieder** anlegen (⚙️ → **Mitglieder & Strafen**, dort auch Fotos) und unter ⚙️ → **Regeln & Beträge** Grundbetrag und Kegelbahn einstellen.
-3. **Kegelabend starten**. Der kleine Knopf unter jeder Person schaltet weiter: kegelt → schaut zu → 🚪 gegangen → abgemeldet → nicht abgemeldet. Bei 🚪 **gegangen** stellst du in der Abrechnung unter **„Zahlt mit“** ein, wie viele Neuner er vor dem Gehen noch mitbezahlt (praktisch, wenn ihr erst hinterher aufschreibt).
-4. **„Grundbetrag kassiert“** antippen, wenn am Anfang alle bezahlt haben.
+3. Schon vorher abgesagt? **„Abend vorplanen“** aufklappen und die Person antippen (kommt → abgemeldet → nicht abgemeldet). **Kegelabend starten** übernimmt das. Der kleine Knopf unter jeder Person schaltet weiter: kegelt → schaut zu → 🚪 gegangen → abgemeldet → nicht abgemeldet. Bei 🚪 **gegangen** stellst du in der Abrechnung unter **„Zahlt mit“** ein, wie viele Neuner er vor dem Gehen noch mitbezahlt (praktisch, wenn ihr erst hinterher aufschreibt).
+4. **„Grundbetrag kassiert“** antippen, wenn am Anfang alle bezahlt haben. Vergessen? Nach 30 Minuten kommt oben ein Hinweis mit **„Jetzt kassieren“**.
 5. **Strafe buchen**: erst die Person, dann die Strafe antippen. Das rote **−** oben links nimmt eine zurück, **„Eigene“** = Betrag und Grund selbst eintippen.
 6. Zum Schluss in der **Abrechnung** auf die **Münze** tippen, wenn jemand seine Strafen bezahlt hat.
 7. **Abend abschließen**. Wer noch offen ist, landet unter „Wer schuldet was“. Die Kegelbahn wird jetzt aus der Kasse gebucht.
@@ -102,7 +107,7 @@ Grundbetrag 7,50 €, Pumpe 0,10 €, „Alle Neune“ 0,10 € (alle anderen za
 <details><summary>Für die Kegelbahn mit schlechtem WLAN – <i>aufklappen</i></summary>
 
 Adresse steht in der Karte unter ⚙️ → **Offline-App** (`/kegelclub/app/`). Im Handy-Browser öffnen, mit dem Home-Assistant-Benutzer anmelden, **„Zum Startbildschirm hinzufügen“**.
-Ohne Netz läuft alles weiter: Was du buchst, wartet im Postausgang und wird nachgeschickt. Nichts zählt doppelt, auch wenn zwei Handys gleichzeitig buchen. Für unterwegs braucht es eine **https**-Adresse (z. B. Nabu Casa).
+Ohne Netz läuft alles weiter: Was du buchst, wartet im Postausgang und wird nachgeschickt, sobald das Netz wieder da ist – auf Android-Handys sogar im Hintergrund, wenn die App zu ist (iPhone: beim nächsten Öffnen). Nichts zählt doppelt, auch wenn zwei Handys gleichzeitig buchen. Für unterwegs braucht es eine **https**-Adresse (z. B. Nabu Casa).
 </details>
 
 ---

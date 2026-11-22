@@ -17,17 +17,22 @@ One click opens it right in your Home Assistant: [![Open in HACS](https://my.hom
 ## ✨ Features
 
 - 🎳 **Bowling evening**: tap a person, tap a fine, done. Every tap = +1, with ↩️ undo.
+- 📅 **Plan the evening**: enter cancellations in advance – when you start, they already show as “excused” or “no-show”.
+- ⏰ **Base fee forgotten?** After 30 minutes a subtle hint appears if “Base fee collected” has not been pressed (can be switched off).
+- 🏆 **Live records** during the evening: “Today: 12× gutter ball · record 18” – break it and you get 🔥 (can be switched off).
 - 👥 **Five states**: bowling · watching · left early · excused · no-show – plus **guests** with the same rules.
 - 💸 **Your own list of fines**: name, icon, amount and **who pays** – the thrower or **all others who are bowling** (e.g. “all nine”).
 - 🧮 **Rules are settings**: base fee, watchers pay yes/no, absent members pay yes/no, extra for no-shows, lane per hour (from the cash, split or off). Fits any club.
 - 🙌 **Waive fines** for trips, Christmas parties & co.
 - 🏦 **Club cash** with “who owes what”, payments, expenses and CSV.
-- 🧮 **Calculator** like in Fixkosten on the cash tab and during the evening – result straight into a deposit or expense.
+- 🧮 **Calculator** like in Fixkosten on the cash tab and after “Close evening” – on the cash tab the result goes straight into a deposit or expense.
+- 🚫 **No credit, only debts**: whoever pays more than they owe stays at 0 € – the money simply stays in the cash box.
+- 🎯 **Game mode** during the evening: only players, only penalties, swipe sideways = next player.
 - 📊 **Statistics** (one year or all years): overview with previous-year comparison and records, kings, cash history · people with their own detail page · evening-by-evening table · fines by type and a "who got what" matrix.
 - 📤 **Print & share**: print an evening's bill, share a real PDF (iPhone: Share → Print), QR code for phones or plain text. 📸 Member photos.
 - 🏠 **About the club**: name, founding date (with a greeting on the anniversary), lane, schedule, notes. ✉️ E-mail per member and “Mail everyone”. 💡 Keep the screen on during the evening.
 - 📥 **Move from the “Alle Neune” app** – with all old evenings, fines and the complete cash.
-- 📱 **Offline app**, 🔒 **PIN lock** (unlocking also works offline), 💾 **backup**, 📜 **history**.
+- 📱 **Offline app** (what you book without network is sent on its own when the network is back – on Android even in the background with the app closed), 🔒 **PIN lock** (unlocking also works offline), 💾 **backup**, 📜 **history**.
 - 🌍 **German or English** (automatic, like Home Assistant) and 💱 **selectable currency**.
 
 ---
@@ -58,9 +63,10 @@ Copy `custom_components/kegelclub` to `/config/custom_components/kegelclub` and 
 
 1. **First start**: the card asks how you want to start – **empty**, with **sample fines** or with the **file from “Alle Neune”**.
 2. Add **members** (⚙️ → **Members & fines**, photos too) and set base fee and lane under ⚙️ → **Rules & amounts**.
-3. **Start bowling evening**. The small button under each person switches: bowling → watching → 🚪 left early → excused → no-show. For 🚪 **left early**, set under **“Pays along”** in the bill how many nines they still paid before leaving (handy if you write everything down afterwards).
-4. **Book a fine**: tap the person first, then the fine.
-5. **Close evening** → the bill goes to the **cash** under “who owes what”. Paid? Tap the green check.
+3. Someone cancelled in advance? Open **“Plan the evening”** and tap them (coming → excused → no-show). **Start bowling evening** takes that over. The small button under each person switches: bowling → watching → 🚪 left early → excused → no-show. For 🚪 **left early**, set under **“Pays along”** in the bill how many nines they still paid before leaving (handy if you write everything down afterwards).
+4. Tap **“Base fee collected”** once everyone has paid. Forgot? After 30 minutes a hint with **“Collect now”** appears at the top.
+5. **Book a fine**: tap the person first, then the fine.
+6. **Close evening** → the bill goes to the **cash** under “who owes what”. Paid? Tap the green check.
 
 More in the card under **📖 Guide** (with search).
 </details>

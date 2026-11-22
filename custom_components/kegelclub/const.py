@@ -53,6 +53,8 @@ DEFAULT_SETTINGS = {
     "view": {},               # 👁️ Ansicht für alle: Abschnitt → False = ausgeblendet
     "club_info": {},          # 🏠 Über den Club: Name, Gründung, Bahn/Ort, Termin, Notiz
     "mascot": False,          # 🎳 Maskottchen Kegelfigur oben links (wie Sparschwein/Einkaufswagen)
+    "fee_hint": True,         # ⏰ Hinweis, wenn der Grundbetrag nach 30 Minuten noch nicht kassiert ist
+    "live_records": True,     # 🏆 im laufenden Abend: „Heute 12× Pumpe · Rekord 18“
 }
 
 # 💸 Beispiel-Vorlage (nur wenn man sie beim Einrichten lädt) – alles änderbar

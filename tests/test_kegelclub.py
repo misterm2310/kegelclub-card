@@ -247,7 +247,7 @@ async def test_pay_at_table_and_hand_fine(hass, setup):
     ok(m, {"type": "pay", "member": "a", "amount": 2.3, "abend": "e1", "tag": "fines"})
     assert {p["id"]: p["debt"] for p in m.summary()["people"]}["a"] == 0
     ok(m, {"type": "abend_extra_delete", "abend": "e1", "id": "x1"})
-    assert {p["id"]: p["debt"] for p in m.summary()["people"]}["a"] == -2.0  # Guthaben
+    assert {p["id"]: p["debt"] for p in m.summary()["people"]}["a"] == 0  # 🚫 kein Guthaben – zu viel Gezahltes bleibt einfach in der Kasse
     assert m.summary()["kasse"] == 30 + 2.3  # Bahn noch nicht abgezogen
     ok(m, {"type": "abend_status", "abend": "e1", "member": "d", "status": "excused"})  # 💶 doch nicht da → Grundbetrag zurück
     assert not any(k.get("member") == "d" and k.get("tag") == "base" for k in m.data["kasse"])
@@ -328,6 +328,22 @@ async def test_gone_cap_entered_afterwards(hass, setup):
     ok(m, {"type": "abend_status", "abend": "ev1", "member": "d", "status": "play", "ts": 60})  # doch da → Handwert weg
     assert "d" not in (m.evening("ev1").get("gone_cap") or {})
 
+async def test_no_credit_only_debts(hass, setup):
+    """🚫 Kein Guthaben: Wer zu viel zahlt (z. B. Altschulden aus „Alle Neune“), steht auf 0 – der nächste Abend zählt voll."""
+    m = mgr(hass)
+    club(m)
+    ok(m, {"type": "pay", "member": "a", "amount": 20, "id": "alt", "ts": 500})  # Altschulden, die die Karte nicht kennt
+    p = {x["id"]: x for x in m.summary()["people"]}
+    assert p["a"]["debt"] == 0 and p["a"]["paid"] == 20  # kein −20 €
+    ok(m, {"type": "abend_start", "op_id": "s1", "id": "ev1", "hours": 0, "ts": 1000})
+    ok(m, {"type": "abend_count", "abend": "ev1", "member": "a", "strafe": "neun"})
+    p = {x["id"]: x for x in m.summary()["people"]}
+    assert p["a"]["debt"] == p["a"]["charged"] > 0  # das Geld von vorher wird NICHT verrechnet
+    due = p["a"]["debt"]
+    ok(m, {"type": "pay", "member": "a", "amount": due + 5, "id": "p2", "ts": 2000})
+    assert {x["id"]: x for x in m.summary()["people"]}["a"]["debt"] == 0
+    assert all(x["debt"] >= 0 for x in m.summary()["people"])
+
 async def test_pin_offline_key(hass, setup):
     """📴 Offline-Schlüssel: Karte bekommt nur PBKDF2, nie die PIN; ältere PINs holen ihn beim ersten richtigen Eintippen nach."""
     import hashlib  # noqa: PLC0415
@@ -382,3 +398,29 @@ async def test_buchen_loeschen_mit_kasse_und_buchung_aendern(hass, setup):
     # ⚙️ Maskottchen-Schalter
     ok(m, {"type": "settings", "settings": {"mascot": True}})
     assert m.data["settings"]["mascot"] is True
+
+
+async def test_plan_evening(hass, setup):
+    """📅 Abend vorplanen: Absagen vorher eintragen, beim Start stehen sie gleich richtig da – danach ist der Plan leer."""
+    m = mgr(hass)
+    club(m)
+    ok(m, {"type": "plan_status", "member": "b", "status": "excused", "ts": 10},
+       {"type": "plan_status", "member": "c", "status": "absent", "ts": 10},
+       {"type": "plan_status", "member": "d", "status": "excused", "ts": 10},
+       {"type": "plan_status", "member": "d", "status": "play", "ts": 20},   # 🔁 doch wieder dabei
+       {"type": "plan_status", "member": "c", "status": "play", "ts": 5},    # 🕒 ältere Änderung zählt nicht
+       {"type": "plan_date", "date": "2026-11-14"})
+    assert m.data["plan"]["status"] == {"b": "excused", "c": "absent"} and m.data["plan"]["date"] == "2026-11-14"
+    assert not m.apply([{"type": "plan_status", "member": "zz", "status": "excused"}])[0]["ok"]
+    assert not m.apply([{"type": "plan_status", "member": "a", "status": "watch"}])[0]["ok"]
+    assert not m.apply([{"type": "plan_date", "date": "14.11."}])[0]["ok"]
+    assert any("Vorgeplant" in x.get("text", "") for x in m.data["log"])
+    ok(m, {"type": "abend_start", "id": "p1"})
+    ev = m.evening("p1")
+    assert ev["status"]["b"] == "excused" and ev["status"]["c"] == "absent" and ev["status"]["a"] == "play" and ev["status"]["d"] == "play"
+    assert set(ev["status_ts"]) == {"b", "c"}
+    assert m.data["plan"] == {}
+    people = bill_evening(ev, *m._maps(), m.data["settings"])["people"]
+    assert people["c"]["extra"] == 5.0 and people["b"]["extra"] == 0  # 🚷 nicht abgemeldet = Extra
+    ok(m, {"type": "plan_status", "member": "a", "status": "excused"}, {"type": "plan_clear"})
+    assert m.data["plan"] == {}
