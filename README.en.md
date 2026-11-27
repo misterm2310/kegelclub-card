@@ -6,7 +6,7 @@
 
 **No more paper lists at the bowling alley.** Book fines with one tap, the bill calculates itself, and the club cash always knows who still owes what. In the dashboard, in the sidebar and as a phone app that also works offline.
 
-One click opens it right in your Home Assistant: [![Open in HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=misterm2310&repository=kegelclub-card&category=integration) [![Add integration](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=kegelclub)
+One click opens it right in your Home Assistant: [![Open in HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=misterm2310&repository=kegelclub-card&category=integration) [![Add integration](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=kegelclub) [![Downloads](https://img.shields.io/github/downloads/misterm2310/kegelclub-card/total?label=Downloads)](https://github.com/misterm2310/kegelclub-card/releases)
 
 ![Preview – made-up names and numbers only](docs/screenshot.png)
 
@@ -96,6 +96,10 @@ language: en       # optional: de or en (default = like Home Assistant)
 ---
 
 ## 💙 Like it?
+
+⭐ **Like the card? Give us a star:** on [GitHub](https://github.com/misterm2310/kegelclub-card), tap “⭐ Star” at the top right (free GitHub account needed) – that shows me how many people like the bowling club and helps others find it. The button is also under ⚙️ → Credits.
+
+📊 **Download counter:** the “Downloads” badge at the top counts how often the ready-made ZIP file of the releases (betas and official versions together) was downloaded. Only GitHub counts this, nothing about you is sent.
 
 It is and stays **free**. If you like, you can send me a small donation via PayPal – completely voluntary: [paypal.me/MarcoStrickmann](https://paypal.me/MarcoStrickmann). The link is also under ⚙️ → Credits. The next round is on you. 🍻
 

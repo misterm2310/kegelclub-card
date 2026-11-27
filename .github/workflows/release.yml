@@ -30,6 +30,16 @@ jobs:
         id: version
         run: echo "tag=v$(jq -r .version custom_components/kegelclub/manifest.json)" >> "$GITHUB_OUTPUT"
 
+      - name: 📦 ZIP für HACS packen (zählt die Downloads)
+        # HACS lädt dann diese fertige ZIP statt des Quellcodes – nur so zählt GitHub die Downloads.
+        # Drin ist genau der Inhalt von custom_components/kegelclub/ (ohne Unterordner davor),
+        # so wie HACS es bei „zip_release“ erwartet. Es geht dabei nichts von den Nutzern ins Internet.
+        run: |
+          cd custom_components/kegelclub
+          zip -r -q -X "$GITHUB_WORKSPACE/kegelclub.zip" . -x '*__pycache__*' '*.pyc'
+          cd "$GITHUB_WORKSPACE" && unzip -l kegelclub.zip | tail -1
+          unzip -l kegelclub.zip | awk '{print $4}' | grep -qx 'manifest.json' || { echo "manifest.json fehlt oben in der ZIP"; exit 1; }
+
       - name: Release anlegen (nur wenn es die Version noch nicht gibt)
         env:
           GH_TOKEN: ${{ github.token }}
@@ -42,7 +52,12 @@ jobs:
           if [ "$BRANCH" = "beta" ] && [ -z "$PRE" ]; then echo "Auf beta nur -beta-Versionen – nichts zu tun."; exit 0; fi
           if [ "$BRANCH" != "beta" ] && [ -n "$PRE" ]; then echo "-beta gehört auf den Zweig beta – nichts zu tun."; exit 0; fi
           if gh release view "$TAG" >/dev/null 2>&1; then
-            echo "Release $TAG gibt es schon – nichts zu tun."
+            # 📦 Release gibt es schon – nur die ZIP nachreichen, falls sie fehlt
+            if gh release view "$TAG" --json assets -q '.assets[].name' | grep -qx kegelclub.zip; then
+              echo "Release $TAG gibt es schon (mit ZIP) – nichts zu tun."
+            else
+              gh release upload "$TAG" kegelclub.zip
+            fi
           else
             # 📝 Kurze deutsche Beschreibung: die Commit-Texte seit dem letzten Release
             PREV=$(git describe --tags --abbrev=0 --exclude '*-beta*' "$SHA^" 2>/dev/null || true)
@@ -54,8 +69,8 @@ jobs:
               [ -n "$PREV" ] && echo "**Alle Änderungen:** https://github.com/${GITHUB_REPOSITORY}/compare/${PREV}...${TAG}"
             } > notes.md
             if ! grep -q "^- " notes.md; then
-              gh release create "$TAG" --target "$SHA" --title "$TAG" $PRE --generate-notes
+              gh release create "$TAG" kegelclub.zip --target "$SHA" --title "$TAG" $PRE --generate-notes
             else
-              gh release create "$TAG" --target "$SHA" --title "$TAG" $PRE --notes-file notes.md
+              gh release create "$TAG" kegelclub.zip --target "$SHA" --title "$TAG" $PRE --notes-file notes.md
             fi
           fi

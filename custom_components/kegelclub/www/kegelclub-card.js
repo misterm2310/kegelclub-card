@@ -6,7 +6,7 @@
 // - Jede Änderung (Pumpe, Einzahlung, wer da ist …) wird als kleine „Änderung“ verschickt.
 // - Klappt das Verschicken nicht (kein Netz auf der Kegelbahn), landet die Änderung im Postausgang und wird
 //   später nachgeschickt. Bis dahin rechnet die Karte selbst so, als wäre sie schon angekommen.
-const KC_VERSION = "1.0.3";
+const KC_VERSION = "1.0.4-beta.1";
 
 const MONTHS = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
 const QKEY = "kegelclub_queue";
@@ -52,6 +52,7 @@ const KC_GUIDE = [
 ];
 // 🆕 Was ist neu – das Neueste oben (wie bei der Einkaufsliste)
 const KC_NEWS = [
+  ["1.0.4-beta.1", "⭐ <b>Stern-Knopf in den Credits:</b> Gefällt dir die Karte? Unter 🙏 Credits führt „⭐ Gib uns einen Stern“ direkt zu GitHub · 📦 <b>Download-Zähler:</b> Jede neue Version hängt jetzt als fertige ZIP-Datei am Release, HACS lädt diese ZIP – so zählt GitHub endlich mit, wie oft der Kegelclub geladen wird (Schild oben im README). Es wird nichts getrackt und nichts von dir übertragen"],
   ["1.0.3", "🎉 <b>Offizielle Version 1.0.3:</b> Alles aus 4 Betas ist jetzt fest drin – Gut Holz! · 📅 <b>Abend vorplanen</b> (klappt auf und zu): Absagen schon vorher eintragen, beim Start steht gleich „abgemeldet“ / „nicht abgemeldet“ · ⏰ <b>Grundbetrag vergessen?</b> Nach 30 Minuten ein dezenter Hinweis mit „Jetzt kassieren“ · 🏆 <b>Live-Rekorde</b> im laufenden Abend · 📶 <b>Im Hintergrund nachschicken:</b> Was im Funkloch gebucht wurde, geht von selbst raus, sobald das Netz wieder da ist · 🧮 <b>Taschenrechner</b> nach „Abend abschließen“ · 🪙 abhaken, wer bezahlt hat · 🚫 kein Guthaben mehr, nur Schulden · 📊 Stand am vorigen Kegelabend · 🎯 Spielmodus nur mit Kegelnden, seitlich wischen = nächster Spieler"],
   ["1.0.3-beta.4", "📂 <b>„Abend vorplanen“ klappt auf und zu</b> (wie „Buchen“ auf der Kasse): Am Anfang ist es zugeklappt, ein Tipp auf die Überschrift öffnet es. Jedes Gerät merkt sich, wie du es zuletzt hattest. Wer abgesagt hat, steht trotzdem in der Überschrift („1 abgemeldet · 1 nicht abgemeldet“)"],
   ["1.0.3-beta.3", "📅 <b>Abend vorplanen:</b> Unter „Nächster Kegelabend“ tippst du schon vorher an, wer abgesagt hat (kommt → abgemeldet → nicht abgemeldet), dazu ein Datum zur Erinnerung. Beim „Kegelabend starten“ steht dann gleich alles richtig da · ⏰ <b>Grundbetrag vergessen?</b> Läuft der Abend seit 30 Minuten und „Grundbetrag kassiert“ wurde nicht gedrückt, kommt oben ein dezenter Hinweis mit „Jetzt kassieren“ (✕ = für heute weg, abschaltbar unter ⚙️ → Regeln & Beträge) · 🏆 <b>Live-Rekorde:</b> Im laufenden Abend steht klein „Heute: 12× Pumpe · Rekord 18“ – wird der Rekord geknackt, gibt es 🔥. Ist eine Person gewählt, steht auch ihr Bestwert da (abschaltbar unter ⚙️ → Ansicht)"],
@@ -1185,6 +1186,7 @@ a.btn.paypal { background:#0070ba; border-color:#0070ba; color:#fff; }
 .ellogo img { display:block; max-width:100%; width:200px; height:auto; }
 .elcbtns { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin:12px 0; }
 a.elcbtn { color:var(--primary-text-color); background:var(--secondary-background-color, rgba(127,127,127,.12)); border-radius:12px; padding:10px 14px; text-decoration:none; font-weight:500; }
+a.elcbtn.star { background:#fbc02d; color:#3e2723; border:2px solid #f57f17; font-weight:700; }
 a.elcbtn.pp { display:inline-flex; align-items:center; gap:8px; background:#0070BA; color:#fff; border:2px solid #003087; font-weight:700; }
 .elcbtn.pp svg { width:20px; height:20px; flex:none; }
 .elcsmall { opacity:.7; font-size:.9em; }
@@ -2440,6 +2442,10 @@ ${scope} .ksf{text-align:center;font-size:10px;color:#999;margin-top:12px}`;
       <p>${t("Gemacht von <b>Mister-M</b> – mit Hilfe von Claude 🤖", "Made by <b>Mister-M</b> – with help from Claude 🤖")}</p>
       <p>${t("Ich versuche, Updates und Fehler-Korrekturen zeitnah zu erledigen.", "I try to ship updates and fixes promptly.")}</p>
       <p class="elcsmall">📅 ${t("Neue offizielle Versionen kommen immer sonntags. An den anderen Tagen gibt es nur Test-Versionen (Beta) – die siehst du in HACS unter „Beta-Versionen anzeigen“. Ab Home Assistant 2026.11 findest du HACS unter <b>Einstellungen → Marketplace</b>.", "New official versions always come out on Sundays. On the other days there are only test versions (beta) – you see them in HACS under “Show beta versions”. From Home Assistant 2026.11 you find HACS under <b>Settings → Marketplace</b>.")}</p>
+      <div class="elcbtns">
+        <a class="elcbtn star" href="${REPO}" target="_blank" rel="noopener">⭐ ${t("Gefällt dir die Karte? Gib uns einen Stern", "Like the card? Give us a star")}</a>
+      </div>
+      <p class="elcsmall">${t("Auf GitHub oben rechts auf „⭐ Star“ tippen (braucht ein kostenloses GitHub-Konto) – so sehe ich, wie vielen die Karte gefällt, und andere finden sie leichter. Beim Antippen öffnet sich GitHub im Browser; vorher geht nichts ins Internet.", "On GitHub, tap “⭐ Star” at the top right (needs a free GitHub account) – that shows me how many people like the card and helps others find it. Tapping opens GitHub in your browser; nothing goes to the internet before that.")}</p>
       <div class="elcbtns">
         <a class="elcbtn" href="${REPO}" target="_blank" rel="noopener">🐙 GitHub</a>
         <a class="elcbtn" href="${REPO}/discussions" target="_blank" rel="noopener">💡 ${t("Idee oder Wunsch", "Idea or request")}</a>
