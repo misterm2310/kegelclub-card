@@ -72,7 +72,7 @@ jobs:
               # 📥 Von Hand gestartet und in der alten ZIP steht noch keine Download-Zahl? Dann die ZIP einmal ersetzen
               # (betrifft nur ganz frische Betas, die noch mit dem alten Bauplan gepackt wurden).
               if [ "${{ github.event_name }}" = "workflow_dispatch" ] && grep -q "\"downloads\": [1-9]" custom_components/kegelclub/www/downloads.json \
-                 && gh release download "$TAG" -p kegelclub.zip -O old.zip && ! { unzip -p old.zip downloads.json 2>/dev/null | grep -q '"downloads": [1-9]'; }; then
+                 && gh release download "$TAG" -p kegelclub.zip -O old.zip && ! { unzip -p old.zip www/downloads.json 2>/dev/null | grep -q '"downloads": [1-9]'; }; then
                 gh release upload "$TAG" kegelclub.zip --clobber
                 echo "ZIP von $TAG mit Download-Zahl ersetzt."
               else
