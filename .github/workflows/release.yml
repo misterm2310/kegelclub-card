@@ -30,6 +30,21 @@ jobs:
         id: version
         run: echo "tag=v$(jq -r .version custom_components/kegelclub/manifest.json)" >> "$GITHUB_OUTPUT"
 
+      - name: 📥 Download-Zahl für die Credits in die ZIP legen
+        # Summe aller ZIP-Downloads aller Releases (GitHub-API, nur hier beim Release – die Karte fragt GitHub nie).
+        # Überschreibt www/downloads.json (im Repo steht nur ein Platzhalter mit 0, damit es kein 404 gibt) –
+        # klappt die Abfrage nicht, bleibt die 0 und die Credits zeigen keine Zahl. Das Release läuft trotzdem weiter.
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          N=$(gh api "repos/${GITHUB_REPOSITORY}/releases?per_page=100" --paginate -q '.[].assets[] | select(.name | endswith(".zip")) | .download_count' 2>/dev/null | awk '{s+=$1} END {print s+0}') || N=0
+          if [ "${N:-0}" -gt 0 ]; then
+            printf '{"downloads": %s, "stand": "%s"}\n' "$N" "$(date -u +%F)" > custom_components/kegelclub/www/downloads.json
+            cat custom_components/kegelclub/www/downloads.json
+          else
+            echo "Keine Download-Zahl bekommen – Credits zeigen dann keine Zahl."
+          fi
+
       - name: 📦 ZIP für HACS packen (zählt die Downloads)
         # HACS lädt dann diese fertige ZIP statt des Quellcodes – nur so zählt GitHub die Downloads.
         # Drin ist genau der Inhalt von custom_components/kegelclub/ (ohne Unterordner davor),
@@ -54,7 +69,15 @@ jobs:
           if gh release view "$TAG" >/dev/null 2>&1; then
             # 📦 Release gibt es schon – nur die ZIP nachreichen, falls sie fehlt
             if gh release view "$TAG" --json assets -q '.assets[].name' | grep -qx kegelclub.zip; then
-              echo "Release $TAG gibt es schon (mit ZIP) – nichts zu tun."
+              # 📥 Von Hand gestartet und in der alten ZIP steht noch keine Download-Zahl? Dann die ZIP einmal ersetzen
+              # (betrifft nur ganz frische Betas, die noch mit dem alten Bauplan gepackt wurden).
+              if [ "${{ github.event_name }}" = "workflow_dispatch" ] && grep -q "\"downloads\": [1-9]" custom_components/kegelclub/www/downloads.json \
+                 && gh release download "$TAG" -p kegelclub.zip -O old.zip && ! { unzip -p old.zip downloads.json 2>/dev/null | grep -q '"downloads": [1-9]'; }; then
+                gh release upload "$TAG" kegelclub.zip --clobber
+                echo "ZIP von $TAG mit Download-Zahl ersetzt."
+              else
+                echo "Release $TAG gibt es schon (mit ZIP) – nichts zu tun."
+              fi
             else
               gh release upload "$TAG" kegelclub.zip
             fi

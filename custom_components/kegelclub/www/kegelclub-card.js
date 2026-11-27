@@ -6,7 +6,7 @@
 // - Jede Änderung (Pumpe, Einzahlung, wer da ist …) wird als kleine „Änderung“ verschickt.
 // - Klappt das Verschicken nicht (kein Netz auf der Kegelbahn), landet die Änderung im Postausgang und wird
 //   später nachgeschickt. Bis dahin rechnet die Karte selbst so, als wäre sie schon angekommen.
-const KC_VERSION = "1.0.4-beta.1";
+const KC_VERSION = "1.0.4-beta.2";
 
 const MONTHS = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
 const QKEY = "kegelclub_queue";
@@ -52,6 +52,7 @@ const KC_GUIDE = [
 ];
 // 🆕 Was ist neu – das Neueste oben (wie bei der Einkaufsliste)
 const KC_NEWS = [
+  ["1.0.4-beta.2", "📥 <b>Download-Zahl in den Credits:</b> Unter 🙏 Credits steht jetzt „rund N Downloads (Stand letztes Release)“. Die Zahl schreibt GitHub bei jedem Release mit in die ZIP – die Karte liest sie nur aus deinem Home Assistant, ruft also nie selbst GitHub auf. Zwischen zwei Releases wächst sie nicht, darum „rund“. Ohne ZIP-Installation bleibt die Zeile einfach weg"],
   ["1.0.4-beta.1", "⭐ <b>Stern-Knopf in den Credits:</b> Gefällt dir die Karte? Unter 🙏 Credits führt „⭐ Gib uns einen Stern“ direkt zu GitHub · 📦 <b>Download-Zähler:</b> Jede neue Version hängt jetzt als fertige ZIP-Datei am Release, HACS lädt diese ZIP – so zählt GitHub endlich mit, wie oft der Kegelclub geladen wird (Schild oben im README). Es wird nichts getrackt und nichts von dir übertragen"],
   ["1.0.3", "🎉 <b>Offizielle Version 1.0.3:</b> Alles aus 4 Betas ist jetzt fest drin – Gut Holz! · 📅 <b>Abend vorplanen</b> (klappt auf und zu): Absagen schon vorher eintragen, beim Start steht gleich „abgemeldet“ / „nicht abgemeldet“ · ⏰ <b>Grundbetrag vergessen?</b> Nach 30 Minuten ein dezenter Hinweis mit „Jetzt kassieren“ · 🏆 <b>Live-Rekorde</b> im laufenden Abend · 📶 <b>Im Hintergrund nachschicken:</b> Was im Funkloch gebucht wurde, geht von selbst raus, sobald das Netz wieder da ist · 🧮 <b>Taschenrechner</b> nach „Abend abschließen“ · 🪙 abhaken, wer bezahlt hat · 🚫 kein Guthaben mehr, nur Schulden · 📊 Stand am vorigen Kegelabend · 🎯 Spielmodus nur mit Kegelnden, seitlich wischen = nächster Spieler"],
   ["1.0.3-beta.4", "📂 <b>„Abend vorplanen“ klappt auf und zu</b> (wie „Buchen“ auf der Kasse): Am Anfang ist es zugeklappt, ein Tipp auf die Überschrift öffnet es. Jedes Gerät merkt sich, wie du es zuletzt hattest. Wer abgesagt hat, steht trotzdem in der Überschrift („1 abgemeldet · 1 nicht abgemeldet“)"],
@@ -100,6 +101,20 @@ function kcVerCmp(a, b) {
   for (let i = 0; i < 4; i++) if (x[i] !== y[i]) return x[i] > y[i] ? 1 : -1;
   return 0;
 }
+// 📥 Download-Zahl für die Credits: steht in downloads.json, die die Release-Automatik beim Packen der ZIP
+// hineinlegt ({"downloads": N, "stand": "JJJJ-MM-TT"}). Gelesen wird nur aus dem eigenen Home Assistant –
+// nie live von GitHub. Fehlt die Datei (z. B. ohne ZIP installiert) oder ist N = 0, bleibt die Zeile weg.
+let KC_DL = null;      // { downloads, stand } sobald geladen
+let KC_DL_P = null;    // läuft schon ein Laden? (nur einmal pro Seite)
+const kcLoadDownloads = () => (KC_DL_P ||= fetch(`/kegelclub/files/downloads.json?v=${KC_VERSION}`, { cache: "force-cache" })
+  .then((r) => (r.ok ? r.json() : null))
+  .then((j) => { const n = Number(j?.downloads); KC_DL = n > 0 ? { downloads: Math.round(n), stand: String(j?.stand || "") } : false; return KC_DL; })
+  .catch(() => (KC_DL = false)));
+const kcDownloadsText = () => {
+  if (!KC_DL) return "";
+  const n = KC_DL.downloads.toLocaleString(KC_LANG === "en" ? "en-US" : "de-DE");
+  return KC_LANG === "en" ? `📥 about <b>${esc(n)}</b> downloads (as of last release)` : `📥 rund <b>${esc(n)}</b> Downloads (Stand letztes Release)`;
+};
 const esc = (x) => String(x ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 // 📋 Text kopieren – mit Ersatzweg wie bei der Einkaufsliste, falls das Handy die Zwischenablage sperrt (z. B. in der HA-App oder ohne https)
 // 🧮 Taschenrechner wie bei Fixkosten: rechnet selbst (ohne eval), Punkt vor Strich, % = /100
@@ -2436,9 +2451,12 @@ ${scope} .ksf{text-align:center;font-size:10px;color:#999;margin-top:12px}`;
   // 🙏 Credits – genau wie bei der Einkaufsliste (Logo, Version, Knöpfe, PayPal), in ⚙️ und in der Anleitung
   _creditsHtml() {
     const t = (de, en) => (KC_LANG === "en" ? en : de);
+    // 📥 Download-Zahl einmal nachladen und dann alle offenen Credits-Zeilen füllen (kein neues Zeichnen nötig)
+    if (KC_DL === null) kcLoadDownloads().then(() => this.shadowRoot?.querySelectorAll(".kcdl").forEach((el) => { el.innerHTML = kcDownloadsText(); el.hidden = !KC_DL; }));
     return `<div class="elcredits" translate="no">
       <div class="ellogo"><img src="/kegelclub/files/mister-m.webp?v=${KC_VERSION}" alt="Mister-M" loading="lazy"></div>
       <p class="elcv"><b>Kegelclub</b> v${KC_VERSION}</p>
+      <p class="elcsmall kcdl"${KC_DL ? "" : " hidden"}>${kcDownloadsText()}</p>
       <p>${t("Gemacht von <b>Mister-M</b> – mit Hilfe von Claude 🤖", "Made by <b>Mister-M</b> – with help from Claude 🤖")}</p>
       <p>${t("Ich versuche, Updates und Fehler-Korrekturen zeitnah zu erledigen.", "I try to ship updates and fixes promptly.")}</p>
       <p class="elcsmall">📅 ${t("Neue offizielle Versionen kommen immer sonntags. An den anderen Tagen gibt es nur Test-Versionen (Beta) – die siehst du in HACS unter „Beta-Versionen anzeigen“. Ab Home Assistant 2026.11 findest du HACS unter <b>Einstellungen → Marketplace</b>.", "New official versions always come out on Sundays. On the other days there are only test versions (beta) – you see them in HACS under “Show beta versions”. From Home Assistant 2026.11 you find HACS under <b>Settings → Marketplace</b>.")}</p>

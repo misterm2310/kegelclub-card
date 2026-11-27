@@ -99,7 +99,7 @@ language: en       # optional: de or en (default = like Home Assistant)
 
 ⭐ **Like the card? Give us a star:** on [GitHub](https://github.com/misterm2310/kegelclub-card), tap “⭐ Star” at the top right (free GitHub account needed) – that shows me how many people like the bowling club and helps others find it. The button is also under ⚙️ → Credits.
 
-📊 **Download counter:** the “Downloads” badge at the top counts how often the ready-made ZIP file of the releases (betas and official versions together) was downloaded. Only GitHub counts this, nothing about you is sent.
+📊 **Download counter:** the “Downloads” badge at the top counts how often the ready-made ZIP file of the releases (betas and official versions together) was downloaded. Only GitHub counts this, nothing about you is sent. The same number also shows under 🙏 Credits as “📥 about N downloads (as of last release)” – it is put into the ZIP at release time, so the card never asks GitHub itself.
 
 It is and stays **free**. If you like, you can send me a small donation via PayPal – completely voluntary: [paypal.me/MarcoStrickmann](https://paypal.me/MarcoStrickmann). The link is also under ⚙️ → Credits. The next round is on you. 🍻
 

@@ -181,7 +181,7 @@ actions:
 
 ⭐ **Gefällt dir die Karte? Gib uns einen Stern:** Auf [GitHub](https://github.com/misterm2310/kegelclub-card) oben rechts auf „⭐ Star“ tippen (kostenloses GitHub-Konto nötig) – so sehe ich, wie vielen der Kegelclub gefällt, und andere finden ihn leichter. Den Knopf gibt es auch unter ⚙️ → Credits.
 
-📊 **Download-Zähler:** Das Schild „Downloads“ oben zählt, wie oft die fertige ZIP-Datei der Releases (Betas und offizielle Versionen zusammen) geladen wurde. Das zählt nur GitHub, von dir wird nichts übertragen.
+📊 **Download-Zähler:** Das Schild „Downloads“ oben zählt, wie oft die fertige ZIP-Datei der Releases (Betas und offizielle Versionen zusammen) geladen wurde. Das zählt nur GitHub, von dir wird nichts übertragen. Die gleiche Zahl steht auch unter 🙏 Credits als „📥 rund N Downloads (Stand letztes Release)“ – sie wird beim Release mit in die ZIP gelegt, die Karte fragt GitHub also nie selbst.
 
 Er ist und bleibt **kostenlos**. Wenn du magst, kannst du mir ganz freiwillig eine kleine Spende per PayPal schicken: [paypal.me/MarcoStrickmann](https://paypal.me/MarcoStrickmann). Den Link gibt es auch unter ⚙️ → Credits. Die nächste Runde geht auf dich. 🍻
 

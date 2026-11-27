@@ -27,6 +27,8 @@ const p = await b.newPage({ viewport: { width: 560, height: 1100 }, deviceScaleF
 const errs = [];
 p.on("pageerror", (e) => errs.push(String(e)));
 p.on("console", (m) => { if (m.type() === "error" || /Symbol fehlt/.test(m.text())) errs.push(m.text()); });
+// 📥 Download-Zahl wie aus der Release-ZIP (im Repo liegt nur der Platzhalter mit 0)
+await p.route("**/kegelclub/files/downloads.json*", (rt) => rt.fulfill({ contentType: "application/json", body: '{"downloads": 1234, "stand": "2026-11-27"}' }));
 await p.goto(`http://localhost:${port}/`);
 await p.waitForFunction(() => window.__ready);
 await p.waitForTimeout(200);
@@ -431,13 +433,16 @@ check("Club: Editor zurück auf erstes Buch entfernt „buch“", rb.changed && 
   const r = await sr(`const c = h.host; const d = document.createElement("div"); d.innerHTML = c._newsHtml();
     const box = d.querySelector(".betabox"); const lis = [...d.querySelectorAll(":scope > div > ul > li")];
     return { box: box?.textContent || "", boxN: box?.querySelectorAll("li").length || 0, n: lis.length, head: d.querySelector(":scope > div > p.small")?.textContent || "", ver: [...d.querySelectorAll("b")].some((b) => /^v\d/.test(b.textContent)) };`);
-  check("Was ist neu: Beta 1.0.4-beta.1 = oranger Beta-Kasten mit Stern + Download-Zähler", /1\.0\.4-beta\.1/.test(r.box) && r.boxN >= 1 && /Stern/.test(r.box) && /Download/.test(r.box), JSON.stringify(r));
+  check("Was ist neu: Beta 1.0.4-beta.2 = oranger Beta-Kasten mit Download-Zahl + Stern", /1\.0\.4-beta\.2/.test(r.box) && r.boxN >= 2 && /Download-Zahl in den Credits/.test(r.box) && /Stern/.test(r.box), JSON.stringify(r));
   check("Was ist neu: höchstens 15 Neuerungen bis Version 1.0.3, offizielle 1.0.3 ganz oben", r.n > 0 && r.n <= 15 && /bis Version 1\.0\.3/.test(r.head) && !r.ver, JSON.stringify(r));
 }
 // ⭐ Credits: Stern-Knopf ist nur ein Link zur GitHub-Seite (nichts wird übertragen)
 {
   const r = await sr(`const d = document.createElement("div"); d.innerHTML = h.host._creditsHtml(); const a = d.querySelector("a.elcbtn.star");
     return { href: a?.getAttribute("href") || "", txt: a?.textContent || "", target: a?.getAttribute("target") || "" };`);
+  await p.waitForTimeout(300); // Download-Zahl ist inzwischen nachgeladen
+  const dl = await sr(`const d = document.createElement("div"); d.innerHTML = h.host._creditsHtml(); const x = d.querySelector(".kcdl"); return { txt: x?.textContent || "", hidden: !!x?.hidden };`);
+  check("Credits: „📥 rund 1.234 Downloads (Stand letztes Release)“ aus downloads.json", !dl.hidden && dl.txt === "📥 rund 1.234 Downloads (Stand letztes Release)", JSON.stringify(dl));
   check("Credits: ⭐-Knopf „Gefällt dir die Karte? Gib uns einen Stern“ öffnet das GitHub-Repo", r.href === "https://github.com/misterm2310/kegelclub-card" && /Gib uns einen Stern/.test(r.txt) && r.target === "_blank", JSON.stringify(r));
 }
 check("Keine Fehler in der Konsole", errs.length === 0, errs.join(" | "));
